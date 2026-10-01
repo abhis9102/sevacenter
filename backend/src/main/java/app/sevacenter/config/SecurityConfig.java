@@ -5,6 +5,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
@@ -22,6 +24,7 @@ public class SecurityConfig {
     /** Endpoints intentionally reachable without authentication. Keep this list short. */
     private static final String[] PUBLIC_ENDPOINTS = {
             "/api/v1/ping",
+            "/api/v1/register",
             "/actuator/health",
             "/actuator/health/**",
             // API documentation (OpenAPI JSON + Swagger UI). Fine to expose in dev;
@@ -39,5 +42,14 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .httpBasic(Customizer.withDefaults());
         return http.build();
+    }
+
+    /**
+     * Delegating encoder: stores hashes with an algorithm prefix (default bcrypt) so the
+     * scheme can be upgraded later without breaking existing hashes. Never store plaintext.
+     */
+    @Bean
+    PasswordEncoder passwordEncoder() {
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
 }
