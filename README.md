@@ -1,8 +1,12 @@
 # SevaCenter
 
 Multi-tenant SaaS for Indian temples and religious trusts — a "Planning Center for temples."
-Each trust self-registers and gets its own branded space (`yourtemple.sevacenter.app`) to
+Each trust self-registers and gets its own branded space (`yourtemple.mandircenter.app`) to
 manage devotees, collect donations (with 80G receipts), run events, and publish announcements.
+
+**Two brands, one platform** (like Planning Center / Church Center): **SevaCenter** is the admin
+platform for trust staff (`app.sevacenter.app`); **MandirCenter** is the public devotee site, one
+per temple (`yourtemple.mandircenter.app`). See `docs/adr/0006` and `docs/design/`.
 
 **Status:** M0 — foundation scaffolded (2026-10-02). See `docs/roadmap.md`.
 

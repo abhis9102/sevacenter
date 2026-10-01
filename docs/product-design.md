@@ -9,7 +9,7 @@ Actions + OIDC**.
 
 ## 1. Vision
 
-A temple / religious trust signs up, gets its own branded space at `yourtemple.sevacenter.app`, and
+A temple / religious trust signs up, gets its own branded space at `yourtemple.mandircenter.app`, and
 from there manages its **devotees**, collects **donations**, runs **events/registrations**, and
 **publishes** announcements — the way Planning Center does for churches, reframed for the Indian
 temple/trust market (Razorpay, DPDP Act, 80G receipts).
@@ -34,7 +34,7 @@ Registrations.** Covers multi-tenancy + RBAC + PII + money + public forms. **Pub
 
 This is the Church Center analog and the first thing we build.
 
-**Flow:** someone registers a trust → picks a subdomain `yourtemple` → gets `yourtemple.sevacenter.app`
+**Flow:** someone registers a trust → picks a subdomain `yourtemple` → gets `yourtemple.mandircenter.app`
 → becomes `trust-admin` → invites leaders/members.
 
 **Two phases of "domain":**
