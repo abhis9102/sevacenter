@@ -24,6 +24,11 @@ public class SecurityConfig {
             "/api/v1/ping",
             "/actuator/health",
             "/actuator/health/**",
+            // API documentation (OpenAPI JSON + Swagger UI). Fine to expose in dev;
+            // revisit before production (restrict or disable in the prod profile).
+            "/v3/api-docs/**",
+            "/swagger-ui/**",
+            "/swagger-ui.html",
     };
 
     @Bean

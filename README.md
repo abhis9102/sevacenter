@@ -16,7 +16,7 @@ manage devotees, collect donations (with 80G receipts), run events, and publish 
 
 | Layer | Choice |
 |---|---|
-| Backend | Java 21 + Spring Boot 4 (Spring Security, Data JPA, Flyway) |
+| Backend | Java 21 + Spring Boot 3.5 (Spring Security, Data JPA, Flyway) |
 | Database | PostgreSQL + Row-Level Security (multi-tenancy) |
 | Frontend | Next.js / TypeScript *(from a later milestone)* |
 | Security tooling | Python |
@@ -38,6 +38,10 @@ curl localhost:8080/api/v1/ping          # -> {"status":"ok",...}
 curl localhost:8080/actuator/health      # -> {"status":"UP"}
 make test                # hermetic tests (Testcontainers; needs Docker)
 ```
+
+Once running, the API documents itself:
+- **Swagger UI:** http://localhost:8080/swagger-ui.html
+- **OpenAPI JSON:** http://localhost:8080/v3/api-docs
 
 `make help` lists all targets.
 

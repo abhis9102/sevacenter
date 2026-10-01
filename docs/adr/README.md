@@ -10,3 +10,4 @@ change a decision, add a new ADR that supersedes the old one.
 | [0002](0002-multitenancy-shared-schema-postgres-rls.md) | Multi-tenancy: shared schema + Postgres RLS | Accepted |
 | [0003](0003-cicd-github-actions-oidc.md) | CI/CD: GitHub Actions + OIDC to AWS | Accepted |
 | [0004](0004-schema-via-flyway.md) | Schema managed by Flyway, Hibernate validate-only | Accepted |
+| [0005](0005-pin-spring-boot-3.5-lts.md) | Pin backend to Spring Boot 3.5 (not 4.x) | Accepted |
