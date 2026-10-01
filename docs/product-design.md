@@ -1,6 +1,9 @@
-# Product Design — v0 (brainstorm, open for discussion)
+# Product Design — v1
 
-Everything here is a **proposal to argue with**, not a locked decision. Open questions are marked ❓.
+Core decisions locked 2026-10-02 (see §8). Remaining open items still marked ❓.
+
+**Decisions locked:** MVP = tenant+domain + Devotees + Donations + **Events/Registrations**;
+multi-tenancy = **shared schema + Postgres RLS**; backend = **FastAPI**; **80G receipts in MVP**.
 
 ## 1. Vision
 
@@ -18,15 +21,12 @@ Mapped to Planning Center's modules, then prioritized for *our* build.
 | **Church Center** (per-church site/domain) | **Tenant registration + per-temple subdomain** | **P0 — foundation** | Everything hangs off "which tenant." Richest tenancy/domain security surface. |
 | **People** | **Devotees / Members** | **P1** | Multi-tenant PII directory → BOLA/IDOR/PII surface. |
 | **Giving** | **Donations (daan/seva)** via Razorpay | **P1** | Money → payment authz + business logic. PCI story. |
-| **Registrations** | **Events + Registrations** | P2 | Public forms, uploads, rate limiting. |
-| **Publishing** | **Announcements / public page** | P2 | Mini-CMS; content authz, stored XSS surface. |
+| **Registrations** | **Events + Registrations** | **P1 — in MVP** | Public forms, uploads, rate limiting. |
+| **Publishing** | **Announcements / public page** | P2 (wave 2) | Mini-CMS; content authz, stored XSS surface. |
 | Services / Check-Ins / Groups / Calendar | — | later | Little *new* security surface for the effort. |
 
-**Proposed MVP = P0 + P1:** tenant registration with subdomain, Devotees, Donations. That is the
-"security-maximal minimal" core: multi-tenancy + RBAC + PII + money. P2 (Events, Publishing) is the
-next wave.
-
-❓ Agree MVP = P0+P1, with Events/Publishing as wave 2? Or do you want Publishing in the MVP?
+**MVP (locked) = tenant registration + subdomain, Devotees, Donations (with 80G), Events/
+Registrations.** Covers multi-tenancy + RBAC + PII + money + public forms. **Publishing is wave 2.**
 
 ## 3. The P0 feature in detail: tenant registration + per-temple domain
 
@@ -56,17 +56,16 @@ This is the Church Center analog and the first thing we build.
 | Shared DB, schema-per-tenant | Medium | Medium | Medium |
 | DB-per-tenant | Strong | High | Low (isolation handed to you by infra) |
 
-**Proposed:** shared DB + `tenant_id` + **Postgres Row-Level Security (RLS)** enforcing it at the DB
+**LOCKED:** shared DB + `tenant_id` + **Postgres Row-Level Security (RLS)** enforcing it at the DB
 layer. Most common real-world SaaS model, and implementing RLS correctly (plus finding where app
-code can bypass it) is a strong, demonstrable security story.
-
-❓ Agree on shared-schema + RLS?
+code can bypass it — e.g. a connection that forgets to `SET app.tenant_id`, or a superuser role that
+bypasses RLS) is a strong, demonstrable security story.
 
 ## 5. Tech stack (proposal)
 
 | Layer | Choice | Notes |
 |---|---|---|
-| Backend / API | **Python + FastAPI** | You know Python; API-first; clean for security demos |
+| Backend / API | **Python + FastAPI** (LOCKED) | You know Python; API-first; clean for security demos |
 | DB | **PostgreSQL** (RLS for tenancy) | — |
 | Frontend | **Next.js** (admin + public), subdomain routing via middleware | FE is secondary; keep minimal |
 | Auth | Vetted library (don't hand-roll); session/JWT | Effort goes into authz, not reinventing auth |
@@ -77,8 +76,8 @@ code can bypass it) is a strong, demonstrable security story.
 | CI/CD | **GitHub Actions + OIDC to AWS** | No static keys — strong signal |
 | Pipeline security | Semgrep, osv-scanner/pip-audit, gitleaks+trufflehog, Checkov, Trivy, syft, cosign | Reuse `~/appsec-pipeline-lab` |
 
-❓ FastAPI vs alternatives (Django gives you auth/admin batteries-included — faster MVP, less
-hand-wiring; FastAPI is leaner and more explicit). Worth a 2-minute decision.
+FastAPI chosen over Django (leaner, explicit, API-first). We wire auth/authz ourselves, which is
+where the security learning is.
 
 ## 6. Architecture sketch (MVP)
 
@@ -104,12 +103,19 @@ hand-wiring; FastAPI is leaner and more explicit). Worth a 2-minute decision.
 - **DPDP Act 2023** (India privacy) — consent, data minimization, deletion.
 - **PCI DSS** — via Razorpay (we never store card data; stay in the lowest SAQ scope — state that).
 - **ISO 27001** — control mapping for the GRC story.
-- **80G** — temple/trust donation tax-exemption receipts. ❓ MVP or wave 2?
+- **80G** — temple/trust donation tax-exemption receipts. **IN MVP.** Pulls in **donor PAN capture**
+  (sensitive PII — extra care), the trust's 80G registration number in trust settings, a compliant
+  receipt format, and financial-year reporting. Good PII + compliance surface.
 
-## 8. Open decisions (collected)
+## 8. Decisions
 
-1. MVP = P0 + P1 (tenant+domain, Devotees, Donations), Events/Publishing wave 2? Or Publishing in MVP?
-2. Multi-tenancy: shared schema + Postgres RLS — agreed?
-3. Backend: FastAPI vs Django?
-4. 80G receipts in MVP or later?
+**Locked (2026-10-02):**
+1. MVP = tenant+domain, Devotees, Donations (with 80G), **Events/Registrations**. Publishing = wave 2.
+2. Multi-tenancy = shared schema + `tenant_id` + **Postgres RLS**.
+3. Backend = **FastAPI**.
+4. **80G receipts in the MVP** (brings donor PAN handling into scope).
+
+**Still open ❓:**
 5. Final product name (SevaSetu is a placeholder).
+6. Custom domains (`donate.sometemple.org`) — confirmed wave 2, subdomain-only in MVP.
+7. Public member/donor access — own login vs link/OTP in v1.
