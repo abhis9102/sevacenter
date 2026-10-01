@@ -9,7 +9,7 @@ Actions + OIDC**.
 
 ## 1. Vision
 
-A temple / religious trust signs up, gets its own branded space at `yourtemple.sevasetu.app`, and
+A temple / religious trust signs up, gets its own branded space at `yourtemple.sevacenter.app`, and
 from there manages its **devotees**, collects **donations**, runs **events/registrations**, and
 **publishes** announcements — the way Planning Center does for churches, reframed for the Indian
 temple/trust market (Razorpay, DPDP Act, 80G receipts).
@@ -18,7 +18,7 @@ temple/trust market (Razorpay, DPDP Act, 80G receipts).
 
 Mapped to Planning Center's modules, then prioritized for *our* build.
 
-| PC module | SevaSetu equivalent | Priority | Why |
+| PC module | SevaCenter equivalent | Priority | Why |
 |---|---|---|---|
 | **Church Center** (per-church site/domain) | **Tenant registration + per-temple subdomain** | **P0 — foundation** | Everything hangs off "which tenant." Richest tenancy/domain security surface. |
 | **People** | **Devotees / Members** | **P1** | Multi-tenant PII directory → BOLA/IDOR/PII surface. |
@@ -34,11 +34,11 @@ Registrations.** Covers multi-tenancy + RBAC + PII + money + public forms. **Pub
 
 This is the Church Center analog and the first thing we build.
 
-**Flow:** someone registers a trust → picks a subdomain `yourtemple` → gets `yourtemple.sevasetu.app`
+**Flow:** someone registers a trust → picks a subdomain `yourtemple` → gets `yourtemple.sevacenter.app`
 → becomes `trust-admin` → invites leaders/members.
 
 **Two phases of "domain":**
-1. **Subdomain (MVP):** `*.sevasetu.app` via a wildcard DNS record + wildcard ACM TLS cert. App
+1. **Subdomain (MVP):** `*.sevacenter.app` via a wildcard DNS record + wildcard ACM TLS cert. App
    routes by the `Host` header → resolves tenant. Relatively easy; teaches Host-based tenancy.
 2. **Custom domain (later):** `donate.sometemple.org`. Harder — per-tenant domain verification,
    per-tenant cert issuance. Great DevOps/cloud learning; defer to wave 2.
@@ -95,7 +95,7 @@ bypasses RLS) is a strong, demonstrable security story.
 ## 6. Architecture sketch (MVP)
 
 ```
-            Route53 (*.sevasetu.app)
+            Route53 (*.sevacenter.app)
                    │
             ALB (wildcard ACM TLS)
                    │  routes by Host header → tenant
@@ -133,6 +133,6 @@ bypasses RLS) is a strong, demonstrable security story.
 
 **Still open ❓:**
 7. Build tool: Maven (proposed) vs Gradle.
-8. Final product name (SevaSetu is a placeholder).
+8. Final product name (SevaCenter is a placeholder).
 9. Custom domains (`donate.sometemple.org`) — confirmed wave 2, subdomain-only in MVP.
 10. Public member/donor access — own login vs link/OTP in v1.

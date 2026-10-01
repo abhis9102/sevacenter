@@ -1,0 +1,22 @@
+# Local development dependencies. The app itself runs via `./mvnw spring-boot:run`
+# (Dockerizing the app comes at M5). Compose reads variables from .env (gitignored).
+services:
+  db:
+    image: postgres:16
+    container_name: sevacenter-db
+    environment:
+      POSTGRES_DB: ${DB_NAME:-sevacenter}
+      POSTGRES_USER: ${DB_USERNAME:-sevacenter}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required — copy .env.example to .env and set it}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-sevacenter} -d ${DB_NAME:-sevacenter}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:

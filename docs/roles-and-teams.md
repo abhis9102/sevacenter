@@ -1,6 +1,6 @@
 # Roles & Teams — Operating Model
 
-SevaSetu is built by one person (Abhi) orchestrating coding agents, but deliberately run as if it
+SevaCenter is built by one person (Abhi) orchestrating coding agents, but deliberately run as if it
 were a three-function engineering org. The separation is both a learning device and a real security
 control (separation of duties).
 
