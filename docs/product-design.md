@@ -3,7 +3,9 @@
 Core decisions locked 2026-10-02 (see §8). Remaining open items still marked ❓.
 
 **Decisions locked:** MVP = tenant+domain + Devotees + Donations + **Events/Registrations**;
-multi-tenancy = **shared schema + Postgres RLS**; backend = **FastAPI**; **80G receipts in MVP**.
+multi-tenancy = **shared schema + Postgres RLS**; backend = **Java 21 + Spring Boot** (app) with
+**Python for all security/pipeline tooling** (polyglot); **80G receipts in MVP**; CI/CD = **GitHub
+Actions + OIDC**.
 
 ## 1. Vision
 
@@ -65,19 +67,30 @@ bypasses RLS) is a strong, demonstrable security story.
 
 | Layer | Choice | Notes |
 |---|---|---|
-| Backend / API | **Python + FastAPI** (LOCKED) | You know Python; API-first; clean for security demos |
-| DB | **PostgreSQL** (RLS for tenancy) | — |
-| Frontend | **Next.js** (admin + public), subdomain routing via middleware | FE is secondary; keep minimal |
-| Auth | Vetted library (don't hand-roll); session/JWT | Effort goes into authz, not reinventing auth |
-| Payments | **Razorpay** (UPI/cards) | Indian rail; webhook signature verification |
-| Containers | Docker + compose (local) | — |
-| IaC | **Terraform** | Authoring, not just scanning |
+| Backend / API | **Java 21 (LTS) + Spring Boot 3.x** (LOCKED) | Spring Web + **Spring Security** + Spring Data JPA/Hibernate. Serves the SWE/Java track; Spring Security doubles as enterprise AppSec depth |
+| Build tool | **Maven** (proposed) | Ubiquitous in enterprise, explicit to review; Gradle is the modern alt. ❓ |
+| DB | **PostgreSQL** + **RLS** for tenancy | Tenant set per-request via a session variable; RLS enforces at DB layer |
+| Frontend | **Next.js / TypeScript** (admin + public), subdomain routing via middleware | FE is secondary; keep minimal |
+| Auth | **Spring Security** (don't hand-roll); session or JWT | Effort goes into authz (method-level `@PreAuthorize`, tenant checks), not reinventing auth |
+| Payments | **Razorpay** (Java SDK) | Indian rail; webhook signature verification |
+| **Security / pipeline tooling** | **Python** | Custom checks, CI glue, AI-assisted triage, secret-scanner-style tools. Your strength; what AppSec JDs want |
+| Containers | Docker + compose (local) | JVM base image → container-security lesson (distroless/jlink to shrink + harden) |
+| IaC | **Terraform** (HCL) | Authoring, not just scanning |
 | Cloud | AWS **ap-south-1**: ECS **Fargate** + RDS Postgres + ALB + Route53 + wildcard **ACM** cert + Secrets Manager | Skip EKS early; Fargate first |
-| CI/CD | **GitHub Actions + OIDC to AWS** | No static keys — strong signal |
-| Pipeline security | Semgrep, osv-scanner/pip-audit, gitleaks+trufflehog, Checkov, Trivy, syft, cosign | Reuse `~/appsec-pipeline-lab` |
+| CI/CD | **GitHub Actions + OIDC to AWS** (LOCKED) | No static keys. Jenkins = wave-2 security side-quest |
+| Pipeline security | Semgrep (+ Java rules), **OWASP Dependency-Check / osv-scanner** (Maven SCA), gitleaks+trufflehog, Checkov, Trivy, syft, cosign | Reuse `~/appsec-pipeline-lab`; now scans a Java + JS + HCL polyglot repo |
 
-FastAPI chosen over Django (leaner, explicit, API-first). We wire auth/authz ourselves, which is
-where the security learning is.
+**Why this stack (decision rationale):**
+- **Polyglot by design** — Java app + Python security tooling mirrors a real org (app devs in Java,
+  security engineer writes Python) and serves both of Abhi's tracks at once.
+- **Java/Spring Boot over Python/FastAPI** — chosen to feed the SWE/Java track and because Spring
+  Security is where enterprise authn/authz lives (most apps Abhi would later secure are Java/Spring).
+  Known cost: slower build + reviewing agent-written Java while gaining fluency.
+- **Not Ruby/Rails** (Planning Center's stack) — we copy PC's product *shape*, not its stack; Ruby
+  serves neither of Abhi's tracks.
+- **GitHub Actions over Jenkins/GitLab** — code is on GitHub, OIDC gives keyless AWS deploy, native
+  SARIF/code-scanning. Jenkins is a wave-2 side-quest (enterprise relevance + Jenkins hardening is
+  itself an AppSec exercise).
 
 ## 6. Architecture sketch (MVP)
 
@@ -115,7 +128,11 @@ where the security learning is.
 3. Backend = **FastAPI**.
 4. **80G receipts in the MVP** (brings donor PAN handling into scope).
 
+5. Backend = **Java 21 + Spring Boot** (app); **Python** for all security/pipeline tooling (polyglot).
+6. CI/CD = **GitHub Actions + OIDC to AWS**. Jenkins = wave-2 side-quest.
+
 **Still open ❓:**
-5. Final product name (SevaSetu is a placeholder).
-6. Custom domains (`donate.sometemple.org`) — confirmed wave 2, subdomain-only in MVP.
-7. Public member/donor access — own login vs link/OTP in v1.
+7. Build tool: Maven (proposed) vs Gradle.
+8. Final product name (SevaSetu is a placeholder).
+9. Custom domains (`donate.sometemple.org`) — confirmed wave 2, subdomain-only in MVP.
+10. Public member/donor access — own login vs link/OTP in v1.
