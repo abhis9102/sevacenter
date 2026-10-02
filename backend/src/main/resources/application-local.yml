@@ -1,0 +1,18 @@
+# Local dev profile: two DB roles (run with SPRING_PROFILES_ACTIVE=local).
+# - Flyway/migrations connect as the OWNER (superuser compose role), which runs DDL.
+# - The app runtime connects as the least-privilege role 'sevacenter_app', which RLS
+#   applies to. The role is created by the docker db-init script (docker/db-init/).
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/sevacenter}  # trufflehog:ignore — no credentials in URL; creds come from env
+    username: ${DB_APP_USERNAME:sevacenter_app}
+    password: ${DB_APP_PASSWORD}
+  flyway:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/sevacenter}  # trufflehog:ignore — no credentials in URL; creds come from env
+    user: ${DB_USERNAME:sevacenter}
+    password: ${DB_PASSWORD}
+
+# Allow the X-Tenant-Slug header locally (no real subdomains on localhost).
+sevacenter:
+  tenant:
+    allow-header-override: true

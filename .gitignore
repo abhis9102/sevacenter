@@ -1,0 +1,33 @@
+# Secrets / env
+.env
+*.env.local
+
+# Java / Maven
+target/
+*.class
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# IDE / OS
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Local data
+*.db
+
+# Security scan outputs (CI artifacts, never committed)
+*.sarif
+osv-all.json
+
+# Private local context for Claude Code (never committed)
+CLAUDE.local.md

@@ -1,0 +1,302 @@
+<title>SevaCenter Design System</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600&family=Mukta:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: two-brand styleguide — SevaCenter (restrained admin) + MandirCenter (vibrant public), shared type. */
+  :root {
+    /* SevaCenter — admin / platform (restrained warm) */
+    --sc-primary: #C96A1E; --sc-primary-strong: #9A4E10; --sc-maroon: #7E2232; --sc-gold: #B98C2E;
+    --sc-ink: #FFFFFF;
+    /* MandirCenter — public / devotional (vibrant Hindu palette) */
+    --mc-primary: #E85D04; --mc-primary-strong: #B8450A; --mc-kumkum: #C1121F;
+    --mc-haldi: #EFA00B; --mc-maroon: #6A0F1A; --mc-gold: #CBA135; --mc-bg: #FFF5E6; --mc-ink: #FFFFFF;
+    /* Shared neutrals (warm sandstone) */
+    --bg: #FAF5EE; --surface: #FFFFFF; --surface-2: #F2E9DB; --fg: #241B14; --muted: #7C6F62; --border: #E7DBC8;
+    /* Semantic */
+    --success: #2F7A52; --warning: #C2861A; --danger: #BC3B30; --info: #2B6E86;
+    /* Type */
+    --font-display: "Spectral", Georgia, serif;
+    --font-body: "Mukta", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+    --radius: 12px; --shadow: 0 1px 2px rgba(36,27,20,.06), 0 8px 24px rgba(36,27,20,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --sc-primary: #E6903F; --sc-primary-strong: #F3AC68; --sc-maroon: #D6788A; --sc-gold: #E0BC6A;
+      --sc-ink: #221A10;
+      --mc-primary: #FB8521; --mc-primary-strong: #FCA14C; --mc-kumkum: #E8565F;
+      --mc-haldi: #F3BC4E; --mc-maroon: #E0808C; --mc-gold: #E3C06A; --mc-bg: #241A12; --mc-ink: #221A10;
+      --bg: #191410; --surface: #221B14; --surface-2: #2C241B; --fg: #F4EADD; --muted: #B2A595; --border: #3A2F24;
+      --success: #5CB487; --warning: #E4B04A; --danger: #E8766B; --info: #6FB6CE;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35); color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --sc-primary: #E6903F; --sc-primary-strong: #F3AC68; --sc-maroon: #D6788A; --sc-gold: #E0BC6A; --sc-ink: #221A10;
+    --mc-primary: #FB8521; --mc-primary-strong: #FCA14C; --mc-kumkum: #E8565F;
+    --mc-haldi: #F3BC4E; --mc-maroon: #E0808C; --mc-gold: #E3C06A; --mc-bg: #241A12; --mc-ink: #221A10;
+    --bg: #191410; --surface: #221B14; --surface-2: #2C241B; --fg: #F4EADD; --muted: #B2A595; --border: #3A2F24;
+    --success: #5CB487; --warning: #E4B04A; --danger: #E8766B; --info: #6FB6CE;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35); color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--fg); font-family: var(--font-body); margin: 0; line-height: 1.55; }
+  .wrap { max-width: 1040px; margin-inline: auto; padding-inline: 20px; padding-block: 28px 64px; }
+  h1,h2,h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; font-weight: 600; }
+  .tnum { font-variant-numeric: tabular-nums; } .mono { font-family: var(--font-mono); }
+
+  .mast { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+          border-bottom: 1px solid var(--border); padding-bottom: 20px; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .diya { width: 40px; height: 40px; flex: none; }
+  .wordmark { font-family: var(--font-display); font-size: 26px; font-weight: 600; letter-spacing: -.01em; }
+  .wordmark b { color: var(--sc-primary-strong); font-weight: 600; }
+  .tagline { color: var(--muted); font-size: 13.5px; margin-top: 2px; }
+  .toggle { font: inherit; font-size: 13px; color: var(--fg); background: var(--surface); border: 1px solid var(--border);
+            border-radius: 999px; padding: 7px 14px; cursor: pointer; }
+  .toggle:hover { border-color: var(--sc-primary); }
+
+  section { margin-top: 44px; }
+  .eyebrow { text-transform: uppercase; letter-spacing: .14em; font-size: 11.5px; color: var(--sc-primary-strong); font-weight: 600; margin-bottom: 10px; }
+  .lead { color: var(--muted); max-width: 62ch; margin-top: 6px; }
+  h2.sec { font-size: 22px; }
+
+  /* Two-brand explainer */
+  .brands { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  @media (max-width: 640px) { .brands { grid-template-columns: 1fr; } }
+  .brandcard { border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; background: var(--surface); }
+  .brandcard .nm { font-family: var(--font-display); font-size: 19px; }
+  .brandcard.sc { border-top: 3px solid var(--sc-primary); }
+  .brandcard.mc { border-top: 3px solid var(--mc-primary); }
+  .brandcard .role { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-top: 2px; }
+  .brandcard p { font-size: 13.5px; margin: 10px 0 0; }
+  .brandcard .dom { font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin-top: 8px; }
+
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-top: 14px; }
+  .sw { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
+  .sw .chip { height: 60px; } .sw .meta { padding: 8px 10px; }
+  .sw .nm { font-size: 12.5px; font-weight: 600; } .sw .hex { font-size: 11.5px; color: var(--muted); }
+  .palette-title { font-family: var(--font-display); font-size: 16px; margin: 22px 0 2px; }
+  .palette-sub { font-size: 12.5px; color: var(--muted); }
+
+  .type-row { display: flex; align-items: baseline; gap: 16px; padding: 12px 0; border-bottom: 1px dashed var(--border); flex-wrap: wrap; }
+  .type-row .tag { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); min-width: 150px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-top: 18px; align-items: start; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); min-width: 0; }
+  .panel-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 12px; }
+
+  .btn { font: inherit; font-weight: 600; font-size: 14px; border-radius: 10px; padding: 10px 16px; cursor: pointer; border: 1px solid transparent; }
+  .btn:focus-visible { outline: 2px solid var(--sc-primary); outline-offset: 2px; }
+  .btn-primary { background: var(--sc-primary); color: var(--sc-ink); }
+  .btn-primary:hover { background: var(--sc-primary-strong); }
+  .btn-secondary { background: transparent; color: var(--sc-maroon); border-color: var(--sc-maroon); }
+  .btn-ghost { background: var(--surface-2); color: var(--fg); border-color: var(--border); }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+  .field { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+  .field label { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+  .field input { font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--fg); }
+  .field input:focus-visible { outline: 2px solid var(--sc-primary); outline-offset: 1px; border-color: var(--sc-primary); }
+
+  .badges { display: flex; gap: 8px; flex-wrap: wrap; }
+  .badge { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; border: 1px solid transparent; }
+  .b-success { background: color-mix(in srgb, var(--success) 15%, transparent); color: var(--success); border-color: color-mix(in srgb, var(--success) 35%, transparent); }
+  .b-warning { background: color-mix(in srgb, var(--warning) 16%, transparent); color: var(--warning); border-color: color-mix(in srgb, var(--warning) 36%, transparent); }
+  .b-danger  { background: color-mix(in srgb, var(--danger) 15%, transparent); color: var(--danger); border-color: color-mix(in srgb, var(--danger) 35%, transparent); }
+  .b-gold    { background: color-mix(in srgb, var(--sc-gold) 18%, transparent); color: var(--sc-gold); border-color: color-mix(in srgb, var(--sc-gold) 40%, transparent); }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 14px; margin-top: 16px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .stat .k { font-size: 12px; color: var(--muted); } .stat .v { font-family: var(--font-display); font-size: 24px; font-weight: 600; margin-top: 4px; }
+  .stat .d { font-size: 12px; margin-top: 4px; } .up { color: var(--success); } .flat { color: var(--muted); }
+
+  .previews { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; }
+  @media (max-width: 760px) { .previews { grid-template-columns: 1fr; } }
+
+  /* MandirCenter public surface — vibrant */
+  .donate { background: linear-gradient(170deg, color-mix(in srgb, var(--mc-primary) 16%, var(--mc-bg)), var(--mc-bg));
+            border: 1px solid color-mix(in srgb, var(--mc-primary) 30%, var(--border)); border-radius: 16px; padding: 20px; box-shadow: var(--shadow); }
+  .mc-head { display: flex; align-items: center; gap: 10px; }
+  .mc-tag { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--mc-primary-strong);
+            border: 1px solid color-mix(in srgb, var(--mc-primary) 40%, transparent); border-radius: 999px; padding: 2px 8px; }
+  .temple { font-family: var(--font-display); font-size: 19px; color: var(--fg); margin-top: 10px; }
+  .temple small { display: block; font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); font-weight: 400; margin-top: 3px; }
+  .amt-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0; }
+  .amt { border: 1px solid color-mix(in srgb, var(--mc-primary) 30%, var(--border)); background: var(--surface); border-radius: 10px; padding: 8px 14px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--fg); }
+  .amt.sel { border-color: var(--mc-primary); background: color-mix(in srgb, var(--mc-primary) 16%, var(--surface)); color: var(--mc-primary-strong); }
+  .mc-btn { font: inherit; font-weight: 700; font-size: 14px; border: 0; border-radius: 10px; padding: 12px 16px; width: 100%; cursor: pointer;
+            background: var(--mc-primary); color: var(--mc-ink); }
+  .mc-btn:hover { background: var(--mc-primary-strong); }
+  .receipt { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); border-top: 1px dashed color-mix(in srgb, var(--mc-primary) 30%, var(--border)); margin-top: 14px; padding-top: 12px; }
+
+  /* SevaCenter admin surface — restrained */
+  .admin { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); }
+  .admin-top { background: var(--sc-maroon); color: #fff; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
+  .admin-top .t { font-family: var(--font-display); font-size: 15px; } .admin-top .u { font-size: 12px; opacity: .85; }
+  .admin-body { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  .tbl-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); background: var(--surface-2); }
+  tbody tr:last-child td { border-bottom: 0; }
+
+  .foot { margin-top: 56px; border-top: 1px solid var(--border); padding-top: 18px; color: var(--muted); font-size: 13px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <div class="brand">
+      <svg class="diya" viewBox="0 0 48 48" aria-hidden="true">
+        <path d="M24 5c3.2 5.4 1.9 8.6-.2 11.2-1.6 2-3.4 3.8-3.4 6.6a3.6 3.6 0 0 0 7.2.3c1.3 1.5 1.1 3.9-.6 5.2 3.6-.7 5.8-3.9 5.6-7.6-.2-4.3-3-6.4-4.2-9.8C24.4 8.6 24.3 6.6 24 5Z" fill="var(--mc-primary)"/>
+        <path d="M24 12c1.5 2.8.8 4.6-.4 6.2-1.6 2.1-2.3 3.4-1.8 5.3.5-1.6 1.6-2.7 2.6-4 1.2-1.6 1.8-3.9-.4-7.5Z" fill="var(--mc-haldi)"/>
+        <path d="M8 33c4.5 3.6 11 5.2 16 5.2S35.5 36.6 40 33c-1.2 5-7.8 8.4-16 8.4S9.2 38 8 33Z" fill="var(--mc-maroon)"/>
+      </svg>
+      <div>
+        <div class="wordmark">Seva<b>Center</b></div>
+        <div class="tagline">Platform for temples &amp; religious trusts</div>
+      </div>
+    </div>
+    <button class="toggle" id="themeBtn" type="button">Toggle theme</button>
+  </header>
+
+  <section>
+    <div class="eyebrow">Design system · v0</div>
+    <h1 style="font-size:30px;">One system, two brands</h1>
+    <p class="lead">SevaCenter is two products sharing one
+      design language — the warm, trustworthy world of the temple. The admin platform stays calm so
+      staff can work in it all day; the public devotee site turns up the saffron, kumkum and gold.</p>
+    <div class="brands">
+      <div class="brandcard sc">
+        <div class="nm">SevaCenter</div>
+        <div class="role">Admin · for trust staff</div>
+        <p>Manage devotees, donations, 80G receipts and events. Restrained, data-dense, efficient.</p>
+        <div class="dom">app.sevacenter.app</div>
+      </div>
+      <div class="brandcard mc">
+        <div class="nm" style="color:var(--mc-primary-strong)">MandirCenter</div>
+        <div class="role">Public · for devotees</div>
+        <p>Each temple's own branded space to receive daan and event sign-ups. Vibrant, devotional, welcoming.</p>
+        <div class="dom">yourtemple.mandircenter.app</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Colour</div>
+    <h2 class="sec">Two palettes, one family</h2>
+
+    <div class="palette-title">SevaCenter — admin</div>
+    <div class="palette-sub">Muted saffron, warm neutrals. Calm enough for all-day work; status colours kept separate from the brand.</div>
+    <div class="swatches">
+      <div class="sw"><div class="chip" style="background:var(--sc-primary)"></div><div class="meta"><div class="nm">Saffron (muted)</div><div class="hex mono">#C96A1E</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--sc-maroon)"></div><div class="meta"><div class="nm">Maroon</div><div class="hex mono">#7E2232</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--sc-gold)"></div><div class="meta"><div class="nm">Gold</div><div class="hex mono">#B98C2E</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--bg); border-bottom:1px solid var(--border)"></div><div class="meta"><div class="nm">Sand</div><div class="hex mono">#FAF5EE</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--fg)"></div><div class="meta"><div class="nm">Espresso</div><div class="hex mono">#241B14</div></div></div>
+    </div>
+
+    <div class="palette-title" style="color:var(--mc-primary-strong)">MandirCenter — public</div>
+    <div class="palette-sub">The Hindu devotional palette: bhagwa saffron, kumkum red, haldi gold, deep maroon.</div>
+    <div class="swatches">
+      <div class="sw"><div class="chip" style="background:var(--mc-primary)"></div><div class="meta"><div class="nm">Bhagwa Saffron</div><div class="hex mono">#E85D04</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--mc-kumkum)"></div><div class="meta"><div class="nm">Kumkum Red</div><div class="hex mono">#C1121F</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--mc-haldi)"></div><div class="meta"><div class="nm">Haldi Gold</div><div class="hex mono">#EFA00B</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--mc-maroon)"></div><div class="meta"><div class="nm">Deep Maroon</div><div class="hex mono">#6A0F1A</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--mc-bg); border-bottom:1px solid var(--border)"></div><div class="meta"><div class="nm">Saffron Cream</div><div class="hex mono">#FFF5E6</div></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Typography — shared</div>
+    <h2 class="sec">Type scale</h2>
+    <p class="lead">Spectral (serif) for an editorial, respectful voice; Mukta — drawn for Indian scripts —
+      carries the UI; IBM Plex Mono sets amounts and receipt data.</p>
+    <div style="margin-top:14px;">
+      <div class="type-row"><span class="tag">Display / Spectral 30</span><span style="font-family:var(--font-display);font-size:30px;font-weight:600;">Annadaan &amp; Seva</span></div>
+      <div class="type-row"><span class="tag">Body / Mukta 15</span><span style="font-size:15px;">Record a devotee, collect a donation, issue an 80G receipt.</span></div>
+      <div class="type-row"><span class="tag">Data / Plex Mono 15</span><span class="mono tnum" style="font-size:15px;">₹ 2,15,000.00</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Components — SevaCenter admin</div>
+    <h2 class="sec">Building blocks</h2>
+    <div class="grid">
+      <div class="card">
+        <div class="panel-label">Buttons</div>
+        <div class="btn-row" style="margin-bottom:10px;">
+          <button class="btn btn-primary" type="button">Add devotee</button>
+          <button class="btn btn-secondary" type="button">New donation</button>
+        </div>
+        <div class="btn-row"><button class="btn btn-ghost" type="button">Export CSV</button></div>
+      </div>
+      <div class="card">
+        <div class="panel-label">Form field</div>
+        <div class="field"><label for="d1">Devotee name</label><input id="d1" value="Lakshmi Iyer"></div>
+        <div class="field"><label for="d2">Phone</label><input id="d2" class="tnum" value="+91 98XXXXXX21"></div>
+      </div>
+      <div class="card">
+        <div class="panel-label">Status badges</div>
+        <div class="badges" style="margin-bottom:10px;">
+          <span class="badge b-success">Paid</span><span class="badge b-warning">Pending</span><span class="badge b-danger">Failed</span>
+        </div>
+        <div class="badges"><span class="badge b-gold">80G issued</span><span class="badge b-success">UPI verified</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">The two surfaces</div>
+    <h2 class="sec">MandirCenter (public) &amp; SevaCenter (admin)</h2>
+    <div class="previews">
+      <div class="donate">
+        <div class="mc-head"><span class="mc-tag">MandirCenter</span></div>
+        <div class="temple">Shri Siddheshwar Seva Trust<small>siddheshwar.mandircenter.app</small></div>
+        <p style="font-size:14px;margin:12px 0 0;color:var(--fg);">Offer your daan towards Annadaan</p>
+        <div class="amt-row">
+          <span class="amt">₹501</span><span class="amt sel">₹1,100</span><span class="amt">₹5,100</span><span class="amt">Other</span>
+        </div>
+        <button class="mc-btn" type="button">Donate ₹1,100 via UPI</button>
+        <div class="receipt">RECEIPT · 80G eligible · Reg. AAATS1234F<br>PAN captured securely · Powered by Razorpay</div>
+      </div>
+      <div class="admin">
+        <div class="admin-top"><span class="t">SevaCenter · Admin</span><span class="u">Priya · trust-admin</span></div>
+        <div class="admin-body">
+          <div class="stats" style="margin-top:0;grid-template-columns:repeat(2,1fr);">
+            <div class="stat"><div class="k">Donations · Oct</div><div class="v tnum">₹2.15L</div><div class="d up">▲ 18%</div></div>
+            <div class="stat"><div class="k">Pending 80G</div><div class="v tnum">4</div><div class="d flat">to issue</div></div>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>Donor</th><th>Purpose</th><th>Amount</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td>Lakshmi Iyer</td><td>Annadaan</td><td class="mono tnum">₹11,000</td><td><span class="badge b-success">Paid</span></td></tr>
+                <tr><td>Anonymous</td><td>Deepam</td><td class="mono tnum">₹501</td><td><span class="badge b-warning">Pending</span></td></tr>
+                <tr><td>S. Nair Family</td><td>General Daan</td><td class="mono tnum">₹25,000</td><td><span class="badge b-gold">80G</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">
+    SevaCenter + MandirCenter design system · tokens in <span class="mono">docs/design/</span>, consumed by the
+    frontend theme at the Next.js milestone. Names and figures are illustrative examples.
+  </div>
+</div>
+
+<script>
+  (function () {
+    var btn = document.getElementById('themeBtn'), root = document.documentElement;
+    btn.addEventListener('click', function () {
+      var cur = root.getAttribute('data-theme');
+      var next = cur === 'dark' ? 'light' : (cur === 'light' ? 'dark'
+                 : (matchMedia('(prefers-color-scheme: dark)').matches ? 'light' : 'dark'));
+      root.setAttribute('data-theme', next);
+    });
+  })();
+</script>

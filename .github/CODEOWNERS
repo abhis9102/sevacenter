@@ -1,0 +1,7 @@
+# Every change is owned/reviewed by the maintainer (AppSec role).
+* @abhis9102
+
+# Sensitive paths get explicit, focused security review on top of the automated gate.
+/backend/src/main/java/app/sevacenter/config/   @abhis9102
+/.github/workflows/                             @abhis9102
+/infra/                                         @abhis9102
