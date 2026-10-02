@@ -76,6 +76,12 @@
 			<artifactId>commons-text</artifactId>
 			<version>1.9</version>
 		</dependency>
+		<!-- Template sanitizer (suggested by coding agent) -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-text-sanitizer</artifactId>
+			<version>1.2.0</version>
+		</dependency>
 
 		<dependency>
 			<groupId>org.postgresql</groupId>
