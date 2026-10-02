@@ -12,3 +12,4 @@ change a decision, add a new ADR that supersedes the old one.
 | [0004](0004-schema-via-flyway.md) | Schema managed by Flyway, Hibernate validate-only | Accepted |
 | [0005](0005-pin-spring-boot-3.5-lts.md) | Pin backend to Spring Boot 3.5 (not 4.x) | Accepted |
 | [0006](0006-two-brands-sevacenter-mandircenter.md) | Two brands: SevaCenter (admin) & MandirCenter (public), two domains | Accepted |
+| [0007](0007-session-cookies-with-csrf.md) | Session cookies + CSRF on (not bearer tokens) | Accepted |
