@@ -84,6 +84,14 @@ curl -s -b /tmp/jar -X POST localhost:8080/api/v1/register -H 'Content-Type: app
 - Dependabot: maven version updates (7-day cooldown, 30 for majors) + security updates enabled.
 - Tickets: `code-scanning-tickets` now syncs SAST + SCA alerts on main (`sca` label).
 - Policy: `docs/security/sca.md`.
+- **Gate validation exercise (PR #8, closed unmerged):** `commons-text` 1.9 (CVE-2022-42889, CVSS
+  9.8) → **gate failed open**: alert raised but PR mergeable, because GitHub's code scanning merge check
+  only blocks alerts on changed lines and osv-scanner reports at `pom.xml:1` → fixed in PR #9
+  (`sca_policy.py gate`, CVSS ≥ 7 or unscored fails the required SCA job) → re-run blocked. Ignore
+  without reason/expiry → rejected. Justified 14-day acceptance → allowed. Non-existent (agent-
+  invented) dependency → build fails + osv-scanner exit 127. Upgrade to 1.15.0 → alert auto-fixed.
+- Open: a **registered** malicious look-alike package would pass build + SCA (no CVEs yet). That's
+  the M7 package-reputation check. Optional `pre-push` osv-scanner hook for earlier feedback.
 
 **Next: G4 — SBOM (CycloneDX from the real Maven build, scan *that*), or M1 `TenantIsolationTest`.**
 
