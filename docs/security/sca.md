@@ -65,7 +65,7 @@ required `SCA (osv-scanner)` job. Code scanning remains the place for visibility
 ## Known gaps (next gates)
 
 - osv-scanner resolves Maven's tree **itself**; it can differ from what Maven actually builds.
-  G4 (SBOM) generates the dependency list from the real build and scans that.
+  Covered by G4: the SBOM job scans Maven's real output and fails on drift (`docs/security/sbom.md`).
 - Reachability: findings aren't filtered by whether we call the vulnerable code. That's
   deliberate for now (simpler, conservative); revisit if the noise grows.
 - Malicious / hallucinated packages (not CVEs) are a different problem: M7.

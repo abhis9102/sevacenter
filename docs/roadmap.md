@@ -34,7 +34,7 @@ cloud); and we **prove it by making it fail** on a planted issue before trusting
 | G1 ✅ | Harden CI: SHA-pinned actions, least-privilege `permissions`, branch ruleset, required checks, workflow linting (zizmor) | CI/CD supply-chain compromise (mutable action tags, over-privileged tokens) |
 | G2 ✅ | SAST — Semgrep → code scanning; findings → tickets | Injection and insecure code patterns reaching `main` |
 | G3 ✅ | SCA — osv-scanner + Dependabot; coverage + expiring-risk policy | Known-vulnerable or end-of-life dependencies |
-| G4 | SBOM (CycloneDX) from the real build | Not knowing exactly what we ship; customer/regulatory asks |
+| G4 ✅ | SBOM (CycloneDX) from the real build + signed provenance/SBOM attestations | Not knowing exactly what we ship; unverifiable artifacts; customer/regulatory asks |
 | G5 | DAST — OWASP ZAP baseline against the app run *inside* CI | Runtime flaws that code scanning can't see (headers, auth flows) |
 | G6 | Container image scan (Trivy) — needs M5 | Vulnerable base images and OS packages |
 | G7 | IaC scan (Checkov) + OIDC to AWS — needs M6 | Cloud misconfiguration; long-lived cloud credentials |

@@ -93,7 +93,17 @@ curl -s -b /tmp/jar -X POST localhost:8080/api/v1/register -H 'Content-Type: app
 - Open: a **registered** malicious look-alike package would pass build + SCA (no CVEs yet). That's
   the M7 package-reputation check. Optional `pre-push` osv-scanner hook for earlier feedback.
 
-**Next: G4 — SBOM (CycloneDX from the real Maven build, scan *that*), or M1 `TenantIsolationTest`.**
+**G4 — SBOM + attestations: ✅ (this PR).**
+- `cyclonedx-maven-plugin` (pre-configured by the Boot parent): CycloneDX 1.6 from Maven's real
+  resolution, embedded in the jar. 113 runtime components, all with purl/version/hashes/licenses.
+  `/actuator/sbom` deliberately unexposed.
+- `build` uploads jar + SBOM; new required `sbom` job: validate, scan shipped components, CVSS ≥ 7
+  gate, **drift** vs the G3 scan (by full group:artifact; artifactIds collide). Today: 0 drift.
+- `attest` job (main only, signs but never builds): SLSA provenance + SBOM attestations for the jar
+  via `actions/attest` (keyless Sigstore). Least privilege: no `artifact-metadata` (registry-only).
+- Policy: `docs/security/sbom.md`. `tools/security/sbom_check.py` tested on pass + fail cases.
+
+**Next: G4 validation (verify attestation; tampered jar must fail), then M1 `TenantIsolationTest`.**
 
 ## Next up — M1 slice 2
 - Login + sessions (cookie session per ADR 0007; set cookie flags HttpOnly/Secure/SameSite); tenant-aware `UserDetailsService` (scope lookup by `TenantContext`).
