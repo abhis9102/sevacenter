@@ -55,6 +55,25 @@ class ErrorDisclosureTest {
                         "at org.", "Exception");
     }
 
+    @Test
+    void browsersGetJsonNotAFrameworkFingerprintPage() throws Exception {
+        HttpResponse<String> error = http.send(HttpRequest.newBuilder(uri("/api/v1/does-not-exist"))
+                        .header("Accept", "text/html,application/xhtml+xml").build(),
+                HttpResponse.BodyHandlers.ofString());
+
+        assertThat(error.headers().firstValue("Content-Type").orElse("")).startsWith("application/json");
+        assertThat(error.body()).doesNotContain("Whitelabel", "<html");
+    }
+
+    @Test
+    void errorEndpointCalledDirectlyIsNotFound() throws Exception {
+        HttpResponse<String> direct = http.send(HttpRequest.newBuilder(uri("/error")).build(),
+                HttpResponse.BodyHandlers.ofString());
+
+        assertThat(direct.statusCode()).isEqualTo(404);
+        assertThat(direct.body()).doesNotContain("999", "None");
+    }
+
     private URI uri(String path) {
         return URI.create("http://localhost:" + port + path);
     }

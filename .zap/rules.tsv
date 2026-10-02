@@ -1,0 +1,6 @@
+# ZAP rule overrides for zap-api-scan.py (-c). Format: <rule id><TAB><IGNORE|INFO|WARN|FAIL><TAB>(why)
+#
+# Passing this file at all matters: without -c, zap-api-scan.py runs the "API-Minimal" policy
+# (23 active rules). With it, the full "Default Policy" (every installed active rule) runs.
+# Blocking decisions are made by tools/security/dast_policy.py, not here.
+10049	IGNORE	(Non-Storable Content: informational; the API deliberately sends Cache-Control: no-store)
