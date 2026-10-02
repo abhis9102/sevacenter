@@ -22,8 +22,26 @@ can explain in an interview. Security work (AppSec role) runs *inside* every mil
 (M0-M7) ≈ **4-5 months**. Comfortable talking to all of it ≈ 6-7 months. EKS/custom domains are a
 later stretch.
 
+## Security-gate track (pulled forward from M7)
+
+The real goal of the project is learning to build CI/CD security gates well enough to rebuild them
+alone in a new environment. So gates are added **one at a time, alongside M1–M4**, not left to M7.
+For each gate: Abhi writes the config; we record **why** (risk it covers / misses), **when**
+(pre-commit · PR · main · nightly · staging), **where** (hook · workflow job · required check ·
+cloud); and we **prove it by making it fail** on a planted issue before trusting it.
+
+| # | Gate | Key lesson |
+|---|---|---|
+| G1 | Harden existing CI: SHA-pinned actions, least-privilege `permissions`, branch protection, required checks | GitHub Actions supply-chain risk |
+| G2 | SAST — Semgrep on PRs (diff-aware) | rule tuning, fail vs warn, triaging false positives |
+| G3 | SCA — osv-scanner / Dependabot | transitive deps, fix-SLA policy |
+| G4 | SBOM (CycloneDX) | what it's for, who consumes it |
+| G5 | DAST — OWASP ZAP baseline against the app run *inside* CI | runtime vs code testing |
+| G6 | Container image scan (Trivy) — needs M5 | base-image risk |
+| G7 | IaC scan (Checkov) + OIDC to AWS — needs M6 | cloud trust boundaries |
+
+M7 then becomes "consolidate + AI-code provenance + hallucinated-package check + DAST on staging".
+
 ## Immediate next step
 
-Start **M0**. Reuse the `~/appsec-pipeline-lab` security tooling (already installed: semgrep,
-pre-commit, gitleaks, trufflehog, osv-scanner). First deliverable: repo skeleton + FastAPI
-hello-world + Postgres in docker-compose + pre-commit guardrails + PR/AI-declaration template.
+M1: `TenantIsolationTest`, then G1. (M0 done — Spring Boot, not FastAPI, per ADR 0001.)

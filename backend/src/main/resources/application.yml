@@ -4,7 +4,7 @@ spring:
 
   datasource:
     # 12-factor: all config from the environment. No secrets in source.
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/sevacenter}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/sevacenter}  # trufflehog:ignore — no credentials in URL; creds come from env
     username: ${DB_USERNAME:sevacenter}
     password: ${DB_PASSWORD}          # no default on purpose — app fails fast if unset
 

@@ -6,20 +6,29 @@ on:
   pull_request:
     branches: [main]
 
-permissions:
-  contents: read
+# Default for every job: no token permissions at all. Each job opts in to exactly what it
+# needs, so a compromised step can't push code, open releases, or edit PRs.
+permissions: {}
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Every third-party action is pinned to a full commit SHA (tags are mutable — see the
+# tj-actions/changed-files compromise, March 2025). The trailing comment is the human-readable
+# version; Dependabot (.github/dependabot.yml) bumps both together.
 jobs:
   build:
     name: Build & test (backend)
     runs-on: ubuntu-latest
+    timeout-minutes: 20 # a hung job shouldn't burn runner minutes for 6h (the default)
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false # don't leave the token in .git/config for later steps
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
           java-version: "21"
@@ -32,10 +41,37 @@ jobs:
   secrets-scan:
     name: Secret scan (gitleaks)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
+          fetch-depth: 0 # full history: scan every commit in the push/PR, not just the tip
+          persist-credentials: false
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          # Read-only use: on pull_request the action lists the PR's commits via the API.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # PR comments would need pull-requests: write; findings show in the job log instead.
+          GITLEAKS_ENABLE_COMMENTS: "false"
 
-  # Full security gate (SAST/SCA/IaC/image/SBOM + AI-code provenance) is layered in at M7.
+  workflow-lint:
+    name: Workflow security lint (zizmor)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Static analysis of .github/workflows itself: script injection via ${{ }} in run:,
+      # dangerous triggers (pull_request_target), unpinned actions, over-broad permissions.
+      # advanced-security: false → plain pass/fail gate, no SARIF upload / write perms needed.
+      - uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482 # v0.6.4
+        with:
+          advanced-security: false
+
+  # Next gates (roadmap "Security-gate track"): G2 SAST (Semgrep → SARIF), G3 SCA, G4 SBOM,
+  # G5 DAST (ZAP baseline), G6 image scan, G7 IaC + OIDC.

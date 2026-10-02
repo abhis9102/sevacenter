@@ -1,0 +1,18 @@
+# Keeps SHA-pinned actions from rotting: Dependabot understands `uses: owner/repo@<sha> # vX.Y.Z`
+# and bumps the SHA and the version comment together in one PR, which still goes through CI
+# and review like any other change. Maven deps get added here at G3 (SCA).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    # Supply-chain cooldown: don't adopt a release until it has been public for a week, so a
+    # hijacked release is likely caught and yanked before we pull it in.
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci

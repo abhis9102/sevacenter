@@ -1,6 +1,6 @@
 # Dev Status — resume point
 
-_Last updated: 2026-10-02, end of session._
+_Last updated: 2026-10-02 (evening session)._
 
 ## Where we are
 
@@ -9,45 +9,55 @@ Flyway (V1 baseline), 12-factor config, hermetic Testcontainers tests, docker-co
 Makefile, pre-commit guardrails, GitHub Actions CI, PR template + AI-declaration, CODEOWNERS,
 CONTRIBUTING, SECURITY, ADRs 0001–0006, design system + styleguide. springdoc/OpenAPI wired up.
 
-**M1 — auth, tenancy, RLS: 🚧 in progress (slice 1 written, compiles, NOT yet run).**
+**M1 — auth, tenancy, RLS: 🚧 in progress. Slice 1 ✅ runs end to end (2026-10-02).**
 
-### M1 slice 1 — done (code compiles via `./mvnw test-compile`)
-- `V2__tenancy_and_users.sql`: `tenant` (no RLS, the registry) + `app_user` (RLS **enabled + forced**,
-  policy on `current_setting('app.tenant_id')`, fails closed when unset). CRUD granted to the
-  least-privilege role.
-- Entities/repos: `Tenant`, `AppUser` (+ `Role` enum: TRUST_ADMIN/LEADER/MEMBER), repositories.
-- Tenancy plumbing: `TenantContext` (thread-local), `TenantResolutionFilter` (Host subdomain →
-  tenant, runs before Spring Security), `RlsTenantAspect` (sets `set_config('app.tenant_id', …, true)`
-  per transaction), `TenancyConfig` (`@EnableTransactionManagement(HIGHEST_PRECEDENCE)` + filter reg).
-- Registration: `POST /api/v1/register` (create trust + first TRUST_ADMIN, bcrypt hash) — service,
-  controller, DTOs, `GlobalExceptionHandler` (400 validation / 409 slug taken).
-- Security: `PasswordEncoder` (delegating/bcrypt) bean; `/api/v1/register` permitted; everything else
-  still authenticated (HTTP Basic placeholder).
-- Two-role DB: `docker/db-init/01-app-role.sh` creates `sevacenter_app` (non-superuser); `local`
-  profile (`application-local.yml`) runs Flyway as owner, app as `sevacenter_app`; `.env.example`,
-  `docker-compose.yml`, Makefile (`run` uses local profile, new `db-reset`) updated.
+### M1 slice 1 — done and verified running
+- `V2__tenancy_and_users.sql`: `tenant` (registry, no RLS) + `app_user` (RLS **enabled + forced**,
+  fails closed when `app.tenant_id` unset). Entities/repos, `TenantContext`, `TenantResolutionFilter`,
+  `RlsTenantAspect`, `POST /api/v1/register`, `GlobalExceptionHandler`, bcrypt `PasswordEncoder`.
+- Two-role DB: Flyway as owner, app as least-privilege `sevacenter_app` (`docker/db-init/`).
+- **First run found two bugs, both fixed:**
+  1. CSRF (Spring default) blocked `/register`. Decision → **ADR 0007: session cookies + CSRF on**,
+     SPA double-submit (`XSRF-TOKEN` cookie → `X-XSRF-TOKEN` header); new `GET /api/v1/csrf`.
+  2. `/error` wasn't public, so every 403/400 surfaced as a misleading **401**. Now permitted.
+- `make run` now loads `.env` (Spring doesn't read it on its own).
+- **Verified manually:** no token → 403; wrong token → 403; valid → 201; duplicate slug → 409;
+  bad body → 400. In the DB: hash stored as `{bcrypt}`; as `sevacenter_app` — no tenant → 0 rows,
+  tenant 1 → 1 row, tenant 2 → 0 rows. App role is `NOSUPERUSER`, `NOBYPASSRLS`. `make test` green.
 
-### ⚠️ Not yet done / verify first in the morning
-1. **Run it** — this slice has only been compiled, never started. First morning task:
-   ```bash
-   cd ~/sevacenter && cp -n .env.example .env   # set DB_PASSWORD + DB_APP_PASSWORD
-   make db-reset && make run
-   ```
-   Then register a tenant (local uses the `X-Tenant-Slug` header since localhost has no subdomain):
-   ```bash
-   curl -s -X POST localhost:8080/api/v1/register -H 'Content-Type: application/json' \
-     -d '{"slug":"siddheshwar","trustName":"Shri Siddheshwar Seva Trust",
-          "adminEmail":"priya@example.org","adminPassword":"change-this-please-123","adminName":"Priya"}'
-   ```
-   Expect `201`. Likely iteration points: Flyway owner vs app-role grants, the RLS aspect transaction
-   ordering, and the `set_config` timing in `RegistrationService`.
-2. **Tenant isolation test** — NOT written yet. Add `TenantIsolationTest` that proves a user in
-   tenant A cannot read tenant B's rows. Note: Testcontainers' default DB user is a **superuser and
-   bypasses RLS**, so the test must create/use a **non-superuser** role (raw JDBC) to prove the policy.
-   This is the key AppSec deliverable for M1.
+Register locally (tenant via `X-Tenant-Slug` header since localhost has no subdomain):
+```bash
+make db-reset && make run
+curl -s -c /tmp/jar localhost:8080/api/v1/csrf          # -> {"token": "..."} + XSRF-TOKEN cookie
+curl -s -b /tmp/jar -X POST localhost:8080/api/v1/register -H 'Content-Type: application/json' \
+  -H "X-XSRF-TOKEN: <token>" \
+  -d '{"slug":"siddheshwar","trustName":"Shri Siddheshwar Seva Trust",
+       "adminEmail":"priya@example.org","adminPassword":"change-this-please-123","adminName":"Priya"}'
+```
+
+### ⚠️ Next — do first
+1. **`TenantIsolationTest`** (AppSec deliverable) — automate the manual RLS check above. Testcontainers'
+   default user is a **superuser and bypasses RLS**, so the test must connect as a non-superuser role.
+   Also add CSRF tests (no token / bad token → 403).
+
+## Security-gate track
+**G1 — harden CI: ✅ (PR #1).** Repo is public at github.com/abhis9102/sevacenter.
+- Actions SHA-pinned (verified by zizmor's online impostor-commit audit), `permissions: {}` +
+  per-job `contents: read`, `persist-credentials: false`, timeouts, gitleaks gets `GITHUB_TOKEN`.
+- New `workflow-lint` job (zizmor, pass/fail, no SARIF yet). Old workflow had 6 findings → 0.
+- Dependabot (`github-actions`, weekly, 7-day cooldown).
+- Repo: secret scanning + push protection, Dependabot alerts, private vuln reporting, squash-only,
+  auto-delete merged branches.
+- Ruleset `protect-main` (id 24377427): PR required (0 approvals — solo; can't self-approve),
+  3 required checks + up-to-date, linear history, no force-push/deletion, **no bypass actors**.
+  Proven: direct push to main → `GH013` rejected.
+- Pre-commit hooks installed locally (were never installed); first-run trufflehog false positives
+  triaged per line.
+
+**Next: G2 — SAST (Semgrep in CI → SARIF → Security tab, code-scanning merge protection).**
 
 ## Next up — M1 slice 2
-- Login + sessions; tenant-aware `UserDetailsService` (scope lookup by `TenantContext`).
+- Login + sessions (cookie session per ADR 0007; set cookie flags HttpOnly/Secure/SameSite); tenant-aware `UserDetailsService` (scope lookup by `TenantContext`).
 - `@PreAuthorize` role enforcement (TRUST_ADMIN/LEADER/MEMBER); method security.
 - `GET /api/v1/me`; user management endpoints (list users — also proves RLS end to end).
 - Resolve tenant from the authenticated user on the admin host (not only from subdomain).
