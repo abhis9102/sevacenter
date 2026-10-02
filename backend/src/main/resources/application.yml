@@ -32,9 +32,11 @@ management:
         enabled: true
       show-details: never
 
-# Never leak internals in error responses.
-server:
-  error:
-    include-message: never
-    include-stacktrace: never
-    include-binding-errors: never
+# Never leak internals in error responses. Boot 4 moved these from server.error.* to
+# spring.web.error.*; the old keys are silently ignored (found by the G5 validation exercise).
+# SecurityRegressionTest asserts error bodies carry none of these details.
+spring.web.error:
+  include-message: never
+  include-stacktrace: never
+  include-binding-errors: never
+  include-exception: false

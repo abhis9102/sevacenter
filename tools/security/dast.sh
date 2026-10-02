@@ -56,7 +56,8 @@ for _ in $(seq 90); do
 done
 curl -sf "http://127.0.0.1:$APP_PORT/actuator/health" >/dev/null || { echo "::error::app never became healthy"; exit 1; }
 
-echo "--- ZAP API scan (active)"
+echo "--- ZAP API scan (active, full Default Policy via .zap/rules.tsv)"
+cp "$ROOT/.zap/rules.tsv" "$OUT/rules.tsv" # -c resolves inside ZAP's /zap/wrk mount
 TOKEN=$(curl -sf "http://127.0.0.1:$APP_PORT/api/v1/csrf" | python3 -c 'import sys,json; print(json.load(sys.stdin)["token"])')
 replace() { # index, description, header, value
   printf -- '-config replacer.full_list(%s).%s ' \
@@ -67,7 +68,7 @@ ZAP_OPTS="$(replace 0 csrf-header X-XSRF-TOKEN "$TOKEN")$(replace 1 csrf-cookie 
 rc=0
 docker run --rm --network host -v "$(cd "$OUT" && pwd):/zap/wrk:rw" "$ZAP_IMAGE" \
   zap-api-scan.py -t "http://127.0.0.1:$APP_PORT/v3/api-docs" -f openapi \
-  -J zap.json -r zap.html -I -z "$ZAP_OPTS" || rc=$?
+  -c rules.tsv -J zap.json -r zap.html -I -z "$ZAP_OPTS" || rc=$?
 # -I: warnings don't fail here; the policy gate (dast_policy.py) decides. 0/1 = scan ran; 3 = error.
 if [ "$rc" -gt 1 ]; then echo "::error::ZAP scan failed (exit $rc)"; exit "$rc"; fi
 [ -s "$OUT/zap.json" ] || { echo "::error::ZAP produced no report"; exit 1; }

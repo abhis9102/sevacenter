@@ -10,3 +10,9 @@
 # param = "XSRF-TOKEN"          # only this cookie
 # ignoreUntil = 2026-12-31
 # reason = "Abhi: by design (ADR 0007), the SPA must read the CSRF cookie; it is not a session credential."
+
+[[accepted]]
+pluginId = "100001" # Unexpected Content-Type
+uri = '^https?://[^/?]+\?' # request target with no path, e.g. "GET ?a=b": malformed HTTP
+ignoreUntil = 2026-12-31
+reason = "Abhi (AppSec): Tomcat's connector rejects a request line with no path with a minimal HTML 400 before Spring runs; no version or details disclosed (verified). In M6 the ALB rejects these first. Re-check then."

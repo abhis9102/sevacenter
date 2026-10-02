@@ -121,6 +121,14 @@ curl -s -b /tmp/jar -X POST localhost:8080/api/v1/register -H 'Content-Type: app
   so an invalid ignore hides the finding from code scanning (the job still fails). Make SCA scan
   without the config for reporting.
 
+- **G5 validation (PR #14):** planted stack-trace leak and permissive CORS were **invisible to DAST**
+  (well-formed JSON only; no Origin header; CORS rule not installed). Covered instead by real-server
+  `ErrorDisclosureTest` and `CorsPolicyTest` (both mutation-checked). Side finding: Boot 4 ignores
+  `server.error.*`, so the hardening was dead config → `spring.web.error.*`. ZAP now runs the full Default
+  Policy (48 vs 23 active rules; `.zap/rules.tsv`), which found the Whitelabel page (→ JSON-only
+  `ApiErrorController`) and `/error` direct = 500 (→ 404). One scoped/expiring accepted risk (Tomcat's
+  bare 400 for malformed request lines).
+
 **Next: M1 `TenantIsolationTest` (automated cross-tenant proof), then slice 2 (login + authenticated DAST).**
 
 ## Next up — M1 slice 2
