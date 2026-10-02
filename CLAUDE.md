@@ -23,7 +23,7 @@ Full detail: `docs/roles-and-teams.md`. Decisions: `docs/adr/`. Design: `docs/de
 
 ## Stack
 
-Java 21 + **Spring Boot 3.5** (Security, Data JPA, Flyway, springdoc) · PostgreSQL + **Row-Level
+Java 21 + **Spring Boot 4.1** (Security, Data JPA, Flyway, springdoc) · PostgreSQL + **Row-Level
 Security** for tenant isolation · Python for security/pipeline tooling · Next.js/TS frontend (later)
 · Terraform → AWS ECS Fargate (M6) · GitHub Actions + OIDC. Build tool: Maven (`./mvnw`).
 

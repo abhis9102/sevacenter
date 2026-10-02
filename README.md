@@ -20,7 +20,7 @@ per temple (`yourtemple.mandircenter.app`). See `docs/adr/0006` and `docs/design
 
 | Layer | Choice |
 |---|---|
-| Backend | Java 21 + Spring Boot 3.5 (Spring Security, Data JPA, Flyway) |
+| Backend | Java 21 + Spring Boot 4.1 (Spring Security 7, Data JPA, Flyway) |
 | Database | PostgreSQL + Row-Level Security (multi-tenancy) |
 | Frontend | Next.js / TypeScript *(from a later milestone)* |
 | Security tooling | Python |

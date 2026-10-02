@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.5.3</version>
+		<version>4.1.1</version>
 		<relativePath/>
 	</parent>
 
@@ -17,13 +17,19 @@
 
 	<properties>
 		<java.version>21</java.version>
-		<springdoc.version>2.8.6</springdoc.version>
+		<springdoc.version>3.1.1</springdoc.version>
+		<!-- SCA overrides (G3): patch-level bumps over Boot 4.1.1's managed versions to fix
+		     published CVEs. Remove each once a Boot release ships an equal or newer version;
+		     Dependabot (maven) will propose that Boot bump. -->
+		<tomcat.version>11.0.26</tomcat.version>             <!-- GHSA-9xv2-5v5q-p794, -gcx9-497g-6cp6, -h3x4-894j-xpx5 (critical) -->
+		<jackson-2-bom.version>2.21.7</jackson-2-bom.version> <!-- GHSA-7hhh-6rmp-j9qf, -p6pp-m3f8-5c89, -cxp5-3px4-pw24, ... -->
+		<jackson-bom.version>3.1.7</jackson-bom.version>      <!-- same advisories, Jackson 3 line -->
 	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
+			<artifactId>spring-boot-starter-webmvc</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -43,12 +49,14 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-aop</artifactId>
+			<artifactId>spring-boot-starter-aspectj</artifactId>
 		</dependency>
 
+		<!-- Boot 4 is modular: auto-configuration lives in the starter. flyway-core alone would
+		     compile fine but never run the migrations. -->
 		<dependency>
-			<groupId>org.flywaydb</groupId>
-			<artifactId>flyway-core</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-flyway</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.flywaydb</groupId>
@@ -70,12 +78,22 @@
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
+			<artifactId>spring-boot-starter-webmvc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.security</groupId>
-			<artifactId>spring-security-test</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-jpa-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-flyway-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -85,12 +103,12 @@
 		</dependency>
 		<dependency>
 			<groupId>org.testcontainers</groupId>
-			<artifactId>junit-jupiter</artifactId>
+			<artifactId>testcontainers-junit-jupiter</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.testcontainers</groupId>
-			<artifactId>postgresql</artifactId>
+			<artifactId>testcontainers-postgresql</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

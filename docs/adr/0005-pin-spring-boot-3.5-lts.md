@@ -1,6 +1,6 @@
 # ADR-0005: Pin backend to Spring Boot 3.5 (not 4.x)
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-0008](0008-migrate-to-spring-boot-4.1.md) (2026-10-02): 3.5 OSS support ended 2026-06-30
 - **Date:** 2026-10-02
 
 ## Context

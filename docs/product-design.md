@@ -67,7 +67,7 @@ bypasses RLS) is a strong, demonstrable security story.
 
 | Layer | Choice | Notes |
 |---|---|---|
-| Backend / API | **Java 21 (LTS) + Spring Boot 3.x** (LOCKED) | Spring Web + **Spring Security** + Spring Data JPA/Hibernate. Serves the SWE/Java track; Spring Security doubles as enterprise AppSec depth |
+| Backend / API | **Java 21 (LTS) + Spring Boot 4.1** (LOCKED; was 3.x, see ADR 0008) | Spring Web + **Spring Security** + Spring Data JPA/Hibernate. Serves the SWE/Java track; Spring Security doubles as enterprise AppSec depth |
 | Build tool | **Maven** (proposed) | Ubiquitous in enterprise, explicit to review; Gradle is the modern alt. ❓ |
 | DB | **PostgreSQL** + **RLS** for tenancy | Tenant set per-request via a session variable; RLS enforces at DB layer |
 | Frontend | **Next.js / TypeScript** (admin + public), subdomain routing via middleware | FE is secondary; keep minimal |
