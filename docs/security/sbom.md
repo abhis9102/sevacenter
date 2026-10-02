@@ -45,6 +45,19 @@ gh attestation verify build/backend-*.jar -R abhis9102/sevacenter \
 
 A jar modified by even one byte has a different digest, and verification fails.
 
+**Verify with a strict policy before deploying** (the M6 deploy step must do this). Checking only
+the repo is weak: any workflow in the repo, on any branch, could have signed something.
+
+```bash
+gh attestation verify build/backend-*.jar -R abhis9102/sevacenter \
+  --signer-workflow abhis9102/sevacenter/.github/workflows/ci.yml \
+  --source-ref refs/heads/main
+```
+
+Validated 2026-10-02 (run 37044857198): original jar → verified (provenance names repo, `ci.yml`,
+`main`, commit); jar with one added class → no attestation for its digest; same jar claimed for
+another repo → rejected; required a different signer workflow → certificate identity mismatch.
+
 ## Exposure
 
 - `/actuator/sbom` stays **unexposed** (`management.endpoints.web.exposure.include: health,info`).
