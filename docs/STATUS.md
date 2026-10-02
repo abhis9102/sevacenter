@@ -141,8 +141,23 @@ curl -s -b /tmp/jar -X POST localhost:8080/api/v1/register -H 'Content-Type: app
 - Lesson: Maven doesn't delete stale resources in `target/`; a removed migration kept running until
   `clean`. Use `./mvnw clean verify` when deleting/renaming migrations.
 
-**Next: M1 slice 2: login + sessions, roles (`@PreAuthorize`, invariant 5), `/me`, user management;
-then authenticated DAST including cross-tenant attack attempts.**
+## M1 slice 2a — staff login ✅ (this PR, ADR 0009)
+- Per-tenant admin host; **Host allowlist** (`<slug>.<base-domain>` only; any other host resolves no
+  tenant). HTTP Basic placeholder removed.
+- Framework form login (JSON handlers) at `POST /api/v1/auth/login`: session fixation protection, CSRF
+  rotation. `POST /api/v1/auth/logout`, `GET /api/v1/me`. `TenantBindingFilter` kills sessions replayed
+  on another tenant's host. `LoginThrottle`: per-account + per-IP lockout, 429.
+- `SC_SESSION` cookie: HttpOnly, Secure (off only in the local profile), SameSite=Lax, 30-min idle.
+  Unauthenticated requests get JSON 401 (no Basic challenge). Method security + role hierarchy wired.
+- Login published in the OpenAPI spec (`springdoc.show-login-endpoint`), so DAST attacks it; `/error`
+  hidden from the spec. DAST: 171 URLs, clean.
+- Bugs caught by tests before shipping: throttle matched the login URL by servlet path and **never
+  fired** → same matcher as Spring Security; spring-security-test's `csrf()` swaps the shared CSRF
+  repository, so MockMvc cookie checks were order-dependent → cookie flags tested over a real server.
+- 42 tests; auth controls mutation-checked.
+
+**Next: M1 slice 2b: user management with setup links (`@PreAuthorize`, invariant 5); then 2c:
+authenticated DAST including cross-tenant attack attempts.**
 
 ## Next up — M1 slice 2
 - Login + sessions (cookie session per ADR 0007; set cookie flags HttpOnly/Secure/SameSite); tenant-aware `UserDetailsService` (scope lookup by `TenantContext`).
@@ -157,5 +172,4 @@ security gates. See `docs/roadmap.md`.
 
 ## Open product questions (non-blocking)
 - Diya vs lotus logo mark. Any MandirCenter colour too strong (see styleguide artifact).
-- Per-tenant admin subdomain (`slug.sevacenter.app`) vs single `app.sevacenter.app` — leaning
-  per-tenant for uniform Host-based tenant resolution; revisit when building slice 2 login.
+- ~~Per-tenant admin subdomain vs single `app.sevacenter.app`~~ → decided: per-tenant (ADR 0009).

@@ -16,3 +16,10 @@ spring:
 sevacenter:
   tenant:
     allow-header-override: true
+
+# Local dev runs on plain http, where a Secure cookie would never be sent back.
+server:
+  servlet:
+    session:
+      cookie:
+        secure: false

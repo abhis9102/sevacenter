@@ -1,7 +1,10 @@
 package app.sevacenter.tenant;
 
+import java.util.List;
+
 import javax.sql.DataSource;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -35,10 +38,10 @@ public class TenancyConfig {
     @Bean
     FilterRegistrationBean<TenantResolutionFilter> tenantResolutionFilter(
             TenantRepository tenants,
-            @org.springframework.beans.factory.annotation.Value("${sevacenter.tenant.allow-header-override:false}")
-            boolean allowHeaderOverride) {
+            @Value("${sevacenter.tenant.allow-header-override:false}") boolean allowHeaderOverride,
+            @Value("${sevacenter.tenant.base-domains:sevacenter.app,mandircenter.app}") List<String> baseDomains) {
         FilterRegistrationBean<TenantResolutionFilter> reg = new FilterRegistrationBean<>();
-        reg.setFilter(new TenantResolutionFilter(tenants, allowHeaderOverride));
+        reg.setFilter(new TenantResolutionFilter(tenants, allowHeaderOverride, baseDomains));
         reg.addUrlPatterns("/*");
         reg.setOrder(Ordered.HIGHEST_PRECEDENCE);   // before Spring Security (-100)
         return reg;

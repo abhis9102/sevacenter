@@ -32,6 +32,26 @@ management:
         enabled: true
       show-details: never
 
+# Publish Spring Security's login endpoint in the OpenAPI spec: it isn't a controller, so it
+# would otherwise be missing from the docs and invisible to the DAST scan (G5), which is
+# driven by the spec.
+springdoc:
+  show-login-endpoint: true
+
+# Staff session (ADR 0007/0009). Not the default JSESSIONID name (a framework fingerprint).
+# HttpOnly: JavaScript never sees it. SameSite=Lax: not sent on cross-site subrequests, but a
+# link from WhatsApp/email to the admin still arrives logged in. Secure by default; only the
+# local http profile turns it off.
+server:
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        name: SC_SESSION
+        http-only: true
+        same-site: lax
+        secure: true
+
 # Never leak internals in error responses. Boot 4 moved these from server.error.* to
 # spring.web.error.*; the old keys are silently ignored (found by the G5 validation exercise).
 # SecurityRegressionTest asserts error bodies carry none of these details.

@@ -2,6 +2,7 @@ package app.sevacenter.web;
 
 import java.util.Map;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.web.error.ErrorAttributeOptions;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
  * <p>Uses {@link ErrorAttributeOptions#defaults()} (status, error, path) unconditionally, so no
  * property can switch on messages, exception names or stack traces.
  */
+@Hidden // internal error dispatch, not part of the API (and not a target for the spec-driven DAST)
 @RestController
 public class ApiErrorController extends AbstractErrorController {
 

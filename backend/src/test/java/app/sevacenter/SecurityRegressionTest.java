@@ -5,7 +5,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -19,9 +18,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
- * Every DAST (G5) finding becomes a test here, so a fix can't silently regress. DAST alone
- * can't hold the line: once the scan sends a CSRF cookie, the server stops re-issuing it and
- * ZAP's passive cookie checks no longer see the flags.
+ * Every DAST (G5) finding becomes a test here, so a fix can't silently regress. Cookie flags
+ * are asserted over a real server in SessionCookieTest: spring-security-test's csrf()
+ * post-processor swaps the shared CSRF repository for one that never writes cookies, so a
+ * MockMvc cookie check here failed depending on which test class ran first.
  */
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest
@@ -33,16 +33,6 @@ class SecurityRegressionTest {
 
     @Autowired
     private MockMvc mvc;
-
-    @Test
-    void csrfCookieIsSameSiteStrictButReadableByOurFrontend() throws Exception {
-        mvc.perform(get("/api/v1/csrf"))
-                .andExpect(status().isOk())
-                .andExpect(cookie().exists("XSRF-TOKEN"))
-                .andExpect(cookie().sameSite("XSRF-TOKEN", "Strict"))
-                // Deliberately not HttpOnly: the SPA echoes it in X-XSRF-TOKEN (ADR 0007).
-                .andExpect(cookie().httpOnly("XSRF-TOKEN", false));
-    }
 
     @Test
     void securityHeadersArePresent() throws Exception {

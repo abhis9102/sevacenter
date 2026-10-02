@@ -1,28 +1,46 @@
 package app.sevacenter.config;
 
+import app.sevacenter.auth.LoginHandlers;
+import app.sevacenter.auth.LoginThrottle;
+import app.sevacenter.auth.LoginThrottleFilter;
+import app.sevacenter.auth.TenantBindingFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.ExceptionTranslationFilter;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.header.writers.CrossOriginResourcePolicyHeaderWriter.CrossOriginResourcePolicy;
 
 /**
- * Baseline security policy (M0).
+ * Security policy.
  *
- * <p>Secure-by-default: every request requires authentication except an explicit
- * allowlist of public endpoints. Real authentication (registration/login, sessions,
- * tenant-aware authorization) arrives in M1; HTTP Basic is a placeholder mechanism so
- * protected routes are genuinely protected in the meantime.
+ * <p>Secure-by-default: every request requires authentication except an explicit allowlist
+ * of public endpoints. Staff authenticate with a server-side session (ADR 0007/0009): form
+ * login at {@value #LOGIN_PATH} on their tenant's host, CSRF on every state-changing request,
+ * the session bound to that tenant ({@link TenantBindingFilter}), and roles enforced with
+ * {@code @PreAuthorize} over a TRUST_ADMIN > LEADER > MEMBER hierarchy.
  */
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
+
+    /** Staff login (form-encoded email + password, CSRF-protected) and logout (ADR 0009). */
+    public static final String LOGIN_PATH = "/api/v1/auth/login";
+    public static final String LOGOUT_PATH = "/api/v1/auth/logout";
+    /** Must match server.servlet.session.cookie.name in application.yml. */
+    private static final String SESSION_COOKIE = "SC_SESSION";
 
     /** Endpoints intentionally reachable without authentication. Keep this list short. */
     private static final String[] PUBLIC_ENDPOINTS = {
@@ -32,8 +50,8 @@ public class SecurityConfig {
             "/actuator/health",
             "/actuator/health/**",
             // Spring's error dispatch. Without this, a 403/404/400 is re-checked on the
-            // forward to /error and surfaces as a misleading 401. Error bodies are already
-            // stripped of message/stacktrace (server.error.* in application.yml).
+            // forward to /error and surfaces as a misleading 401. Error bodies carry no
+            // internals (ApiErrorController).
             "/error",
             // API documentation (OpenAPI JSON + Swagger UI). Fine to expose in dev;
             // revisit before production (restrict or disable in the prod profile).
@@ -43,7 +61,8 @@ public class SecurityConfig {
     };
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, LoginHandlers loginHandlers,
+                                            LoginThrottle loginThrottle) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
@@ -61,8 +80,40 @@ public class SecurityConfig {
                 // DAST (G5): other origins may not embed our responses as resources (img/script).
                 .headers(headers -> headers
                         .crossOriginResourcePolicy(corp -> corp.policy(CrossOriginResourcePolicy.SAME_ORIGIN)))
-                .httpBasic(Customizer.withDefaults());
+                // Staff login via the framework's form login, so session-fixation protection,
+                // CSRF token rotation and saving the security context aren't hand-written.
+                // loginPage is set only to switch off Spring's generated HTML login page.
+                .formLogin(form -> form
+                        .loginPage(LOGIN_PATH)
+                        .loginProcessingUrl(LOGIN_PATH)
+                        .usernameParameter("email")
+                        .passwordParameter("password")
+                        .successHandler(loginHandlers)
+                        .failureHandler(loginHandlers)
+                        .permitAll())
+                .logout(logout -> logout
+                        .logoutUrl(LOGOUT_PATH)
+                        .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT))
+                        .deleteCookies(SESSION_COOKIE))
+                // An API answers 401, never a redirect to a login page or a Basic-auth challenge.
+                // sendError routes it through ApiErrorController: the same safe JSON as every error.
+                .exceptionHandling(errors -> errors
+                        .authenticationEntryPoint((request, response, e) ->
+                                response.sendError(HttpStatus.UNAUTHORIZED.value())))
+                .addFilterBefore(new LoginThrottleFilter(loginThrottle, LOGIN_PATH),
+                        UsernamePasswordAuthenticationFilter.class)
+                // After the session's security context is loaded, before authorization.
+                .addFilterBefore(new TenantBindingFilter(), ExceptionTranslationFilter.class);
         return http.build();
+    }
+
+    /** TRUST_ADMIN can do everything a LEADER can, who can do everything a MEMBER can. */
+    @Bean
+    static RoleHierarchy roleHierarchy() {
+        return RoleHierarchyImpl.fromHierarchy("""
+                ROLE_TRUST_ADMIN > ROLE_LEADER
+                ROLE_LEADER > ROLE_MEMBER
+                """);
     }
 
     /**

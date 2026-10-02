@@ -46,7 +46,24 @@ superuser would bypass RLS. Every test was mutation-checked: each fails when its
 | 2 | Non-superuser, `NOBYPASSRLS`, not table owner; `FORCE ROW LEVEL SECURITY` | `appConnectsAsLeastPrivilegeRoleThatRlsAppliesTo`, `appRoleCannotSwitchRlsOff`, `everyTenantScopedTableHasForcedRlsAndAPolicy` (also guards **future** tables) |
 | 3 | RLS `USING` + `WITH CHECK` | `pinnedTenantSeesOnlyItsOwnRows`, `tenantCannotInsertIntoAnotherTenant`, `tenantCannotUpdateOrDeleteAnotherTenantsRows`, `repositoriesOnlySeeTheTenantInContext` (BOLA by id) |
 | 4 | `ReservedSlugs`, shared by registration and routing | `reservedSubdomainsCannotBeRegistered` |
-| 5 | Roles / `@PreAuthorize` (M1 slice 2) | *pending* |
+| 5 | Roles / `@PreAuthorize` (M1 slice 2b), over a TRUST_ADMIN > LEADER > MEMBER hierarchy (wired in 2a) | *pending: first role-protected endpoints arrive in 2b* |
+
+### Staff authentication (M1 slice 2a, ADR 0009): threat → control → test
+
+| Threat | Control | Test |
+|---|---|---|
+| Host-header tenant confusion (`Host: siddheshwar.attacker.example`) | Tenant resolved only from `<slug>.<configured base domain>` | `TenantHostResolutionTest` (10 hosts) |
+| Logging in to another tenant | User lookup scoped by RLS to the Host's tenant | `staffCannotLogInOnAnotherTenantsHost`, `noTenantHostMeansNoLogin` |
+| Session replayed on another tenant's host | `TenantBindingFilter`: 401 + session invalidated | `aSessionIsWorthlessOnAnotherTenantsHostAndIsDestroyed` |
+| Session fixation | Framework form login: session ID changes at login | `sessionIdChangesAtLogin` |
+| Login CSRF | CSRF required on login; token rotates after login | `loginRequiresCsrf`, `SessionCookieTest` |
+| User enumeration | One generic 401; dummy hash check for unknown users | `wrongPasswordAndUnknownEmailAreIndistinguishable` |
+| Brute force / password spraying | Per-account + per-IP lockout (5 / 15 min), 429 even for the right password | 3 throttle tests in `StaffAuthTest` |
+| Session theft via script / cross-site | `SC_SESSION`: HttpOnly, Secure, SameSite=Lax | `SessionCookieTest` (real server) |
+
+All mutation-checked (removing the binding filter, the throttle, fixation protection or the
+cookie flags turns the matching test red).
+
 
 **Found while writing these tests (all fixed):**
 - **Every test ran as a superuser**, so RLS had never actually been tested.
