@@ -10,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.header.writers.CrossOriginResourcePolicyHeaderWriter.CrossOriginResourcePolicy;
 
 /**
  * Baseline security policy (M0).
@@ -55,10 +56,24 @@ public class SecurityConfig {
                 // Plain (non-XOR) handler is fine: BREACH needs the secret and attacker-
                 // reflected input in the same compressed body; /csrf reflects no input.
                 .csrf(csrf -> csrf
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRepository(csrfTokenRepository())
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
+                // DAST (G5): other origins may not embed our responses as resources (img/script).
+                .headers(headers -> headers
+                        .crossOriginResourcePolicy(corp -> corp.policy(CrossOriginResourcePolicy.SAME_ORIGIN)))
                 .httpBasic(Customizer.withDefaults());
         return http.build();
+    }
+
+    /**
+     * XSRF-TOKEN must stay readable by our own JS (no HttpOnly; ADR 0007), but it should never
+     * ride along on cross-site requests: SameSite=Strict (found by DAST, G5). Secure is added
+     * by the HTTPS deployment profile (M6), since local dev runs on plain http.
+     */
+    private static CookieCsrfTokenRepository csrfTokenRepository() {
+        CookieCsrfTokenRepository repository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        repository.setCookieCustomizer(cookie -> cookie.sameSite("Strict"));
+        return repository;
     }
 
     /**
