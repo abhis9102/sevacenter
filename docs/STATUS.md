@@ -103,7 +103,11 @@ curl -s -b /tmp/jar -X POST localhost:8080/api/v1/register -H 'Content-Type: app
   via `actions/attest` (keyless Sigstore). Least privilege: no `artifact-metadata` (registry-only).
 - Policy: `docs/security/sbom.md`. `tools/security/sbom_check.py` tested on pass + fail cases.
 
-**Next: G4 validation (verify attestation; tampered jar must fail), then M1 `TenantIsolationTest`.**
+- **Validated:** jar from the main run verifies (SLSA provenance: repo, `ci.yml`, `main`, commit;
+  SBOM: 113 components). Tampered jar, wrong repo, wrong signer workflow → all rejected. Deploy (M6)
+  must verify with `--signer-workflow … --source-ref refs/heads/main`, not repo alone.
+
+**Next: M1 `TenantIsolationTest` (automated cross-tenant proof), then G5 DAST (ZAP in CI).**
 
 ## Next up — M1 slice 2
 - Login + sessions (cookie session per ADR 0007; set cookie flags HttpOnly/Secure/SameSite); tenant-aware `UserDetailsService` (scope lookup by `TenantContext`).
