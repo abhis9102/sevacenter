@@ -1,6 +1,6 @@
 # Dev Status — resume point
 
-_Last updated: 2026-10-02 (evening session)._
+_Last updated: 2026-10-02 (late session)._
 
 ## Where we are
 
@@ -71,7 +71,21 @@ curl -s -b /tmp/jar -X POST localhost:8080/api/v1/register -H 'Content-Type: app
 - Known limitation: secret-ticket dedup key includes the commit SHA, so a **rebase** of a leaking
   branch can open a duplicate ticket. Fine for now; revisit if it gets noisy.
 
-**Next: G3 — SCA (osv-scanner / Dependabot for Maven), or back to M1 `TenantIsolationTest`.**
+**G3 — SCA + Spring Boot 4.1 migration: ✅ (this PR).**
+- Baseline on Boot 3.5.3: **82 vulns (9 critical)**, and **Boot 3.5 is EOL since 2026-06-30** →
+  migrated to **Boot 4.1.1** (ADR 0008 supersedes 0005). Starter renames, `starter-flyway` (bare
+  flyway-core silently skips migrations in Boot 4), Testcontainers 2, springdoc 3, Security 7.
+  Behavior-preserving: all live checks identical. 3 patch-level CVE overrides (Tomcat, Jackson 2/3).
+- `sca` job: osv-scanner (digest-pinned) → SARIF → code scanning; exits other than 0/1 fail.
+  Ruleset blocks **high/critical**. Daily schedule (CVEs land daily).
+- `tools/security/sca_policy.py`: **coverage** (every declared dep resolved to a version; catches
+  the "0 vulns because 15/183 packages resolved" false-clean we hit) + **ignores** (reason + ≤ 90-day
+  expiry on every accepted risk in `osv-scanner.toml`).
+- Dependabot: maven version updates (7-day cooldown, 30 for majors) + security updates enabled.
+- Tickets: `code-scanning-tickets` now syncs SAST + SCA alerts on main (`sca` label).
+- Policy: `docs/security/sca.md`.
+
+**Next: G4 — SBOM (CycloneDX from the real Maven build, scan *that*), or M1 `TenantIsolationTest`.**
 
 ## Next up — M1 slice 2
 - Login + sessions (cookie session per ADR 0007; set cookie flags HttpOnly/Secure/SameSite); tenant-aware `UserDetailsService` (scope lookup by `TenantContext`).

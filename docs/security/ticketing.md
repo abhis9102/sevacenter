@@ -9,7 +9,9 @@ blocking the change that introduced it.
 |---|---|---|---|---|
 | Secret (gitleaks) | any push / PR | CI fails | **Yes, immediately** (`severity:critical`) | A human confirms rotation. Never automatic. |
 | SAST (Semgrep) | PR | Merge blocked by ruleset; inline annotation | No. The author fixes it in the PR. | n/a |
-| SAST (Semgrep) | `main` (push or weekly rescan) | Alert in Security tab | **Yes**, severity label from the rule | Automatically, when the alert is fixed or dismissed |
+| SAST (Semgrep) | `main` (push or daily rescan) | Alert in Security tab | **Yes**, severity label from the rule | Automatically, when the alert is fixed or dismissed |
+| SCA (osv-scanner) | PR | Merge blocked if high/critical (ruleset) | No. Bump the dependency in the PR. | n/a |
+| SCA (osv-scanner) | `main` (push or **daily** rescan) | Alert in Security tab | **Yes**, label `sca`, severity from CVSS | Automatically, when the alert is fixed or dismissed. See `docs/security/sca.md` |
 
 ## Why secrets are different
 
@@ -19,11 +21,11 @@ GitHub for keys within minutes. Deleting the line, commit or branch doesn't help
 fix happens at the credential's *issuer* (revoke/rotate). That work needs an owner and an audit
 trail, hence a ticket even when the PR is abandoned.
 
-## Why main gets rescanned weekly
+## Why main gets rescanned daily
 
-Semgrep registry rules (`p/java`, …) change over time. Unchanged code on `main` can gain
-new findings, which is the main way SAST alerts (and tickets) appear on `main` at all,
-since the ruleset keeps new findings from being merged.
+Semgrep registry rules (`p/java`, …) change, and **new CVEs are published every day**.
+Unchanged code on `main` can gain new findings, which is the main way alerts (and tickets)
+appear on `main` at all, since the ruleset keeps new findings from being merged.
 
 ## Dismissing a finding
 

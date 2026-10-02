@@ -16,3 +16,21 @@ updates:
         patterns: ["*"]
     commit-message:
       prefix: ci
+
+  # G3 (SCA): Maven version updates. This is the *preventive* half; osv-scanner in CI is the
+  # *detective* half. Security updates (fixes for known CVEs) are enabled in repo settings and
+  # ignore the cooldown, since a known-vulnerable version shouldn't wait a week.
+  - package-ecosystem: maven
+    directory: /backend
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+      semver-major-days: 30 # majors (e.g. Boot 5) need a planned migration, not a drive-by bump
+    groups:
+      spring-boot:
+        patterns: ["org.springframework.boot:*"]
+      maven-minor-patch:
+        update-types: [minor, patch]
+    commit-message:
+      prefix: build

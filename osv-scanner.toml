@@ -1,0 +1,11 @@
+# Accepted dependency risks (G3 SCA). Policy: docs/security/sca.md
+#
+# Every entry needs a reason (who decided, and why it's acceptable) and an ignoreUntil no more
+# than 90 days out. tools/security/sca_policy.py enforces both in CI. When the date passes,
+# osv-scanner stops ignoring the vulnerability and the gate goes red again: fix it or re-justify it.
+#
+# Example:
+# [[IgnoredVulns]]
+# id = "GHSA-xxxx-xxxx-xxxx"
+# ignoreUntil = 2026-12-31
+# reason = "Abhi: vulnerable code path is XML parsing; we never parse XML. Upgrade blocked on Boot 4.2."
