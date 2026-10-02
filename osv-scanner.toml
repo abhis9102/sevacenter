@@ -9,8 +9,3 @@
 # id = "GHSA-xxxx-xxxx-xxxx"
 # ignoreUntil = 2026-12-31
 # reason = "Abhi: vulnerable code path is XML parsing; we never parse XML. Upgrade blocked on Boot 4.2."
-
-[[IgnoredVulns]]
-id = "GHSA-599f-7c49-w659"
-ignoreUntil = 2026-10-16
-reason = "Abhi (AppSec): templates are hard-coded, never user-supplied, so ${script:} lookups are unreachable. Upgrade to commons-text 1.15.0 tracked for this sprint."
