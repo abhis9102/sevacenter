@@ -191,6 +191,38 @@ jobs:
       - name: Drift (everything we ship was also seen by the G3 scan)
         run: python3 tools/security/sbom_check.py drift "$SBOM" osv-pom.json
 
+  # Attacks the running app: the jar from `build` + a throwaway Postgres, ZAP active API scan.
+  # Same script locally (`make dast`). Active scanning only ever targets this ephemeral env.
+  dast:
+    name: DAST (ZAP)
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: backend-build
+          path: build
+      - name: ZAP scan of the built jar (fails if the attacks never reached the database)
+        run: tools/security/dast.sh build/backend-*.jar dast-out
+      - name: Policy gate (Medium+ blocks; Low becomes a ticket on main)
+        run: python3 tools/security/dast_policy.py gate dast-out/zap.json --out dast-out/findings.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ !cancelled() }}
+        with:
+          name: dast-report # zap.html (full report), zap.json, findings.json, app.log
+          path: dast-out/
+          retention-days: 14
+
   # Signs, never builds: binds SLSA build provenance and the SBOM to the jar's digest with a
   # keyless Sigstore certificate. Verify with `gh attestation verify <jar> -R <owner>/<repo>`.
   # Public repo -> entries go to the public Rekor transparency log (repo, workflow, commit).
@@ -249,6 +281,30 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
+  dast-tickets:
+    name: Sync DAST tickets (main)
+    needs: dast
+    # Runs even if the gate failed on main (e.g. a new ZAP rule in the daily scan), so the
+    # finding gets an owner; PR findings block the merge instead.
+    if: ${{ !cancelled() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write # create / reopen / close DAST tickets
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: dast-report
+          path: dast-report
+      - name: Sync tickets with unaccepted findings
+        run: python3 tools/security/tickets.py dast dast-report/findings.json
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
   code-scanning-tickets:
     name: Sync code scanning tickets (main)
     needs: [sast, sca]
@@ -269,5 +325,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-  # Next gates (roadmap "Security-gate track"): G5 DAST (ZAP baseline),
-  # G6 image scan, G7 IaC + OIDC.
+  # Next gates (roadmap "Security-gate track"): G6 image scan, G7 IaC + OIDC.
