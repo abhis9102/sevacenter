@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import pathlib
 import re
 import sys
 import urllib.error
@@ -99,9 +100,22 @@ def run_link() -> str:
 
 # --- secrets (gitleaks SARIF) ---------------------------------------------------------------
 
+def sarif_files(path: str) -> list[pathlib.Path]:
+    """A SARIF file, or every *.sarif under a directory. gitleaks-action stores its report
+    under the runner's absolute path inside the artifact, so don't assume a layout."""
+    p = pathlib.Path(path)
+    files = sorted(p.rglob("*.sarif")) if p.is_dir() else [p]
+    if not files or not files[0].is_file():
+        raise FileNotFoundError(f"no SARIF report found at {path}")
+    return files
+
+
 def secret_findings(sarif_path: str):
-    with open(sarif_path, encoding="utf-8") as f:
-        sarif = json.load(f)
+    for file in sarif_files(sarif_path):
+        yield from _secret_findings(json.loads(file.read_text(encoding="utf-8")))
+
+
+def _secret_findings(sarif: dict):
     for run in sarif.get("runs", []):
         for res in run.get("results", []):
             loc = res["locations"][0]["physicalLocation"]
@@ -238,7 +252,7 @@ def main() -> int:
     p.add_argument("--dry-run", action="store_true", help="print writes instead of doing them")
     sub = p.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("secrets", help="ticket gitleaks findings from a SARIF report")
-    s.add_argument("sarif")
+    s.add_argument("sarif", help="SARIF file, or a directory searched for *.sarif")
     c = sub.add_parser("code-scanning", help="sync tickets with open code scanning alerts")
     c.add_argument("--ref", default="refs/heads/main")
     args = p.parse_args()
