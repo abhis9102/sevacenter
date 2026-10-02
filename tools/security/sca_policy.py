@@ -5,6 +5,10 @@
             package list. A scanner that silently fails to resolve part of the tree reports
             "0 vulnerabilities" for the part it never saw. This happened during the Boot 4
             evaluation: 15 of 183 packages were resolved, and the scan came back clean.
+  gate      Fail on any vulnerability at or above a CVSS threshold. GitHub's code scanning
+            merge check only blocks alerts on lines the PR changed, and osv-scanner reports
+            every finding at pom.xml:1, so a newly added critical dependency was NOT blocked
+            (gate validation, PR #8). The job enforces severity itself instead.
   ignores   Every accepted risk in osv-scanner.toml needs a written reason and an expiry no
             more than MAX_DAYS out. An ignore without an expiry is a permanent blind spot.
 
@@ -49,6 +53,30 @@ def coverage(osv_json: str, poms: list[str]) -> list[str]:
     return errors
 
 
+def gate(osv_json: str, threshold: float) -> list[str]:
+    """Accepted risks are already filtered out of the report by osv-scanner (--config).
+    A finding with no CVSS score blocks too: unknown severity is not low severity."""
+    with open(osv_json, encoding="utf-8") as f:
+        report = json.load(f)
+    errors, seen = [], set()
+    for r in report.get("results", []):
+        for p in r["packages"]:
+            pkg = f"{p['package']['name']}@{p['package'].get('version')}"
+            for g in p.get("groups", []):
+                key = (pkg, tuple(g["ids"]))
+                if key in seen:
+                    continue
+                seen.add(key)
+                sev = g.get("max_severity")
+                score = float(sev) if sev not in (None, "") else None
+                if score is None or score >= threshold:
+                    ids = ", ".join(g.get("aliases") or g["ids"])
+                    errors.append(f"{pkg}: {ids} (CVSS {sev or 'unknown'}). Bump it, override "
+                                  "the version, or accept it in osv-scanner.toml with a reason + expiry")
+    print(f"severity gate: {len(errors)} finding(s) at CVSS >= {threshold} or unscored")
+    return errors
+
+
 def ignores(config: str, today: dt.date) -> list[str]:
     path = pathlib.Path(config)
     if not path.exists():
@@ -82,12 +110,19 @@ def main() -> int:
     c = sub.add_parser("coverage", help="every declared dependency was scanned")
     c.add_argument("osv_json", help="osv-scanner --format json --all-packages output")
     c.add_argument("poms", nargs="+")
+    g = sub.add_parser("gate", help="fail on findings at or above a CVSS threshold")
+    g.add_argument("osv_json", help="osv-scanner --format json output (with --config applied)")
+    g.add_argument("--fail-at", type=float, default=7.0, help="CVSS threshold (default 7.0)")
     i = sub.add_parser("ignores", help="accepted risks have a reason and an expiry")
     i.add_argument("config", nargs="?", default="osv-scanner.toml")
     args = p.parse_args()
 
-    errors = (coverage(args.osv_json, args.poms) if args.cmd == "coverage"
-              else ignores(args.config, dt.date.today()))
+    if args.cmd == "coverage":
+        errors = coverage(args.osv_json, args.poms)
+    elif args.cmd == "gate":
+        errors = gate(args.osv_json, args.fail_at)
+    else:
+        errors = ignores(args.config, dt.date.today())
     for e in errors:
         print(f"::error::{e}")  # GitHub Actions annotation; plain text locally
     return 1 if errors else 0

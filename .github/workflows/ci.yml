@@ -121,8 +121,8 @@ jobs:
         run: python3 tools/security/sca_policy.py ignores osv-scanner.toml
       # osv-scanner resolves Maven's transitive tree itself (no build needed). The repo is
       # mounted at the runner's own path so the SARIF's absolute file URIs map back onto it.
-      # Exit codes: 0 clean, 1 vulnerabilities found (the ruleset decides what blocks, by
-      # severity), 128 nothing scanned, anything else broken. Only 0 and 1 are acceptable.
+      # Exit codes: 0 clean, 1 vulnerabilities found (the severity gate step decides what
+      # blocks), 128 nothing scanned, anything else broken. Only 0 and 1 are acceptable.
       - name: Scan dependencies
         run: |
           scan() {
@@ -140,6 +140,10 @@ jobs:
       # Partial resolution reports "0 vulnerabilities" for what it never saw. Fail on it.
       - name: Coverage (every declared dependency was resolved)
         run: python3 tools/security/sca_policy.py coverage osv-all.json $(git ls-files '*pom.xml')
+      # The blocking decision lives here, not in the ruleset's code_scanning rule: GitHub only
+      # blocks alerts on lines a PR changed, and osv-scanner reports findings at pom.xml:1.
+      - name: Severity gate (block CVSS >= 7.0 unless an accepted risk)
+        run: python3 tools/security/sca_policy.py gate osv-all.json --fail-at 7.0
 
   # --- Ticketing (tools/security/tickets.py; policy in docs/security/ticketing.md) ----------
   # These are the only jobs that can write issues, and they never run a scanner. The ticket
