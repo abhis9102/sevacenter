@@ -115,6 +115,13 @@
 
 	<build>
 		<plugins>
+			<!-- SBOM (G4): CycloneDX from the real dependency resolution, pre-configured by the
+			     Boot parent. Embedded in the jar at META-INF/sbom/application.cdx.json. The
+			     /actuator/sbom endpoint stays unexposed (exact versions = an attacker's shopping list). -->
+			<plugin>
+				<groupId>org.cyclonedx</groupId>
+				<artifactId>cyclonedx-maven-plugin</artifactId>
+			</plugin>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
