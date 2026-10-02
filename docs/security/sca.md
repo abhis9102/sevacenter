@@ -8,7 +8,8 @@ other people. SCA answers: does anything we ship have a published vulnerability?
 | Piece | Kind | When | Where |
 |---|---|---|---|
 | `osv-scanner` (`sca` job) | detective: finds known-vulnerable versions | every PR, push to main, **daily** | CI → SARIF → Security → Code scanning |
-| Ruleset `code_scanning` rule (osv-scanner) | gate | every PR | blocks merge on **high/critical** (CVSS ≥ 7) |
+| `sca_policy.py gate` (required `SCA` check) | **gate** | every PR | fails the job on **high/critical** (CVSS ≥ 7, or unscored) |
+| Ruleset `code_scanning` rule (osv-scanner) | backup only | every PR | does **not** reliably block SCA (see below) |
 | `sca_policy.py coverage` | integrity of the scan itself | every run | CI step, fails the job |
 | `sca_policy.py ignores` | governance of accepted risk | every run | CI step, fails the job |
 | Dependabot security updates | corrective: opens fix PRs for known CVEs | when an advisory lands | repo setting |
@@ -52,6 +53,14 @@ So the job also fails when:
 
 The check was itself tested against that broken pom. Its first version passed it, because declared
 deps appear in the output even when unresolved. A check that's never been seen to fail isn't a check.
+
+## Why the job enforces severity itself (not the ruleset)
+
+Gate validation (PR #8) added `commons-text` 1.9 (Text4Shell, CVSS 9.8). The alert appeared in
+code scanning, yet the PR was **mergeable**: GitHub's code scanning merge check only blocks alerts on
+**lines the PR changed**, and osv-scanner reports every finding at `pom.xml:1`. The same ruleset
+rule works for Semgrep, which reports the exact line. So the severity decision moved into the
+required `SCA (osv-scanner)` job. Code scanning remains the place for visibility and tickets.
 
 ## Known gaps (next gates)
 
