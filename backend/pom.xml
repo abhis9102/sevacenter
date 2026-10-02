@@ -47,10 +47,6 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-aspectj</artifactId>
-		</dependency>
 
 		<!-- Boot 4 is modular: auto-configuration lives in the starter. flyway-core alone would
 		     compile fine but never run the migrations. -->

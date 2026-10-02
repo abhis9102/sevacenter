@@ -4,6 +4,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import app.sevacenter.tenant.ReservedSlugs;
 import app.sevacenter.tenant.Tenant;
 import app.sevacenter.tenant.TenantRepository;
 import app.sevacenter.user.AppUser;
@@ -41,13 +42,16 @@ public class RegistrationService {
     @Transactional
     public RegistrationResponse register(RegistrationRequest req) {
         String slug = req.slug().toLowerCase();
-        if (tenants.existsBySlug(slug)) {
+        // Reserved names answer exactly like taken ones: no hint about which list a name is on.
+        if (ReservedSlugs.isReserved(slug) || tenants.existsBySlug(slug)) {
             throw new SlugAlreadyTakenException(slug);
         }
 
         Tenant tenant = tenants.saveAndFlush(new Tenant(slug, req.trustName().trim()));
 
-        // Pin the RLS tenant for the first-user insert in this same transaction.
+        // The one explicit pin: this transaction started with no tenant (TenantPinningDataSource
+        // set ''), and the tenant it now writes into didn't exist until a moment ago.
+        // Transaction-local (true), so the connection reverts to '' after commit.
         entityManager
                 .createNativeQuery("select set_config('app.tenant_id', :tid, true)")
                 .setParameter("tid", tenant.getId().toString())
