@@ -54,7 +54,24 @@ curl -s -b /tmp/jar -X POST localhost:8080/api/v1/register -H 'Content-Type: app
 - Pre-commit hooks installed locally (were never installed); first-run trufflehog false positives
   triaged per line.
 
-**Next: G2 — SAST (Semgrep in CI → SARIF → Security tab, code-scanning merge protection).**
+**G2 — SAST + tickets: ✅ (PRs #2, #4).**
+- `sast` job: Semgrep (same rulesets as pre-commit), digest-pinned image via `docker run` (Alpine
+  can't be a job container for JS actions) → SARIF → code scanning. Reports only.
+- Ruleset now also requires `SAST (Semgrep)` + a **code_scanning rule** (Semgrep OSS: errors /
+  high+ security alerts block merge).
+- `tools/security/tickets.py` (stdlib only) + policy `docs/security/ticketing.md`: secret → critical
+  ticket immediately, human-closed only; SAST on main → ticket, auto-close/reopen. Weekly rescan.
+- **Live demo (PR #3, closed unmerged):** hook blocked Stripe key → `--no-verify` → push protection
+  blocked it → in-house secret passed push protection → CI gitleaks failed → ticket #5 auto-created
+  (redacted) → SQLi alerts blocked merge → fix commit auto-fixed alerts but secret still in history →
+  squash branch → green → **rejected in manual review** (cross-tenant tenant enumeration — invisible
+  to SAST). Ticket #5 closed by hand with rotation note.
+- Bugs found by the demo: ticket job assumed SARIF at artifact root (fixed, PR #4); re-runs reuse the
+  original workflow definition → update the PR branch instead.
+- Known limitation: secret-ticket dedup key includes the commit SHA, so a **rebase** of a leaking
+  branch can open a duplicate ticket. Fine for now; revisit if it gets noisy.
+
+**Next: G3 — SCA (osv-scanner / Dependabot for Maven), or back to M1 `TenantIsolationTest`.**
 
 ## Next up — M1 slice 2
 - Login + sessions (cookie session per ADR 0007; set cookie flags HttpOnly/Secure/SameSite); tenant-aware `UserDetailsService` (scope lookup by `TenantContext`).
