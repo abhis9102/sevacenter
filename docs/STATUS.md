@@ -39,8 +39,22 @@ curl -s -b /tmp/jar -X POST localhost:8080/api/v1/register -H 'Content-Type: app
 1. **`TenantIsolationTest`** (AppSec deliverable) — automate the manual RLS check above. Testcontainers'
    default user is a **superuser and bypasses RLS**, so the test must connect as a non-superuser role.
    Also add CSRF tests (no token / bad token → 403).
-2. **CI gate 1 — harden existing CI** (see roadmap "Security-gate track"): pin actions to SHAs,
-   branch protection + required checks. Abhi writes the YAML; Claude explains + reviews.
+
+## Security-gate track
+**G1 — harden CI: ✅ (PR #1).** Repo is public at github.com/abhis9102/sevacenter.
+- Actions SHA-pinned (verified by zizmor's online impostor-commit audit), `permissions: {}` +
+  per-job `contents: read`, `persist-credentials: false`, timeouts, gitleaks gets `GITHUB_TOKEN`.
+- New `workflow-lint` job (zizmor, pass/fail, no SARIF yet). Old workflow had 6 findings → 0.
+- Dependabot (`github-actions`, weekly, 7-day cooldown).
+- Repo: secret scanning + push protection, Dependabot alerts, private vuln reporting, squash-only,
+  auto-delete merged branches.
+- Ruleset `protect-main` (id 24377427): PR required (0 approvals — solo; can't self-approve),
+  3 required checks + up-to-date, linear history, no force-push/deletion, **no bypass actors**.
+  Proven: direct push to main → `GH013` rejected.
+- Pre-commit hooks installed locally (were never installed); first-run trufflehog false positives
+  triaged per line.
+
+**Next: G2 — SAST (Semgrep in CI → SARIF → Security tab, code-scanning merge protection).**
 
 ## Next up — M1 slice 2
 - Login + sessions (cookie session per ADR 0007; set cookie flags HttpOnly/Secure/SameSite); tenant-aware `UserDetailsService` (scope lookup by `TenantContext`).
