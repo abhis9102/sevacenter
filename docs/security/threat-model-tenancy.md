@@ -35,6 +35,31 @@ by it, not patched after. Revisit each milestone.
 4. Reserved subdomains (`www`, `api`, `admin`, `mail`, …) cannot be registered by a tenant.
 5. Authorization is enforced server-side even when the UI hides the control.
 
+### Status: invariant → test (`backend/src/test/java/app/sevacenter/TenantIsolationTest.java`)
+
+Tests run as the least-privilege `sevacenter_app` role, like production; the Testcontainers
+superuser would bypass RLS. Every test was mutation-checked: each fails when its control is removed.
+
+| # | Enforced by | Tests |
+|---|---|---|
+| 1 | `TenantPinningDataSource` pins `app.tenant_id` on **every connection checkout** (or `''` = none); V3 policy treats `''` as unset | `noTenantPinnedSeesNothing`, `tenantPinDoesNotLeakIntoTheNextTransaction`, `repositoriesOnlySeeTheTenantInContext` |
+| 2 | Non-superuser, `NOBYPASSRLS`, not table owner; `FORCE ROW LEVEL SECURITY` | `appConnectsAsLeastPrivilegeRoleThatRlsAppliesTo`, `appRoleCannotSwitchRlsOff`, `everyTenantScopedTableHasForcedRlsAndAPolicy` (also guards **future** tables) |
+| 3 | RLS `USING` + `WITH CHECK` | `pinnedTenantSeesOnlyItsOwnRows`, `tenantCannotInsertIntoAnotherTenant`, `tenantCannotUpdateOrDeleteAnotherTenantsRows`, `repositoriesOnlySeeTheTenantInContext` (BOLA by id) |
+| 4 | `ReservedSlugs`, shared by registration and routing | `reservedSubdomainsCannotBeRegistered` |
+| 5 | Roles / `@PreAuthorize` (M1 slice 2) | *pending* |
+
+**Found while writing these tests (all fixed):**
+- **Every test ran as a superuser**, so RLS had never actually been tested.
+- **The RLS policy crashed instead of failing closed** on reused pooled connections: after a
+  transaction-local `set_config`, Postgres resets the setting to `''`, not NULL, and `''::bigint`
+  errors. Fixed by V3 (`nullif`).
+- **Repository calls were never pinned**: the former `RlsTenantAspect` only fired for our own
+  `@Transactional` classes. Replaced by pinning at connection checkout.
+- **Reserved subdomains could be registered**: they were only skipped during routing.
+
+Known limit: RLS stops application *bugs*, not SQL injection. Injected SQL runs as the same role
+and can call `set_config` itself. Injection is covered by SAST, DAST and parameterized queries.
+
 ## Open questions
 
 - Public donor access: own login vs. link/OTP (affects the auth surface).

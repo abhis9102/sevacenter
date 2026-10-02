@@ -1,23 +1,36 @@
 package app.sevacenter.tenant;
 
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
-import org.springframework.core.Ordered;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.core.Ordered;
 
 /**
  * Wires up multi-tenancy:
  * <ul>
- *   <li>Transaction management at HIGHEST_PRECEDENCE, so the transaction opens before the
- *       {@link RlsTenantAspect} sets the tenant GUC on that transaction's connection.</li>
- *   <li>The {@link TenantResolutionFilter} ahead of the Spring Security chain
- *       (which registers at order -100).</li>
+ *   <li>Every application {@link DataSource} is wrapped in a {@link TenantPinningDataSource}, so
+ *       each connection checkout pins the RLS tenant from {@link TenantContext}.</li>
+ *   <li>The {@link TenantResolutionFilter} runs ahead of the Spring Security chain
+ *       (which registers at order -100), so the tenant is known before any connection is used.</li>
  * </ul>
  */
 @Configuration
-@EnableTransactionManagement(order = Ordered.HIGHEST_PRECEDENCE)
 public class TenancyConfig {
+
+    /** Every application DataSource pins the RLS tenant on checkout. */
+    @Bean
+    static BeanPostProcessor tenantPinningDataSource() {
+        return new BeanPostProcessor() {
+            @Override
+            public Object postProcessAfterInitialization(Object bean, String beanName) {
+                return bean instanceof DataSource ds && !(bean instanceof TenantPinningDataSource)
+                        ? new TenantPinningDataSource(ds) : bean;
+            }
+        };
+    }
 
     @Bean
     FilterRegistrationBean<TenantResolutionFilter> tenantResolutionFilter(

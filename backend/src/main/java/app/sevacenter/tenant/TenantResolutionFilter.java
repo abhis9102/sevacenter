@@ -26,10 +26,6 @@ public class TenantResolutionFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(TenantResolutionFilter.class);
 
-    /** Subdomains that are never a tenant. */
-    private static final java.util.Set<String> RESERVED =
-            java.util.Set.of("www", "app", "api", "admin", "mail", "static", "assets", "cdn");
-
     private final TenantRepository tenants;
     private final boolean allowHeaderOverride;
 
@@ -43,7 +39,7 @@ public class TenantResolutionFilter extends OncePerRequestFilter {
                                     FilterChain chain) throws ServletException, IOException {
         try {
             String slug = resolveSlug(request);
-            if (slug != null && !RESERVED.contains(slug)) {
+            if (slug != null && !ReservedSlugs.isReserved(slug)) {
                 tenants.findBySlug(slug).ifPresent(t -> TenantContext.set(t.getId()));
             }
             chain.doFilter(request, response);

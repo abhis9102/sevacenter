@@ -29,5 +29,7 @@ Host (subdomain).
 
 - Must guarantee the tenant session variable is set on every DB connection/request, and
   that the app's DB role is **not** RLS-exempt. These become explicit test cases.
+  Implemented by `TenantPinningDataSource` (pins on every connection checkout, so every access
+  path is covered) and proven by `TenantIsolationTest`. See the threat model's invariant table.
 - Noisy-neighbor and per-tenant backup/export are harder than DB-per-tenant (acceptable at
   our scale).

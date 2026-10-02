@@ -129,7 +129,20 @@ curl -s -b /tmp/jar -X POST localhost:8080/api/v1/register -H 'Content-Type: app
   `ApiErrorController`) and `/error` direct = 500 (→ 404). One scoped/expiring accepted risk (Tomcat's
   bare 400 for malformed request lines).
 
-**Next: M1 `TenantIsolationTest` (automated cross-tenant proof), then slice 2 (login + authenticated DAST).**
+## M1 slice 1 — tenant isolation proven ✅ (this PR)
+- Tests now run like production: Flyway as owner, app as `sevacenter_app` (connection-details beans;
+  dynamic properties applied too late for the real-server test context, which then silently
+  reached the local dev DB).
+- `TenantIsolationTest` (10 tests, threat-model invariants 1–4, all mutation-checked).
+- Found + fixed: (1) **all tests had run as a superuser** (RLS untested); (2) **RLS policy crashed** on
+  reused connections (`''::bigint`) → V3 `nullif`; (3) **repositories were never pinned** (aspect only hit
+  our `@Transactional` classes) → `TenantPinningDataSource` pins on every checkout, `RlsTenantAspect`
+  and the AspectJ starter removed; (4) **reserved subdomains registrable** → `ReservedSlugs`.
+- Lesson: Maven doesn't delete stale resources in `target/`; a removed migration kept running until
+  `clean`. Use `./mvnw clean verify` when deleting/renaming migrations.
+
+**Next: M1 slice 2: login + sessions, roles (`@PreAuthorize`, invariant 5), `/me`, user management;
+then authenticated DAST including cross-tenant attack attempts.**
 
 ## Next up — M1 slice 2
 - Login + sessions (cookie session per ADR 0007; set cookie flags HttpOnly/Secure/SameSite); tenant-aware `UserDetailsService` (scope lookup by `TenantContext`).
