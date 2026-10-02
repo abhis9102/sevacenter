@@ -1,7 +1,8 @@
 package app.sevacenter.web;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,11 +22,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> onValidation(MethodArgumentNotValidException ex) {
-        Map<String, String> fields = new HashMap<>();
+        // Sorted, so identical requests get byte-identical responses. With a HashMap the field
+        // order varied between identical requests, which DAST read as SQL injection (G5).
+        Map<String, String> fields = new TreeMap<>();
         for (FieldError fe : ex.getBindingResult().getFieldErrors()) {
             fields.putIfAbsent(fe.getField(), fe.getDefaultMessage());
         }
-        Map<String, Object> body = new HashMap<>();
+        Map<String, Object> body = new LinkedHashMap<>();
         body.put("error", "validation_failed");
         body.put("fields", fields);
         return ResponseEntity.badRequest().body(body);

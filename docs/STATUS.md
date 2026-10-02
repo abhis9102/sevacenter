@@ -107,7 +107,21 @@ curl -s -b /tmp/jar -X POST localhost:8080/api/v1/register -H 'Content-Type: app
   SBOM: 113 components). Tampered jar, wrong repo, wrong signer workflow → all rejected. Deploy (M6)
   must verify with `--signer-workflow … --source-ref refs/heads/main`, not repo alone.
 
-**Next: M1 `TenantIsolationTest` (automated cross-tenant proof), then G5 DAST (ZAP in CI).**
+**G5 — DAST: ✅ (this PR).**
+- `tools/security/dast.sh` (CI + `make dast`): throwaway Postgres → built jar → ZAP 2.17 **active API
+  scan** from the OpenAPI spec → **coverage check** (scan must create tenants). ~2 min.
+- `dast_policy.py`: Medium+ fails, Low → ticket on main; `.zap/accepted.toml` entries must be scoped
+  (rule + param/uri), reasoned, expiring. Invalid entries suppress nothing (bug caught in testing).
+- `tickets.py dast`; `dast-tickets` job on main. Required check `DAST (ZAP)`.
+- Findings fixed: XSRF cookie `SameSite=Strict`, `Cross-Origin-Resource-Policy: same-origin`, injected
+  `CsrfToken` hidden from the spec. **"SQL injection" false positive** traced to HashMap ordering in
+  validation errors → sorted map. First "clean" scan had tested nothing (0 tenants, all 403) → CSRF
+  replacer + valid spec examples. All locked in `SecurityRegressionTest` (mutation-checked).
+- Follow-up (G3): osv-scanner applies `osv-scanner.toml` entries even when our policy rejects them,
+  so an invalid ignore hides the finding from code scanning (the job still fails). Make SCA scan
+  without the config for reporting.
+
+**Next: M1 `TenantIsolationTest` (automated cross-tenant proof), then slice 2 (login + authenticated DAST).**
 
 ## Next up — M1 slice 2
 - Login + sessions (cookie session per ADR 0007; set cookie flags HttpOnly/Secure/SameSite); tenant-aware `UserDetailsService` (scope lookup by `TenantContext`).

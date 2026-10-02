@@ -10,7 +10,9 @@ blocking the change that introduced it.
 | Secret (gitleaks) | any push / PR | CI fails | **Yes, immediately** (`severity:critical`) | A human confirms rotation. Never automatic. |
 | SAST (Semgrep) | PR | Merge blocked by ruleset; inline annotation | No. The author fixes it in the PR. | n/a |
 | SAST (Semgrep) | `main` (push or daily rescan) | Alert in Security tab | **Yes**, severity label from the rule | Automatically, when the alert is fixed or dismissed |
-| SCA (osv-scanner) | PR | Merge blocked if high/critical (ruleset) | No. Bump the dependency in the PR. | n/a |
+| SCA (osv-scanner) | PR | Merge blocked if high/critical (required SCA job) | No. Bump the dependency in the PR. | n/a |
+| DAST (ZAP) | PR | Merge blocked if Medium+ (required DAST job) | No. Fix it in the PR. | n/a |
+| DAST (ZAP) | `main` (push or daily) | Low+ unaccepted findings | **Yes**, label `dast` | Automatically, when a later scan of main no longer finds it. See `docs/security/dast.md` |
 | SCA (osv-scanner) | `main` (push or **daily** rescan) | Alert in Security tab | **Yes**, label `sca`, severity from CVSS | Automatically, when the alert is fixed or dismissed. See `docs/security/sca.md` |
 
 ## Why secrets are different

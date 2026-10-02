@@ -1,0 +1,12 @@
+# Accepted DAST risks (G5). Policy: docs/security/dast.md
+#
+# Scope every entry to one ZAP rule (pluginId) AND a param and/or uri regex; whole-rule ignores
+# are rejected. Each needs a reason (>= 20 chars: who decided, why it's acceptable) and an
+# ignoreUntil no more than 90 days out. tools/security/dast_policy.py enforces all of it.
+#
+# Example:
+# [[accepted]]
+# pluginId = "10010"            # Cookie No HttpOnly Flag
+# param = "XSRF-TOKEN"          # only this cookie
+# ignoreUntil = 2026-12-31
+# reason = "Abhi: by design (ADR 0007), the SPA must read the CSRF cookie; it is not a session credential."
