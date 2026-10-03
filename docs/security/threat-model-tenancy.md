@@ -212,6 +212,15 @@ Tests in `EventTest`; rows in `authz_probe.py`.
 | Spam registrations | 20 per IP per 15 min | `registrationsAreRateLimitedPerClient` |
 | Deleting history | No DELETE grant; cancel instead | `eventsAndPassesAreNeverDeletedOnlyCancelled` |
 
+### Sevak signups (ADR 0015): threat → control → test
+
+| Threat | Control | Test (`SevakTest`) |
+|---|---|---|
+| Volunteer contacts readable by members / the public | List LEADER+; public response echoes the name only | `onlyLeadersSeeSignupsWithContactsAndReviewThem`, `anyoneCanOfferSevaAndLearnsNothingBack` |
+| Self-approval via the request body | Explicit record; status/reviewer server-set | `aSignupNeedsAContactAndCantApproveItself` |
+| Cross-trust review by id | Forced RLS → 404 | `anotherTrustsSignupsAreInvisibleAndUnreviewable` |
+| Spam signups | 20 per IP per 15 min | `signupsAreRateLimitedPerClient` |
+
 ## Open questions
 
 - Public donor access: own login vs. link/OTP (affects the auth surface).

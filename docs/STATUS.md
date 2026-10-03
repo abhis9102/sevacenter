@@ -294,7 +294,12 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
 - Capacity under row lock; 50-bit pass codes; check-in once; gate sees no contacts; rate-limited.
 - `EventTest` (12), **mutation-checked 13/13**; probe +9 rows.
 
-**Next:** pujas (paid via M3.3) + sevak signups, then the public temple page, then devotee OTP login.
+## Sevak signups ✅ (this PR, ADR 0015)
+- `V14`: `sevak_signup` (forced RLS, no DELETE). Public **/sevak** form; staff **Volunteers** screen
+  (LEADER+, approve/decline). `SevakTest` (6), mutation-checked 6/6; probe +4 rows.
+
+**Next:** pujas (puja fees are seva income, **not** 80G donations: separate from the donation ledger;
+paid via the M3.3 verified flow), then the public temple page, then devotee OTP login.
 
 ## Next up — M1 slice 2
 - Login + sessions (cookie session per ADR 0007; set cookie flags HttpOnly/Secure/SameSite); tenant-aware `UserDetailsService` (scope lookup by `TenantContext`).
