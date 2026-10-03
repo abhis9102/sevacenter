@@ -42,8 +42,13 @@ public class ApiErrorController extends AbstractErrorController {
         if (status == HttpStatus.NO_CONTENT) {
             return new ResponseEntity<>(status);
         }
+        Map<String, Object> body = getErrorAttributes(request, ErrorAttributeOptions.defaults());
+        // No timestamp: identical requests must get byte-identical errors. A per-response value
+        // made every 401/400 differ, which DAST's boolean SQL-injection test read as injection
+        // (POST /donations amount, GET /receipts paging; same lesson as G5).
+        body.remove("timestamp");
         return ResponseEntity.status(status)
                 .contentType(MediaType.APPLICATION_JSON) // preset: skips content negotiation
-                .body(getErrorAttributes(request, ErrorAttributeOptions.defaults()));
+                .body(body);
     }
 }

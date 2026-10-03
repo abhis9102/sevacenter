@@ -103,6 +103,23 @@ class ErrorDisclosureTest {
         assertThat(response.body()).doesNotContain("Exception", "at org.");
     }
 
+    /** Error bodies are deterministic: no timestamp, so identical requests match byte for byte. */
+    @Test
+    void identicalFailingRequestsGetByteIdenticalErrors() throws Exception {
+        String first = null;
+        for (int i = 0; i < 5; i++) {
+            HttpResponse<String> r = http.send(HttpRequest.newBuilder(uri("/api/v1/devotees")).build(),
+                    HttpResponse.BodyHandlers.ofString());
+            assertThat(r.statusCode()).isEqualTo(401);
+            assertThat(r.body()).doesNotContain("timestamp");
+            if (first == null) {
+                first = r.body();
+            }
+            assertThat(r.body()).isEqualTo(first);
+            Thread.sleep(5);
+        }
+    }
+
     private URI uri(String path) {
         return URI.create("http://localhost:" + port + path);
     }
