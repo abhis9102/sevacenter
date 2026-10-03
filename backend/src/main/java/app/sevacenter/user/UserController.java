@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -57,6 +58,13 @@ public class UserController {
     @PreAuthorize("hasRole('TRUST_ADMIN')")
     public UserResponse changeRole(@PathVariable long id, @Valid @RequestBody ChangeRoleRequest request) {
         return UserResponse.of(service.changeRole(id, request.role()));
+    }
+
+    /** Narrows a LEADER's or MEMBER's access per module (ADR 0021); an empty map removes all limits. */
+    @PutMapping("/{id}/module-access")
+    @PreAuthorize("hasRole('TRUST_ADMIN')")
+    public UserResponse changeModuleAccess(@PathVariable long id, @Valid @RequestBody ModuleAccessRequest request) {
+        return UserResponse.of(service.changeModuleAccess(id, request.limits()));
     }
 
     @PostMapping("/{id}/deactivate")
@@ -99,11 +107,16 @@ public class UserController {
     public record ChangeRoleRequest(@Schema(example = "LEADER") @NotNull Role role) {
     }
 
+    public record ModuleAccessRequest(
+            @Schema(example = "{\"DONATIONS\": \"NONE\", \"DEVOTEES\": \"VIEW\"}")
+            @NotNull java.util.Map<StaffModule, ModuleAccess> limits) {
+    }
+
     public record UserResponse(long id, String email, String displayName, Role role, UserStatus status,
-                               OffsetDateTime createdAt) {
+                               OffsetDateTime createdAt, java.util.Map<StaffModule, ModuleAccess> moduleLimits) {
         static UserResponse of(AppUser u) {
             return new UserResponse(u.getId(), u.getEmail(), u.getDisplayName(), u.getRole(), u.getStatus(),
-                    u.getCreatedAt());
+                    u.getCreatedAt(), u.getModuleLimits());
         }
     }
 

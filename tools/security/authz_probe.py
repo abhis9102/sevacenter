@@ -409,6 +409,22 @@ class Probe:
                    f"{status}")
         self.expect("anonymous cannot read an audit log", 401, self.client(b).request("GET", "/api/v1/audit"))
 
+        print("\nmodule access limits (ADR 0021)")
+        limited_id, _ = self.staff(a, admin_a, "limited@probe.example", "MEMBER")
+        limited = self.session(a, "limited@probe.example")
+        self.expect("member reads devotees before any limit", 200, limited.request("GET", "/api/v1/devotees"))
+        self.expect("leader cannot set access limits", 403,
+                    leader.request("PUT", f"/api/v1/users/{limited_id}/module-access", body={"limits": {}}))
+        self.expect("B's admin cannot limit A's staff", 404,
+                    admin_b.request("PUT", f"/api/v1/users/{limited_id}/module-access",
+                                    body={"limits": {"DEVOTEES": "NONE"}}))
+        self.expect("admin limits devotees to no access", 200,
+                    admin_a.request("PUT", f"/api/v1/users/{limited_id}/module-access",
+                                    body={"limits": {"DEVOTEES": "NONE"}}))
+        self.expect("the limit is enforced by the server", 403, limited.request("GET", "/api/v1/devotees"))
+        self.expect("...on every endpoint of the module", 403, limited.request("GET", "/api/v1/devotees/1"))
+        self.expect("a limit grants nothing beyond the role", 403, limited.request("GET", "/api/v1/donations"))
+
         print("\nCSRF")
         self.expect("state change without the CSRF header", 403,
                     admin_a.request("POST", "/api/v1/users", body=new_user, csrf=False))

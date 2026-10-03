@@ -12,7 +12,10 @@ import {
   hasRole,
   ROLE_LABELS,
   ROLES,
+  STAFF_MODULES,
   type CreatedStaffUser,
+  type ModuleAccess,
+  type ModuleLimits,
   type Role,
   type StaffUser,
   type UserStatus,
@@ -39,6 +42,7 @@ export default function StaffPage() {
   const [link, setLink] = useState<{ name: string; url: string; kind?: "setup" | "reset" } | null>(null);
   const [toDeactivate, setToDeactivate] = useState<StaffUser | null>(null);
   const [toDelete, setToDelete] = useState<StaffUser | null>(null);
+  const [toLimit, setToLimit] = useState<StaffUser | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -169,12 +173,20 @@ export default function StaffPage() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <Badge tone={STATUS[u.status]?.tone ?? "neutral"}>{STATUS[u.status]?.label ?? u.status}</Badge>
+                      <div className="flex flex-wrap gap-1">
+                        <Badge tone={STATUS[u.status]?.tone ?? "neutral"}>{STATUS[u.status]?.label ?? u.status}</Badge>
+                        {u.moduleLimits && Object.keys(u.moduleLimits).length > 0 ? <Badge tone="warning">Limited access</Badge> : null}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-muted">{formatDate(u.createdAt)}</td>
                     {isAdmin ? (
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-2">
+                          {u.role !== "TRUST_ADMIN" && u.status !== "DISABLED" ? (
+                            <Button variant="secondary" onClick={() => setToLimit(u)}>
+                              Access
+                            </Button>
+                          ) : null}
                           {u.status === "PENDING" ? (
                             <Button variant="secondary" onClick={() => void reissue(u)}>
                               New setup link
@@ -271,7 +283,72 @@ export default function StaffPage() {
           </Button>
         </div>
       </Dialog>
+
+      {toLimit ? (
+        <ModuleAccessDialog
+          user={toLimit}
+          onClose={() => setToLimit(null)}
+          onSaved={(updated) => {
+            setToLimit(null);
+            setNotice({ tone: "success", text: `Access updated for ${updated.displayName}.` });
+            void load();
+          }}
+        />
+      ) : null}
     </div>
+  );
+}
+
+const ACCESS_OPTIONS: { value: ModuleAccess; label: string }[] = [
+  { value: "FULL", label: "As their role allows" },
+  { value: "VIEW", label: "View only" },
+  { value: "NONE", label: "No access" },
+];
+
+/**
+ * Narrows what a leader or member can reach, per module (ADR 0021). The server enforces it on every
+ * request; limits only take away from the role and never add to it.
+ */
+function ModuleAccessDialog({ user, onClose, onSaved }: {
+  user: StaffUser;
+  onClose: () => void;
+  onSaved: (u: StaffUser) => void;
+}) {
+  const [limits, setLimits] = useState<ModuleLimits>(() => ({ ...(user.moduleLimits ?? {}) }));
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function save() {
+    setBusy(true);
+    setError(null);
+    try {
+      const only = Object.fromEntries(Object.entries(limits).filter(([, v]) => v !== "FULL"));
+      onSaved(await api.request<StaffUser>(`/users/${user.id}/module-access`, { method: "PUT", json: { limits: only } }));
+    } catch (err) {
+      setError(describeError(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog open onClose={onClose} title={`Access for ${user.displayName}`}>
+      <p className="text-sm text-muted">
+        {ROLE_LABELS[user.role]}s keep everything their role allows unless you limit a module here. Limits apply
+        from their next click; they can never give more than the role.
+      </p>
+      <div className="flex flex-col gap-3">
+        {STAFF_MODULES.map((m) => (
+          <SelectField key={m.id} label={m.label} value={limits[m.id] ?? "FULL"} options={ACCESS_OPTIONS}
+                       onChange={(e) => setLimits({ ...limits, [m.id]: e.target.value as ModuleAccess })} />
+        ))}
+      </div>
+      {error ? <Alert tone="danger">{error}</Alert> : null}
+      <div className="flex justify-end gap-2">
+        <Button variant="secondary" onClick={onClose}>Cancel</Button>
+        <Button busy={busy} onClick={() => void save()}>Save access</Button>
+      </div>
+    </Dialog>
   );
 }
 

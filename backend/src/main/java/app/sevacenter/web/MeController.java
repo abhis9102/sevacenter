@@ -29,7 +29,8 @@ public class MeController {
         AppUser u = users.findById(user.userId()).orElse(null);
         if (u != null) {
             String slug = tenants.findById(u.getTenantId()).map(Tenant::getSlug).orElse(null);
-            return new MeResponse(u.getId(), u.getEmail(), u.getDisplayName(), u.getRole().name(), slug, u.hasAvatar());
+            return new MeResponse(u.getId(), u.getEmail(), u.getDisplayName(), u.getRole().name(), slug, u.hasAvatar(),
+                    u.getModuleLimits());
         }
         return MeResponse.of(user, tenants);
     }
