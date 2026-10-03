@@ -28,11 +28,13 @@ public class DonationService {
 
     private final DonationRepository donations;
     private final DevoteeService devotees;
+    private final ReceiptService receipts;
     private final Clock clock = Clock.system(IST);
 
-    public DonationService(DonationRepository donations, DevoteeService devotees) {
+    public DonationService(DonationRepository donations, DevoteeService devotees, ReceiptService receipts) {
         this.donations = donations;
         this.devotees = devotees;
+        this.receipts = receipts;
     }
 
     /**
@@ -74,6 +76,7 @@ public class DonationService {
         }
         try {
             Donation reversal = donations.saveAndFlush(original.reversal(reason.strip(), LocalDate.now(clock), staffId));
+            receipts.cancelForDonation(donationId, reason.strip(), staffId); // same transaction
             audit.info("event=donation_reversed tenant={} user={} donation={} reversal={}", currentTenant(), staffId,
                     donationId, reversal.getId());
             return reversal;

@@ -6,16 +6,14 @@ import { useEffect, useState } from "react";
 
 import { api } from "@/components/apiClient";
 import { Diya, Wordmark } from "@/components/Diya";
+import { LanguageToggle } from "@/components/LanguageToggle";
+import { useLanguage } from "@/components/LanguageProvider";
 import { SessionProvider } from "@/components/Session";
 import { useTenant } from "@/components/TenantProvider";
-import { Alert, Badge, Button, Spinner } from "@/components/ui";
+import { Alert, Spinner } from "@/components/ui";
+import { UserMenu } from "@/components/UserMenu";
 import { ApiError, describeError } from "@/lib/errors";
-import { hasRole, ROLE_LABELS, type Me, type Role } from "@/lib/types";
-
-const NAV: ReadonlyArray<{ href: string; label: string; min: Role }> = [
-  { href: "/devotees", label: "Devotees", min: "MEMBER" },
-  { href: "/staff", label: "Staff", min: "LEADER" },
-];
+import { hasRole, type Me, type Role } from "@/lib/types";
 
 /** Signed-in shell: loads the current user (401 -> login), nav, user + role, sign out. */
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -25,6 +23,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (!tenant) {
@@ -42,13 +41,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       .catch((err) => {
         // A 401 is already on its way to /login (the API client redirects).
         if (!cancelled && !(err instanceof ApiError && err.status === 401)) {
-          setError(describeError(err));
+          setError(describeError(err, t.errors));
         }
       });
     return () => {
       cancelled = true;
     };
-  }, [tenant, router]);
+  }, [tenant, router, t.errors]);
+
+  useEffect(() => {
+    function handleUserUpdated() {
+      api.get<Me>("/me").then(setMe).catch(() => {});
+    }
+    window.addEventListener("user-updated", handleUserUpdated);
+    return () => window.removeEventListener("user-updated", handleUserUpdated);
+  }, []);
 
   async function signOut() {
     setSigningOut(true);
@@ -75,12 +82,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (!me) {
     return (
       <main className="flex min-h-dvh items-center justify-center gap-2 text-muted">
-        <Spinner /> Loading…
+        <Spinner /> {t.common.loading}
       </main>
     );
   }
 
-  const role = me.role as Role;
+  const navItems = [
+    { href: "/devotees", label: t.nav.devotees, min: "MEMBER" as Role },
+    { href: "/staff", label: t.nav.staff, min: "LEADER" as Role },
+  ];
+
   return (
     <SessionProvider value={me}>
       <div className="flex min-h-dvh flex-col">
@@ -94,7 +105,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               {me.tenant ?? tenant}
             </span>
             <nav aria-label="Main" className="order-last flex w-full gap-1 sm:order-none sm:w-auto">
-              {NAV.filter((n) => hasRole(me.role, n.min)).map((n) => {
+              {navItems.filter((n) => hasRole(me.role, n.min)).map((n) => {
                 const active = pathname === n.href || pathname.startsWith(`${n.href}/`);
                 return (
                   <Link
@@ -111,14 +122,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               })}
             </nav>
             <div className="ml-auto flex items-center gap-3">
-              <div className="text-right leading-tight">
-                <p className="text-sm font-medium">{me.displayName}</p>
-                <p className="text-xs text-muted">{me.email}</p>
-              </div>
-              <Badge tone="primary">{ROLE_LABELS[role] ?? me.role}</Badge>
-              <Button variant="secondary" onClick={signOut} busy={signingOut}>
-                Sign out
-              </Button>
+              <LanguageToggle />
+              <UserMenu me={me} onSignOut={signOut} signingOut={signingOut} />
             </div>
           </div>
         </header>

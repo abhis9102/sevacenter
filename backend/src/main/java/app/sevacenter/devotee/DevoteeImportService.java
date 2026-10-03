@@ -68,6 +68,9 @@ public class DevoteeImportService {
                     throw new ImportRejectedException("too_many_rows", List.of());
                 }
                 int line = (int) record.getRecordNumber() + 1; // +1: the header is line 1
+                if (isBlank(record)) {
+                    continue;
+                }
                 try {
                     Row row = row(record, line, errors);
                     if (row != null) {
@@ -135,6 +138,16 @@ public class DevoteeImportService {
         }
         // Same normalisation as the API (phone, NUL): throws InvalidFieldException -> a row error.
         return new Row(DevoteeService.normalise(details.toDomain()), consent);
+    }
+
+    private static boolean isBlank(CSVRecord r) {
+        for (String col : DevoteeCsv.COLUMNS) {
+            String val = r.isMapped(col) ? r.get(col) : null;
+            if (val != null && !val.isBlank()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static String cell(CSVRecord r, String column) {

@@ -51,6 +51,22 @@ public class AppUser {
     @Column(name = "created_at", insertable = false, updatable = false)
     private OffsetDateTime createdAt;
 
+    @Column(name = "notify_devotees", nullable = false)
+    private boolean notifyDevotees = true;
+
+    @Column(name = "notify_donations", nullable = false)
+    private boolean notifyDonations = true;
+
+    @Column(name = "notify_security", nullable = false)
+    private boolean notifySecurity = true;
+
+    /**
+     * Read-only here: {@link UserAvatar} owns the image columns, so the bytes (up to 2 MB) never
+     * load with the user, which StaffSessionFilter re-reads on every request.
+     */
+    @Column(name = "avatar_content_type", insertable = false, updatable = false)
+    private String avatarContentType;
+
     protected AppUser() { }
 
     public AppUser(Long tenantId, String email, String passwordHash, String displayName, Role role) {
@@ -71,6 +87,24 @@ public class AppUser {
     public void activate(String newPasswordHash) {
         this.passwordHash = newPasswordHash;
         this.status = UserStatus.ACTIVE;
+    }
+
+    public void updatePassword(String newPasswordHash) {
+        this.passwordHash = newPasswordHash;
+    }
+
+    public void updateDisplayName(String newDisplayName) {
+        this.displayName = newDisplayName;
+    }
+
+    public void updatePreferences(boolean notifyDevotees, boolean notifyDonations, boolean notifySecurity) {
+        this.notifyDevotees = notifyDevotees;
+        this.notifyDonations = notifyDonations;
+        this.notifySecurity = notifySecurity;
+    }
+
+    public boolean hasAvatar() {
+        return this.avatarContentType != null;
     }
 
     public void disable() {
@@ -100,4 +134,7 @@ public class AppUser {
     public Role getRole() { return role; }
     public UserStatus getStatus() { return status; }
     public OffsetDateTime getCreatedAt() { return createdAt; }
+    public boolean isNotifyDevotees() { return notifyDevotees; }
+    public boolean isNotifyDonations() { return notifyDonations; }
+    public boolean isNotifySecurity() { return notifySecurity; }
 }

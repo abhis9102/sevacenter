@@ -50,3 +50,24 @@ export function slugFromHost(
   }
   return null;
 }
+
+/** A tenant slug as the backend accepts it (V2 check): 3-40 lowercase letters, digits, hyphens. */
+export const REGISTERED_SLUG_RE = /^[a-z0-9]([a-z0-9-]{1,38}[a-z0-9])$/;
+
+/**
+ * The sign-in URL on a trust's own host, built from the slug a visitor typed. Validated first: the
+ * slug becomes part of a hostname, so "evil.example/x" must never turn into a link to evil.example.
+ */
+export function portalLoginUrl(
+  rawSlug: string,
+  location: { protocol: string; hostname: string; port: string },
+): string | null {
+  const slug = rawSlug.trim().toLowerCase();
+  if (!REGISTERED_SLUG_RE.test(slug)) {
+    return null;
+  }
+  const port = location.port ? `:${location.port}` : "";
+  const local = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+  const base = local ? "localhost" : location.hostname.replace(/^www\./, "");
+  return `${location.protocol}//${slug}.${base}${port}/login`;
+}

@@ -144,6 +144,38 @@ Tests in `DonationTest`; rows also in `authz_probe.py`.
 | Wrong FY totals (UTC vs IST, Apr–Mar) | FY computed in `Asia/Kolkata`, 1 Apr – 31 Mar | `summariesFollowTheIndianFinancialYear` |
 | Erasure vs statutory retention | Donor with donations → anonymised (row kept, PII gone); ledger keeps its donor-name snapshot (legal obligation) | `erasingADonorAnonymisesThemAndKeepsTheLedger` |
 
+### 80G receipts and PAN (M3.2, ADR 0012): threat → control → test
+
+Tests in `ReceiptTest` and `PanProtectionTest`; rows also in `authz_probe.py`.
+
+| Threat | Control | Test |
+|---|---|---|
+| Donor PAN leaked from a DB dump, backup, log or replica | AES-256-GCM in the app, random nonce; DB holds ciphertext + last 4 + HMAC index only; keys from env (KMS in M6) | `thePanIsStoredOnlyEncryptedAndShownInFullOnlyOnTheReceipt`, `roundTripsAndNeverRepeatsACiphertext` |
+| Ciphertext copied across tenants (SQL bug, insider) | Tenant id bound as GCM associated data | `aCiphertextMovedToAnotherTenantFailsToDecrypt` |
+| Tampered ciphertext or wrong key | GCM authentication: decrypt fails, nothing partial returned | `tamperedCiphertextAndOtherKeysFail` |
+| App started with no / placeholder / reused keys | Fails to start: 32-byte, non-constant, distinct keys required | `theAppRefusesToStartWithoutRealKeys` |
+| Full PAN in lists, browser caches, error messages | Lists show `XXXXXX1234`; single receipt `no-store`; validation errors never echo the value | `thePanIsStoredOnly…`, `anInvalidPanIsRejectedWithoutEchoingIt` |
+| Duplicate / skipped receipt numbers (tax compliance) | Per-tenant per-FY counter upsert, row-locked in the issuing transaction; `UNIQUE (tenant, fy, seq)` | `numbersAreSequentialPerFinancialYearAndPerTrust`, `concurrentIssuesGetUniqueConsecutiveNumbers` |
+| Ineligible 80G receipts (cash > ₹2,000, reversed or duplicate donations, registration not valid that day) | Refused with a specific 409 | `cashAboveTwoThousandRupeesIsNotEligible`, `oneReceiptPerDonation…`, `theTrustNeedsAProfile…` |
+| Rewriting an issued receipt | Insert-only grants; trust/donor snapshots; reversal adds a cancellation row, number never reused | `theAppRoleCannotEditOrDeleteReceipts`, `anIssuedReceiptKeepsTheTrustDetails…`, `reversingAReceiptedDonationCancels…` |
+| BOLA on receipts / donations of another trust | Forced RLS → 404 | `anotherTenantsReceiptsAndDonationsAreNotFound` |
+
+### Profile, avatar and password reset: threat → control → test
+
+From the review of the profile/avatar/i18n and password-reset work (tests in `ProfileTest`,
+`PasswordResetTest`).
+
+| Threat | Control | Test |
+|---|---|---|
+| **Account takeover:** `/forgot-password` returned the reset token to the caller when the profile was `local`, `test` *or `default`* (any deployment without a profile) | No endpoint gives a token to its caller. Reset links are issued by a TRUST_ADMIN (`POST /users/{id}/reset-link`) and handed over like setup links | `noEndpointGivesAResetTokenToWhoeverAsks`, probe |
+| Reset links surviving deactivation/deletion, or reviving a disabled account | Deactivate/delete mark links used; redeeming requires an ACTIVE user (each layer tested on its own) | `deactivationMarksOutstandingLinksUsed`, `aStillValidLinkCantResetAnAccountThatIsNoLongerActive`, `deactivatingOrDeletingStaffKillsTheirLinks` |
+| Reset link replay / old links / wrong host | Single use, newest only, 1 h, RLS-scoped | `anAdminIssuedLinkResetsThePasswordOnce`, `aNewLinkKillsTheOldOne`, `aLinkOnlyWorksOnItsOwnTrustsHost` |
+| Password guessing through change-password with a stolen session | Same per-account lockout as login | `wrongCurrentPasswordsLockLikeLogin` |
+| Avatar as stored XSS / MIME confusion | Type from magic bytes (PNG/JPEG/WebP only), 2 MB, served under `/api/**` (nosniff + sandbox CSP) | `ProfileTest` avatar tests |
+| Avatar bytes (2 MB) loaded on every request (the session filter re-reads the user) | Image columns mapped on `UserAvatar` only | `theUserEntityNeverCarriesImageBytes` |
+| Staff opting out of the audit trail | No "activity log" opt-out (removed with the unused directory toggle) | `getProfileReturnsCurrentUserInfoAndDefaultPreferences` |
+| Open redirect via the "go to your temple" box (`evil.example/x` became the host) | Slug validated like registration before building the URL | `routing.test.ts` → `portalLoginUrl` |
+
 ## Open questions
 
 - Public donor access: own login vs. link/OTP (affects the auth surface).

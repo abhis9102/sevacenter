@@ -23,6 +23,10 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> {
 
     Optional<AppUser> findByIdAndDeletedAtIsNull(Long id);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select u from AppUser u where u.id = ?1 and u.deletedAt is null")
+    Optional<AppUser> findLockedByIdAndDeletedAtIsNull(Long id);
+
     /**
      * The tenant's active admins, row-locked: demoting or disabling an admin re-counts under the
      * lock, so two admins demoting each other at the same moment can't leave the trust with none.

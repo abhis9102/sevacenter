@@ -296,6 +296,38 @@ class UserManagementTest {
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.error").value("email_taken"));
     }
 
+    /**
+     * Delete and link-issuing for the same user serialize on the user row (DAST found a reissue
+     * racing a delete: a token inserted for a just-deleted user, a foreign-key 500).
+     */
+    @Test
+    void linkIssuingAndDeletionLockTheUserRow() throws Exception {
+        long id = userId(createUser(a, adminA, "racer@x.example", "MEMBER"));
+        long tenantA = tenants.findBySlug(a).orElseThrow().getId();
+        CountDownLatch locked = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        ExecutorService pool = Executors.newSingleThreadExecutor();
+        try {
+            Future<?> holder = pool.submit(() -> tx.executeWithoutResult(st -> {
+                pin(tenantA);
+                assertThat(users.findLockedByIdAndDeletedAtIsNull(id)).isPresent();
+                locked.countDown();
+                await(release);
+            }));
+            locked.await();
+            assertThatThrownBy(() -> tx.executeWithoutResult(st -> {
+                pin(tenantA);
+                jdbc.execute("set local lock_timeout = '300ms'");
+                users.findLockedByIdAndDeletedAtIsNull(id);
+            })).isInstanceOf(CannotAcquireLockException.class);
+            release.countDown();
+            holder.get();
+        } finally {
+            release.countDown();
+            pool.shutdownNow();
+        }
+    }
+
     // --- deleting staff ----------------------------------------------------------------------
 
     @Test

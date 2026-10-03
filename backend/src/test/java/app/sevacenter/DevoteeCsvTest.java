@@ -80,6 +80,13 @@ class DevoteeCsvTest {
     }
 
     @Test
+    void exportMatchesEvenWhenAcceptHeaderIsApplicationJson() throws Exception {
+        mvc.perform(on(a, get("/api/v1/devotees/export")).session(admin).accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", org.hamcrest.Matchers.startsWith("text/csv")));
+    }
+
+    @Test
     void exportedCellsCannotRunAsSpreadsheetFormulas() throws Exception {
         createJson("{\"fullName\":\"=HYPERLINK(\\\"https://evil.example\\\",\\\"click\\\")\",\"phone\":\"9876543210\","
                 + "\"city\":\"@SUM(1+1)\",\"state\":\"-2+3\",\"consentSource\":\"IN_PERSON\"}");
@@ -178,6 +185,13 @@ class DevoteeCsvTest {
     void nulBytesInCellsAreARowErrorNotAServerError() throws Exception {
         importCsv(admin, HEADER + ROW.replace("Pune", "Pu\u0000ne"))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.rows[0].field").value("city"));
+    }
+
+    @Test
+    void trailingBlankRowsAreGracefullyIgnored() throws Exception {
+        importCsv(admin, HEADER + ROW + ",,,,,,,,\n")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.imported").value(1));
     }
 
     // --- helpers -----------------------------------------------------------------------------

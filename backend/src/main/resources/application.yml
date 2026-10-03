@@ -45,6 +45,14 @@ management:
 springdoc:
   show-login-endpoint: true
 
+# Donor PAN protection (ADR 0012): AES-256-GCM key + a separate HMAC key for the blind index,
+# from the environment only (KMS in M6). Empty default on purpose: the app refuses to start with
+# a clear message (PanProtection) instead of running without protection.
+sevacenter:
+  pan:
+    encryption-key: ${SEVACENTER_PAN_KEY:}
+    index-key: ${SEVACENTER_PAN_INDEX_KEY:}
+
 # Staff session (ADR 0007/0009). Not the default JSESSIONID name (a framework fingerprint).
 # HttpOnly: JavaScript never sees it. SameSite=Lax: not sent on cross-site subrequests, but a
 # link from WhatsApp/email to the admin still arrives logged in. Secure by default; only the

@@ -5,7 +5,7 @@ ZAP finds injection, headers and error handling. It can't find broken access con
 GET /users/7 looks fine unless you know user 7 belongs to another tenant. This probe knows. It
 seeds two tenants with admins, a leader and a member, then runs a matrix of
 identity x endpoint x host and fails on any status other than the expected one. Every new
-endpoint gets rows here (users: M1; devotees + CSV: M2; donations: M3).
+endpoint gets rows here (users: M1; devotees + CSV: M2; donations + receipts: M3).
 
 Tenants are resolved from the real Host header (<slug>.sevacenter.app), as in production, not
 from the dev-only X-Tenant-Slug override.
@@ -174,6 +174,10 @@ class Probe:
         self.expect("leader cannot issue setup links", 403,
                     leader.request("POST", f"/api/v1/users/{pending_a}/setup-link"))
         self.expect("leader cannot delete staff", 403, leader.request("DELETE", f"/api/v1/users/{pending_a}"))
+        self.expect("leader cannot issue password reset links", 403,
+                    leader.request("POST", f"/api/v1/users/{pending_a}/reset-link"))
+        self.expect("no endpoint hands a reset token to whoever asks", 401,
+                    anon.request("POST", "/api/v1/auth/forgot-password", body={"email": admin(a)}))
         self.expect("member cannot promote themselves", 403,
                     member.request("PATCH", f"/api/v1/users/{pending_a}/role", body={"role": "TRUST_ADMIN"}))
 
@@ -183,6 +187,7 @@ class Probe:
         self.expect("deactivate B's user by id", 404, admin_a.request("POST", f"/api/v1/users/{victim_b}/deactivate"))
         self.expect("issue a setup link for B's user", 404, admin_a.request("POST", f"/api/v1/users/{victim_b}/setup-link"))
         self.expect("delete B's user by id", 404, admin_a.request("DELETE", f"/api/v1/users/{victim_b}"))
+        self.expect("reset link for B's user", 404, admin_a.request("POST", f"/api/v1/users/{victim_b}/reset-link"))
         _, users_a = admin_a.request("GET", "/api/v1/users")
         _, users_b = admin_b.request("GET", "/api/v1/users")
         emails_a = {u["email"] for u in users_a}
@@ -281,6 +286,34 @@ class Probe:
                     admin_a.request("POST", f"/api/v1/donations/{gift_a}/reverse", body={"reason": "probe reversal again"}))
         self.expect("no endpoint edits the ledger", 405,
                     admin_a.request("PUT", f"/api/v1/donations/{gift_a}", body=gift))
+
+        print("\n80G receipts (M3.2, ADR 0012): roles, PAN never in lists, cross-tenant ids")
+        trust = {"legalName": "Probe Trust", "address": "1 Probe Road, Pune", "pan": "AAATP1234F",
+                 "registration80g": "AAATP1234FF20214", "validFrom": "2020-04-01", "validTo": "2030-03-31"}
+        self.expect("leader cannot edit the trust profile", 403, leader.request("PUT", "/api/v1/trust-profile", body=trust))
+        self.expect("admin sets the trust profile", 200, admin_a.request("PUT", "/api/v1/trust-profile", body=trust))
+        self.expect("B's admin sets B's trust profile", 200,
+                    admin_b.request("PUT", "/api/v1/trust-profile", body=dict(trust, legalName="Probe Trust B")))
+        body = self.expect("leader records a donation to receipt", 201,
+                           leader.request("POST", "/api/v1/donations", body=dict(gift, amount="501")))
+        to_receipt = (body or {}).get("id")
+        issue = {"donorPan": "ABCPE1234F", "donorAddress": "12 Probe Street"}
+        self.expect("member cannot issue a receipt", 403,
+                    member.request("POST", f"/api/v1/donations/{to_receipt}/receipt", body=issue))
+        body = self.expect("leader issues a receipt", 201,
+                           leader.request("POST", f"/api/v1/donations/{to_receipt}/receipt", body=issue))
+        receipt_a = (body or {}).get("id")
+        _, listed = leader.request("GET", "/api/v1/receipts?fy=2026")
+        self.check("receipt lists never carry the full PAN", "ABCPE1234F" not in json.dumps(listed), str(listed)[:160])
+        body = self.expect("B issues a receipt", 201, admin_b.request("POST", f"/api/v1/donations/{gift_b}/receipt",
+                                                                        body=issue))
+        receipt_b = (body or {}).get("id")
+        self.expect("A reads B's receipt by id", 404, admin_a.request("GET", f"/api/v1/receipts/{receipt_b}"))
+        self.expect("A receipts B's donation", 404,
+                    admin_a.request("POST", f"/api/v1/donations/{gift_b}/receipt", body=issue))
+        self.expect("a second receipt for one donation is refused", 409,
+                    leader.request("POST", f"/api/v1/donations/{to_receipt}/receipt", body=issue))
+        self.expect("receipts can't be edited", 405, admin_a.request("PUT", f"/api/v1/receipts/{receipt_a}", body=issue))
 
         print("\nCSRF")
         self.expect("state change without the CSRF header", 403,

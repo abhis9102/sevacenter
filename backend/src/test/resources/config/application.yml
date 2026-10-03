@@ -1,0 +1,6 @@
+# Test-only overrides, merged on top of the main application.yml (config/ wins).
+# Synthetic PAN keys (bytes 0..31 and 32..63): valid for PanProtection's checks, obviously not real.
+sevacenter:
+  pan:
+    encryption-key: AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=  # gitleaks:allow (synthetic test key)
+    index-key: ICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj8=  # gitleaks:allow (synthetic test key)

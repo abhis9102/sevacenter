@@ -12,8 +12,12 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
 
+import app.sevacenter.auth.LoginThrottle;
 import app.sevacenter.tenant.TenantContext;
 import app.sevacenter.tenant.TenantRepository;
+import app.sevacenter.web.InvalidFieldException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,19 +37,95 @@ public class UserManagementService {
     static final Duration SETUP_LINK_TTL = Duration.ofHours(72);
     private static final SecureRandom RANDOM = new SecureRandom();
 
+    private static final Logger audit = LoggerFactory.getLogger("audit");
+
     private final AppUserRepository users;
     private final SetupTokenRepository setupTokens;
     private final TenantRepository tenants;
     private final PasswordEncoder passwordEncoder;
+    private final UserAvatarRepository avatars;
+    private final LoginThrottle throttle;
+    private final PasswordResetService resets;
     private final Clock clock;
 
     public UserManagementService(AppUserRepository users, SetupTokenRepository setupTokens,
-                                 TenantRepository tenants, PasswordEncoder passwordEncoder) {
+                                 TenantRepository tenants, PasswordEncoder passwordEncoder,
+                                 UserAvatarRepository avatars, LoginThrottle throttle,
+                                 PasswordResetService resets) {
         this.users = users;
         this.setupTokens = setupTokens;
         this.tenants = tenants;
         this.passwordEncoder = passwordEncoder;
+        this.avatars = avatars;
+        this.throttle = throttle;
+        this.resets = resets;
         this.clock = Clock.systemUTC();
+    }
+
+    @Transactional(readOnly = true)
+    public AppUser getProfile(long userId) {
+        return find(userId);
+    }
+
+    @Transactional
+    public AppUser updateProfile(long userId, String displayName, boolean notifyDevotees, boolean notifyDonations,
+                                 boolean notifySecurity) {
+        AppUser user = find(userId);
+        if (displayName != null && !displayName.isBlank()) {
+            user.updateDisplayName(displayName.trim());
+        }
+        user.updatePreferences(notifyDevotees, notifyDonations, notifySecurity);
+        audit.info("event=profile_update tenant={} user={}", user.getTenantId(), user.getId());
+        return user;
+    }
+
+    @Transactional
+    public void changePassword(long userId, String currentPassword, String newPassword) {
+        AppUser user = find(userId);
+        // Same per-account lockout as login, so a stolen session can't guess the password here
+        // instead (guesses here count toward the login lockout, and vice versa).
+        String key = LoginThrottle.accountKey(user.getTenantId(), user.getEmail());
+        if (throttle.isLocked(key)) {
+            throw new LoginThrottle.TooManyAttemptsException();
+        }
+        if (currentPassword == null || !passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throttle.recordFailure(key);
+            throw new InvalidFieldException("currentPassword", "Current password does not match");
+        }
+        if (newPassword == null || newPassword.length() < 12 || newPassword.length() > 200) {
+            throw new InvalidFieldException("newPassword", "Password must be at least 12 characters");
+        }
+        if (currentPassword.equals(newPassword)) {
+            throw new InvalidFieldException("newPassword", "New password must be different from current password");
+        }
+        user.updatePassword(passwordEncoder.encode(newPassword));
+        throttle.reset(key);
+        audit.info("event=password_change tenant={} user={}", user.getTenantId(), user.getId());
+    }
+
+    @Transactional
+    public void updateAvatar(long userId, byte[] bytes) {
+        String contentType = AvatarProtection.detectContentType(bytes);
+        AppUser user = find(userId);
+        avatarOf(user).replace(bytes, contentType);
+        audit.info("event=avatar_update tenant={} user={} bytes={} contentType={}",
+                user.getTenantId(), user.getId(), bytes.length, contentType);
+    }
+
+    @Transactional(readOnly = true)
+    public AvatarRecord getAvatar(long userId) {
+        UserAvatar avatar = avatarOf(find(userId));
+        if (avatar.getContentType() == null) {
+            throw new AvatarNotFoundException();
+        }
+        return new AvatarRecord(avatar.getData(), avatar.getContentType());
+    }
+
+    @Transactional
+    public void removeAvatar(long userId) {
+        AppUser user = find(userId);
+        avatarOf(user).clear();
+        audit.info("event=avatar_remove tenant={} user={}", user.getTenantId(), user.getId());
     }
 
     @Transactional(readOnly = true)
@@ -65,10 +145,29 @@ public class UserManagementService {
         return new CreatedUser(user, issueSetupLink(user));
     }
 
+    /**
+     * A one-time password reset link for an ACTIVE staff member, handed over by the admin like a
+     * setup link (no email yet). Not for yourself: use change-password, which needs your current one.
+     */
+    @Transactional
+    public String issueResetLink(long userId, long callerId) {
+        if (userId == callerId) {
+            throw new UserConflictException("use_change_password");
+        }
+        AppUser user = findLocked(userId);
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new UserConflictException("not_active");
+        }
+        String token = resets.issueFor(user);
+        String slug = tenants.findById(user.getTenantId()).orElseThrow().getSlug();
+        // In the fragment, like setup links: never sent to a server, never in logs or Referer.
+        return "https://" + slug + ".sevacenter.app/reset-password#token=" + token;
+    }
+
     /** A fresh link for a PENDING user; any earlier link stops working. */
     @Transactional
     public String reissueSetupLink(long userId) {
-        AppUser user = find(userId);
+        AppUser user = findLocked(userId);
         if (user.getStatus() != UserStatus.PENDING) {
             throw new UserConflictException("not_pending");
         }
@@ -93,6 +192,7 @@ public class UserManagementService {
         }
         user.disable();
         setupTokens.deleteAllForUser(user.getId());
+        resets.invalidateFor(user.getId());
         return user;
     }
 
@@ -106,11 +206,12 @@ public class UserManagementService {
         if (userId == callerId) {
             throw new UserConflictException("cannot_delete_self");
         }
-        AppUser user = find(userId);
+        AppUser user = findLocked(userId);
         if (user.getRole() == Role.TRUST_ADMIN && user.getStatus() == UserStatus.ACTIVE) {
             requireAnotherActiveAdmin(user);
         }
         setupTokens.deleteAllForUser(user.getId());
+        resets.invalidateFor(user.getId());
         if (user.getStatus() == UserStatus.PENDING) {
             users.delete(user);
         } else {
@@ -155,6 +256,14 @@ public class UserManagementService {
         }
     }
 
+    /**
+     * Row-locked: reissuing a link, issuing a reset link and deleting the same user serialize, so a
+     * link is never inserted for a user deleted a moment earlier (a foreign-key 500, found by DAST).
+     */
+    private AppUser findLocked(long userId) {
+        return users.findLockedByIdAndDeletedAtIsNull(userId).orElseThrow(UserNotFoundException::new);
+    }
+
     private AppUser find(long userId) {
         return users.findByIdAndDeletedAtIsNull(userId).orElseThrow(UserNotFoundException::new);
     }
@@ -190,4 +299,14 @@ public class UserManagementService {
 
     /** 400: one answer for unknown, used, expired and other-tenant tokens. */
     public static class InvalidSetupTokenException extends RuntimeException { }
+
+    /** The image columns of this (already tenant- and deletion-checked) user; RLS applies too. */
+    private UserAvatar avatarOf(AppUser user) {
+        return avatars.findById(user.getId()).orElseThrow(UserNotFoundException::new);
+    }
+
+    public record AvatarRecord(byte[] data, String contentType) { }
+
+    /** 404: user has no avatar uploaded. */
+    public static class AvatarNotFoundException extends RuntimeException { }
 }

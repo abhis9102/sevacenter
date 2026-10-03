@@ -62,7 +62,7 @@ public class LoginThrottle {
         failures.remove(key);
     }
 
-    static String accountKey(long tenantId, String email) {
+    public static String accountKey(long tenantId, String email) {
         return "acct:" + tenantId + ":" + (email == null ? "" : email.trim().toLowerCase(Locale.ROOT));
     }
 
@@ -73,6 +73,9 @@ public class LoginThrottle {
     private Instant now() {
         return clock.instant();
     }
+
+    /** 429: a locked key (see LoginThrottleFilter for login; also used by password change). */
+    public static class TooManyAttemptsException extends RuntimeException { }
 
     private record Failures(int count, Instant windowEnd) {
         boolean expired(Instant now) {

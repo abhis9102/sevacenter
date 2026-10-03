@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { api } from "@/components/apiClient";
+import { useLanguage } from "@/components/LanguageProvider";
 import { useMe } from "@/components/Session";
 import { Alert, Button, Card, PageHeader } from "@/components/ui";
 import { ApiError, describeError } from "@/lib/errors";
@@ -15,6 +16,7 @@ const MAX_BYTES = 2 * 1024 * 1024;
 
 export default function ImportDevoteesPage() {
   const me = useMe();
+  const { t } = useLanguage();
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<number | null>(null);
@@ -26,7 +28,11 @@ export default function ImportDevoteesPage() {
   }
 
   function downloadTemplate() {
-    const blob = new Blob([`${COLUMNS.join(",")}\r\n`], { type: "text/csv;charset=utf-8" });
+    const sample = [
+      COLUMNS.join(","),
+      "Lakshmi Iyer,9876543210,lakshmi@example.org,12 Temple Street,Pune,Maharashtra,411001,1980-05-14,IN_PERSON",
+    ].join("\r\n");
+    const blob = new Blob([`${sample}\r\n`], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -41,11 +47,11 @@ export default function ImportDevoteesPage() {
     setError(null);
     setRows([]);
     if (!file) {
-      setError("Choose a CSV file first.");
+      setError(t.devotees.importPage.chooseFileError);
       return;
     }
     if (file.size > MAX_BYTES) {
-      setError("That file is too large. The limit is 2 MB.");
+      setError(t.errors.upload_too_large ?? "That file is too large. The limit is 2 MB.");
       return;
     }
     const body = new FormData();
@@ -56,7 +62,7 @@ export default function ImportDevoteesPage() {
       setResult(res.imported);
       setFile(null);
     } catch (err) {
-      setError(describeError(err));
+      setError(describeError(err, t.errors));
       if (err instanceof ApiError) {
         setRows(err.rows);
       }
@@ -68,19 +74,18 @@ export default function ImportDevoteesPage() {
   return (
     <div className="flex flex-col gap-6">
       <Link href="/devotees" className="text-sm text-primary-strong hover:underline">
-        ← All devotees
+        {t.devotees.importPage.backLink}
       </Link>
       <PageHeader
-        title="Import devotees"
-        description="Add many devotees at once from a CSV file. Every row is checked with the same rules as the form; if any row has an error, nothing is imported."
+        title={t.devotees.importPage.title}
+        description={t.devotees.importPage.description}
       />
 
       <Card className="flex max-w-3xl flex-col gap-4">
         <div className="text-sm">
-          <p className="font-medium">File format</p>
+          <p className="font-medium">{t.devotees.importPage.formatTitle}</p>
           <p className="mt-1 text-muted">
-            CSV (UTF-8) with a header row and these columns. Only <span className="font-mono">fullName</span> and{" "}
-            <span className="font-mono">consentSource</span> are required on each row.
+            {t.devotees.importPage.formatDescription}
           </p>
           <p className="mt-2 break-words font-mono text-xs">{COLUMNS.join(", ")}</p>
           <ul className="mt-2 list-disc pl-5 text-muted">
@@ -93,13 +98,13 @@ export default function ImportDevoteesPage() {
             <li>A file exported from SevaCenter can be imported as is; each row becomes a new devotee.</li>
           </ul>
           <Button variant="ghost" className="mt-2 -ml-3" onClick={downloadTemplate}>
-            Download empty template
+            {t.devotees.importPage.downloadTemplate}
           </Button>
         </div>
 
         <form onSubmit={onSubmit} className="flex flex-col gap-3">
           <label htmlFor="csv-file" className="text-sm font-medium">
-            CSV file
+            {t.devotees.importPage.fileLabel}
           </label>
           <input
             id="csv-file"
@@ -110,17 +115,17 @@ export default function ImportDevoteesPage() {
           />
           <div>
             <Button type="submit" busy={busy} disabled={!file}>
-              Import
+              {busy ? t.devotees.importPage.importing : t.devotees.importPage.importButton}
             </Button>
           </div>
         </form>
       </Card>
 
       {result !== null ? (
-        <Alert tone="success" title="Import complete">
-          {result === 1 ? "1 devotee was added." : `${result} devotees were added.`}{" "}
+        <Alert tone="success" title={t.common.success}>
+          {result === 1 ? t.devotees.importPage.importCompleteSingle : t.devotees.importPage.importCompleteMultiple(result)}{" "}
           <Link href="/devotees" className="underline">
-            View devotees
+            {t.devotees.importPage.viewDevotees}
           </Link>
         </Alert>
       ) : null}
@@ -129,12 +134,12 @@ export default function ImportDevoteesPage() {
       {rows.length > 0 ? (
         <Card className="max-w-3xl overflow-x-auto p-0">
           <table className="w-full text-left text-sm">
-            <caption className="px-4 pt-4 text-left font-medium">Rows to fix</caption>
+            <caption className="px-4 pt-4 text-left font-medium">{t.devotees.importPage.rowsToFix}</caption>
             <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
               <tr>
-                <th scope="col" className="px-4 py-3 font-medium">Line</th>
-                <th scope="col" className="px-4 py-3 font-medium">Column</th>
-                <th scope="col" className="px-4 py-3 font-medium">Problem</th>
+                <th scope="col" className="px-4 py-3 font-medium">{t.devotees.importPage.colLine}</th>
+                <th scope="col" className="px-4 py-3 font-medium">{t.devotees.importPage.colColumn}</th>
+                <th scope="col" className="px-4 py-3 font-medium">{t.devotees.importPage.colProblem}</th>
               </tr>
             </thead>
             <tbody>

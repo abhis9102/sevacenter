@@ -32,6 +32,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
     }
 
+    @ExceptionHandler(UserManagementService.AvatarNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> onAvatarNotFound() {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "avatar_not_found"));
+    }
+
     @ExceptionHandler(DevoteeService.DevoteeNotFoundException.class)
     public ResponseEntity<Map<String, Object>> onDevoteeNotFound() {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
@@ -39,6 +44,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DonationService.DonationNotFoundException.class)
     public ResponseEntity<Map<String, Object>> onDonationNotFound() {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
+    }
+
+    @ExceptionHandler(app.sevacenter.donation.ReceiptService.ReceiptNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> onReceiptNotFound() {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
     }
 
@@ -73,6 +83,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(Map.of("error", "invalid_or_expired_link"));
     }
 
+    @ExceptionHandler(app.sevacenter.user.PasswordResetService.InvalidResetTokenException.class)
+    public ResponseEntity<Map<String, Object>> onInvalidResetToken() {
+        return ResponseEntity.badRequest().body(Map.of("error", "invalid_or_expired_link"));
+    }
+
     // Found by DAST (M2 slice 2): these surfaced as 500s.
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
@@ -90,6 +105,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
     public ResponseEntity<Map<String, Object>> onConcurrentChange() {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "concurrent_modification"));
+    }
+
+    @ExceptionHandler(app.sevacenter.auth.LoginThrottle.TooManyAttemptsException.class)
+    public ResponseEntity<Map<String, Object>> onTooManyAttempts() {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(Map.of("error", "too_many_attempts"));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

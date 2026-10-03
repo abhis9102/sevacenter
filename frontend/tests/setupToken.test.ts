@@ -79,7 +79,13 @@ describe("localEquivalentSetupUrl", () => {
   it("does nothing outside *.localhost", () => {
     assert.equal(localEquivalentSetupUrl(link, "https://siddheshwar.sevacenter.app"), null);
   });
-  it("only maps setup links", () => {
+  it("also maps password reset links", () => {
+    assert.equal(
+      localEquivalentSetupUrl(`https://siddheshwar.sevacenter.app/reset-password#token=${TOKEN}`, "http://siddheshwar.localhost:3000"),
+      `http://siddheshwar.localhost:3000/reset-password#token=${TOKEN}`,
+    );
+  });
+  it("only maps setup and reset links", () => {
     assert.equal(localEquivalentSetupUrl("https://evil.example/elsewhere#x", "http://a.localhost:3000"), null);
   });
 });
