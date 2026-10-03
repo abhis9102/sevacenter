@@ -3,7 +3,7 @@
  * `/login?next=https://evil.example` (or `//evil.example`, `/\evil.example`, `javascript:`)
  * can never turn our login page into an open redirect.
  */
-export const DEFAULT_AFTER_LOGIN = "/devotees";
+export const DEFAULT_AFTER_LOGIN = "/dashboard";
 
 const BASE = "http://sevacenter.invalid";
 
