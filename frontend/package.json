@@ -12,7 +12,7 @@
     "start": "NEXT_TELEMETRY_DISABLED=1 next start --port ${PORT:-3000}",
     "lint": "eslint --max-warnings=0 .",
     "typecheck": "NEXT_TELEMETRY_DISABLED=1 next typegen && tsc --noEmit",
-    "test": "rm -rf .test-build && tsc -p tsconfig.test.json && node --test .test-build/tests/"
+    "test": "rm -rf .test-build && tsc -p tsconfig.test.json && node --test .test-build/tests/*.test.js"
   },
   "dependencies": {
     "next": "16.3.8",
