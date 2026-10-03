@@ -3,7 +3,8 @@ package app.sevacenter.config;
 import app.sevacenter.auth.LoginHandlers;
 import app.sevacenter.auth.LoginThrottle;
 import app.sevacenter.auth.LoginThrottleFilter;
-import app.sevacenter.auth.TenantBindingFilter;
+import app.sevacenter.auth.StaffSessionFilter;
+import app.sevacenter.user.AppUserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -28,7 +29,8 @@ import org.springframework.security.web.header.writers.CrossOriginResourcePolicy
  * <p>Secure-by-default: every request requires authentication except an explicit allowlist
  * of public endpoints. Staff authenticate with a server-side session (ADR 0007/0009): form
  * login at {@value #LOGIN_PATH} on their tenant's host, CSRF on every state-changing request,
- * the session bound to that tenant ({@link TenantBindingFilter}), and roles enforced with
+ * the session bound to that tenant and re-validated per request ({@link StaffSessionFilter}),
+ * and roles enforced with
  * {@code @PreAuthorize} over a TRUST_ADMIN > LEADER > MEMBER hierarchy.
  */
 @Configuration
@@ -46,6 +48,7 @@ public class SecurityConfig {
     private static final String[] PUBLIC_ENDPOINTS = {
             "/api/v1/ping",
             "/api/v1/register",
+            "/api/v1/auth/setup",   // one-time setup link: the user has no password yet
             "/api/v1/csrf",
             "/actuator/health",
             "/actuator/health/**",
@@ -62,7 +65,7 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, LoginHandlers loginHandlers,
-                                            LoginThrottle loginThrottle) throws Exception {
+                                            LoginThrottle loginThrottle, AppUserRepository users) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
@@ -102,8 +105,9 @@ public class SecurityConfig {
                                 response.sendError(HttpStatus.UNAUTHORIZED.value())))
                 .addFilterBefore(new LoginThrottleFilter(loginThrottle, LOGIN_PATH),
                         UsernamePasswordAuthenticationFilter.class)
-                // After the session's security context is loaded, before authorization.
-                .addFilterBefore(new TenantBindingFilter(), ExceptionTranslationFilter.class);
+                // After the session's security context is loaded, before authorization: tenant
+                // binding + revocation (deactivated users, role changes) on every request.
+                .addFilterBefore(new StaffSessionFilter(users), ExceptionTranslationFilter.class);
         return http.build();
     }
 

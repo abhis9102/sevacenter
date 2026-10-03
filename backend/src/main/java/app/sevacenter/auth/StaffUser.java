@@ -5,6 +5,7 @@ import java.util.List;
 
 import app.sevacenter.user.AppUser;
 import app.sevacenter.user.Role;
+import app.sevacenter.user.UserStatus;
 import org.springframework.security.core.CredentialsContainer;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -12,7 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 /**
  * The authenticated staff member. Carries the tenant it belongs to, so every request can be
- * checked against the Host's tenant ({@link TenantBindingFilter}). Stored in the HTTP session,
+ * checked against the Host's tenant ({@link StaffSessionFilter}). Stored in the HTTP session,
  * hence Serializable via UserDetails; the password hash is erased after authentication.
  */
 public final class StaffUser implements UserDetails, CredentialsContainer {
@@ -31,7 +32,7 @@ public final class StaffUser implements UserDetails, CredentialsContainer {
         this.email = user.getEmail();
         this.displayName = user.getDisplayName();
         this.role = user.getRole();
-        this.active = "ACTIVE".equals(user.getStatus());
+        this.active = user.getStatus() == UserStatus.ACTIVE;
         this.passwordHash = user.getPasswordHash();
     }
 

@@ -30,7 +30,8 @@ public class AppUser {
     @Column(nullable = false)
     private String email;
 
-    @Column(name = "password_hash", nullable = false)
+    /** Null while PENDING (V4 enforces: an ACTIVE user always has one). */
+    @Column(name = "password_hash")
     private String passwordHash;
 
     @Column(name = "display_name", nullable = false)
@@ -40,8 +41,9 @@ public class AppUser {
     @Column(nullable = false)
     private Role role;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status = "ACTIVE";
+    private UserStatus status = UserStatus.ACTIVE;
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private OffsetDateTime createdAt;
@@ -56,12 +58,32 @@ public class AppUser {
         this.role = role;
     }
 
+    /** A user an admin has created; they set their own password via a one-time setup link. */
+    public static AppUser pending(Long tenantId, String email, String displayName, Role role) {
+        AppUser user = new AppUser(tenantId, email, null, displayName, role);
+        user.status = UserStatus.PENDING;
+        return user;
+    }
+
+    public void activate(String newPasswordHash) {
+        this.passwordHash = newPasswordHash;
+        this.status = UserStatus.ACTIVE;
+    }
+
+    public void disable() {
+        this.status = UserStatus.DISABLED;
+    }
+
+    public void changeRole(Role newRole) {
+        this.role = newRole;
+    }
+
     public Long getId() { return id; }
     public Long getTenantId() { return tenantId; }
     public String getEmail() { return email; }
     public String getPasswordHash() { return passwordHash; }
     public String getDisplayName() { return displayName; }
     public Role getRole() { return role; }
-    public String getStatus() { return status; }
+    public UserStatus getStatus() { return status; }
     public OffsetDateTime getCreatedAt() { return createdAt; }
 }

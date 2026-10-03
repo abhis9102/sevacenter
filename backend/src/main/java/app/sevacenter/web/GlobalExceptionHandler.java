@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import app.sevacenter.auth.SlugAlreadyTakenException;
+import app.sevacenter.user.UserManagementService;
 
 /**
  * Turns exceptions into clean API errors. Deliberately terse: it reports what the caller
@@ -19,6 +20,21 @@ import app.sevacenter.auth.SlugAlreadyTakenException;
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(UserManagementService.UserNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> onUserNotFound() {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
+    }
+
+    @ExceptionHandler(UserManagementService.UserConflictException.class)
+    public ResponseEntity<Map<String, Object>> onUserConflict(UserManagementService.UserConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(UserManagementService.InvalidSetupTokenException.class)
+    public ResponseEntity<Map<String, Object>> onInvalidSetupToken() {
+        return ResponseEntity.badRequest().body(Map.of("error", "invalid_or_expired_link"));
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> onValidation(MethodArgumentNotValidException ex) {
