@@ -8,7 +8,7 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { useMe } from "@/components/Session";
 import { Alert, Button, Card, Spinner } from "@/components/ui";
 import { ApiError, describeError } from "@/lib/errors";
-import { hasRole, type DonationItem, type DonationPage, type DonationSummary, type DonationMode, type ReceiptDetail, DONATION_MODES } from "@/lib/types";
+import { hasRole, type DonationFund, type DonationItem, type DonationPage, type DonationSummary, type DonationMode, type ReceiptDetail, DONATION_MODES } from "@/lib/types";
 
 const PAGE_SIZE = 25;
 
@@ -33,6 +33,10 @@ export default function DonationsPage() {
   const [recordAmount, setRecordAmount] = useState("");
   const [recordMode, setRecordMode] = useState<DonationMode>("CASH");
   const [recordPurpose, setRecordPurpose] = useState("");
+  const [recordFund, setRecordFund] = useState("");
+  const [funds, setFunds] = useState<DonationFund[]>([]);
+  const [newFund, setNewFund] = useState("");
+  const [fundError, setFundError] = useState<string | null>(null);
   const [recordReference, setRecordReference] = useState("");
   const [recordDate, setRecordDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [recording, setRecording] = useState(false);
@@ -56,6 +60,20 @@ export default function DonationsPage() {
   const canRecord = hasRole(me.role, "LEADER");
   const canReverse = hasRole(me.role, "TRUST_ADMIN");
 
+  async function saveFund(id: number | null, name: string, active: boolean) {
+    setFundError(null);
+    try {
+      await api.request<DonationFund>(id === null ? "/donation-funds" : `/donation-funds/${id}`, {
+        method: id === null ? "POST" : "PUT",
+        json: { name: name.trim(), active },
+      });
+      if (id === null) setNewFund("");
+      setFunds(await api.get<DonationFund[]>("/donation-funds"));
+    } catch (err) {
+      setFundError(err instanceof ApiError && err.fields.name ? err.fields.name : describeError(err));
+    }
+  }
+
   const loadData = useCallback(() => {
     setLoading(true);
     const params = new URLSearchParams({
@@ -67,11 +85,13 @@ export default function DonationsPage() {
 
     const donationsPromise = api.get<DonationPage>(`/donations?${params.toString()}`);
     const summaryPromise = api.get<DonationSummary>("/donations/summary");
+    const fundsPromise = api.get<DonationFund[]>("/donation-funds");
 
-    Promise.all([donationsPromise, summaryPromise])
-      .then(([pageData, summaryData]) => {
+    Promise.all([donationsPromise, summaryPromise, fundsPromise])
+      .then(([pageData, summaryData, fundData]) => {
         setData(pageData);
         setSummary(summaryData);
+        setFunds(fundData);
         setError(null);
       })
       .catch((err) => {
@@ -115,6 +135,7 @@ export default function DonationsPage() {
           amount: recordAmount.trim(),
           mode: recordMode,
           purpose: recordPurpose.trim() || null,
+          fundId: recordFund ? Number(recordFund) : null,
           reference: recordReference.trim() || null,
           receivedOn: recordDate,
         },
@@ -297,6 +318,41 @@ export default function DonationsPage() {
             </Card>
           ))}
         </div>
+      )}
+
+      {summary && summary.byFund.length > 0 && (
+        <Card className="p-4">
+          <h2 className="mb-3 text-sm font-semibold">By fund (FY {summary.financialYear})</h2>
+          <ul className="flex flex-col gap-1 text-sm">
+            {summary.byFund.map((f) => (
+              <li key={f.fundId ?? "general"} className="flex justify-between gap-3">
+                <span>{f.fund}</span>
+                <span className="font-medium">{formatInr(f.net)} <span className="text-muted">· {f.donations} entries</span></span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      {canReverse && (
+        <Card className="p-4">
+          <h2 className="mb-1 text-sm font-semibold">Funds</h2>
+          <p className="mb-3 text-xs text-muted">Earmarked funds donors and staff can choose. Turn one off to stop new gifts; its history stays.</p>
+          <ul className="mb-3 flex flex-col gap-1 text-sm">
+            {funds.map((f) => (
+              <li key={f.id} className="flex items-center justify-between gap-3">
+                <span className={f.active ? "" : "text-muted line-through"}>{f.name}</span>
+                <Button variant="ghost" onClick={() => void saveFund(f.id, f.name, !f.active)}>{f.active ? "Turn off" : "Turn on"}</Button>
+              </li>
+            ))}
+          </ul>
+          <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); void saveFund(null, newFund, true); }}>
+            <input aria-label="New fund name" value={newFund} onChange={(e) => setNewFund(e.target.value)} maxLength={80}
+                   placeholder="e.g. Annadanam fund" className="flex-1 rounded-lg border border-stone-300 px-3 py-2 text-sm" />
+            <Button type="submit" variant="secondary">Add fund</Button>
+          </form>
+          {fundError ? <div className="mt-2"><Alert tone="danger">{fundError}</Alert></div> : null}
+        </Card>
       )}
 
       {/* Filter and Search Bar */}
@@ -626,6 +682,17 @@ export default function DonationsPage() {
                   </select>
                 </div>
               </div>
+
+              {funds.some((f) => f.active) ? (
+                <div>
+                  <label htmlFor="record-fund" className="block text-xs font-semibold text-stone-700 mb-1">Fund</label>
+                  <select id="record-fund" value={recordFund} onChange={(e) => setRecordFund(e.target.value)}
+                          className="w-full px-3 py-2 text-sm rounded-lg border border-stone-300 bg-white">
+                    <option value="">General fund</option>
+                    {funds.filter((f) => f.active).map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+                  </select>
+                </div>
+              ) : null}
 
               <div>
                 <label className="block text-xs font-semibold text-stone-700 mb-1">

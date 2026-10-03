@@ -43,6 +43,9 @@ public class PaymentIntent {
     @Column(name = "donor_email", updatable = false)
     private String donorEmail;
 
+    @Column(name = "fund_id", updatable = false)
+    private Long fundId;
+
     @Column(nullable = false)
     private String status = "CREATED";
 
@@ -74,6 +77,13 @@ public class PaymentIntent {
         this.donorName = donorName;
         this.purpose = purpose;
     }
+
+    PaymentIntent toFund(Long fund) {
+        this.fundId = fund;
+        return this;
+    }
+
+    Long getFundId() { return fundId; }
 
     PaymentIntent withContact(String phone, String email) {
         this.donorPhone = phone;

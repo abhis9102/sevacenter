@@ -59,7 +59,7 @@ public class OnlineDonationController {
             throw new app.sevacenter.auth.LoginThrottle.TooManyAttemptsException();
         }
         return service.createOrder(Money.toPaise("amount", r.amount()), r.donorName(), r.purpose(), r.phone(),
-                r.email());
+                r.email(), r.fundId());
     }
 
     @PostMapping("/api/v1/public/donations/confirm")
@@ -106,7 +106,8 @@ public class OnlineDonationController {
             @Schema(example = "Annadanam") @Size(max = 120) String purpose,
             // Optional: lets the donor find this donation later in "my seva" (ADR 0019).
             @Schema(example = "98765 43210") @Size(max = 30) String phone,
-            @Schema(example = "lakshmi@example.org") @Size(max = 254) String email) { }
+            @Schema(example = "lakshmi@example.org") @Size(max = 254) String email,
+            @Schema(description = "Optional earmarked fund (ADR 0022); omit for the general fund") Long fundId) { }
 
     public record ConfirmRequest(
             @Schema(example = "order_PZ1example00001") @NotBlank @Size(max = 64) String orderId,

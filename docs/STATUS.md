@@ -351,7 +351,16 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
   promotion clearing them; now tested directly); probe +7 rows.
 - Replaces a UI-only proposal that hid menus while every API stayed open.
 
-Next (user decisions 2026-10-04): donation funds → staff dashboard → dark mode + logo.
+## Donation funds ✅ (this PR, ADR 0022)
+- `V21`: `donation_fund` (managed list, unique names, deactivate-only), `donation.fund_id`,
+  `payment_intent.fund_id`. Reversals carry their fund; only active funds of this trust take new gifts.
+- Summary `byFund`; Donations screen fund picker, by-fund totals and admin fund list; donate page "Give to".
+- Composite FKs `(tenant_id, fund_id)`: the DB refuses a cross-trust fund link.
+- `FundTest` (7), **mutation-checked 11/11** (found first: an online order's fund wasn't validated,
+  and a plain FK would have accepted another trust's fund id; both closed); probe +5 rows.
+  Replaces a free-text category proposal.
+
+Next (user decisions 2026-10-04): staff dashboard → dark mode + logo.
 
 **MVP features are now complete.** Then: M5 containers → M6 AWS → M7 gates.
 

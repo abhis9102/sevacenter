@@ -46,6 +46,10 @@ public class Donation {
     private String reference;
     private String purpose;
 
+    /** Earmarked fund (ADR 0022); null = the general fund. */
+    @Column(name = "fund_id", updatable = false)
+    private Long fundId;
+
     @Column(name = "received_on", nullable = false)
     private LocalDate receivedOn;
 
@@ -106,12 +110,19 @@ public class Donation {
     /** The reversing entry for this donation: same donor and mode, negated amount. */
     Donation reversal(String reason, LocalDate on, long recordedBy) {
         Donation r = received(tenantId, devoteeId, donorName, -amountPaise, mode, reference, purpose, on, recordedBy);
+        r.fundId = fundId; // the reversal nets out of the same fund
         r.reversesId = id;
         r.reversalReason = reason;
         return r;
     }
 
+    Donation toFund(Long fund) {
+        this.fundId = fund;
+        return this;
+    }
+
     public boolean isReversal() { return reversesId != null; }
+    public Long getFundId() { return fundId; }
 
     public Long getId() { return id; }
     public Long getDevoteeId() { return devoteeId; }

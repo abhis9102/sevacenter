@@ -25,6 +25,19 @@ public interface DonationRepository extends JpaRepository<Donation, Long> {
             + "from Donation d where d.receivedOn between ?1 and ?2 group by d.mode order by d.mode")
     List<ModeTotal> totalsByMode(LocalDate from, LocalDate to);
 
+    @Query("select d.fundId as fundId, f.name as fundName, sum(d.amountPaise) as netPaise, "
+            + "sum(case when d.reversesId is null then 1 else 0 end) as donations "
+            + "from Donation d left join DonationFund f on f.id = d.fundId "
+            + "where d.receivedOn between ?1 and ?2 group by d.fundId, f.name order by f.name nulls first")
+    List<FundTotal> totalsByFund(LocalDate from, LocalDate to);
+
+    interface FundTotal {
+        Long getFundId();
+        String getFundName();
+        Long getNetPaise();
+        Long getDonations();
+    }
+
     /**
      * A verified contact's own donations (ADR 0019): online ones by the contact the donor left,
      * staff-recorded ones through the linked devotee's phone/email. Exact matches only.

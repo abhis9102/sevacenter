@@ -46,14 +46,16 @@ public class OnlineDonationService {
     private final PaymentGateway gateway;
     private final SecretBox secrets;
     private final AuditTrail auditTrail;
+    private final FundService funds;
     private final PujaSettlement pujas;
     private final Clock clock = Clock.system(DonationService.IST);
 
     public OnlineDonationService(PaymentSettingsRepository settings, PaymentIntentRepository intents,
                                  DonationRepository donations, PaymentGateway gateway, SecretBox secrets,
                                  @org.springframework.context.annotation.Lazy PujaSettlement pujas,
-                                 AuditTrail auditTrail) {
+                                 AuditTrail auditTrail, FundService funds) {
         this.auditTrail = auditTrail;
+        this.funds = funds;
         this.pujas = pujas;
         this.settings = settings;
         this.intents = intents;
@@ -95,7 +97,8 @@ public class OnlineDonationService {
     // --- public: order + confirm --------------------------------------------------------------
 
     @Transactional
-    public CreatedOrder createOrder(long amountPaise, String donorName, String purpose, String phone, String email) {
+    public CreatedOrder createOrder(long amountPaise, String donorName, String purpose, String phone, String email,
+                                    Long fundId) {
         if (amountPaise < MIN_PAISE || amountPaise > MAX_PAISE) {
             throw new InvalidFieldException("amount", "amount must be between Rs 1 and Rs 10,00,000");
         }
@@ -109,6 +112,7 @@ public class OnlineDonationService {
             throw new InvalidFieldException("email", "email is not valid");
         }
         long tenantId = currentTenant();
+        Long fund = funds.usable(fundId);
         Credentials creds = credentials(tenantId);
         String orderId;
         try {
@@ -117,7 +121,7 @@ public class OnlineDonationService {
             throw new GatewayUnavailableException();
         }
         intents.save(new PaymentIntent(tenantId, orderId, amountPaise, name, blankToNull(purpose))
-                .withContact(donorPhone, donorEmail));
+                .withContact(donorPhone, donorEmail).toFund(fund));
         return new CreatedOrder(orderId, creds.keyId(), amountPaise);
     }
 
@@ -228,7 +232,8 @@ public class OnlineDonationService {
             return Settled.puja(intent, code);
         }
         Donation donation = donations.saveAndFlush(Donation.online(intent.getTenantId(), intent.getDonorName(),
-                intent.getAmountPaise(), mode(p.method()), intent.getPurpose(), LocalDate.now(clock), p.id()));
+                intent.getAmountPaise(), mode(p.method()), intent.getPurpose(), LocalDate.now(clock), p.id())
+                .toFund(intent.getFundId()));
         intent.markPaid(p.id(), donation.getId(), OffsetDateTime.now(clock));
         audit.info("event=online_donation tenant={} donation={} paise={} payment={}", intent.getTenantId(),
                 donation.getId(), intent.getAmountPaise(), p.id());
