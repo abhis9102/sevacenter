@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 
 import app.sevacenter.user.UserManagementService.CreatedUser;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -67,13 +68,14 @@ public class UserController {
         return new SetupLinkResponse(service.reissueSetupLink(id));
     }
 
+    /** Examples are valid on purpose, so DAST attacks reach the database (see RegistrationRequest). */
     public record CreateUserRequest(
-            @NotBlank @Email @Size(max = 254) String email,
-            @NotBlank @Size(max = 120) String displayName,
-            @NotNull Role role) {
+            @Schema(example = "staff@example.org") @NotBlank @Email @Size(max = 254) String email,
+            @Schema(example = "Ravi Kumar") @NotBlank @Size(max = 120) String displayName,
+            @Schema(example = "MEMBER") @NotNull Role role) {
     }
 
-    public record ChangeRoleRequest(@NotNull Role role) {
+    public record ChangeRoleRequest(@Schema(example = "LEADER") @NotNull Role role) {
     }
 
     public record UserResponse(long id, String email, String displayName, Role role, UserStatus status,

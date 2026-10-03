@@ -179,7 +179,7 @@ class TenantIsolationTest {
 
     @Test
     void reservedSubdomainsCannotBeRegistered() {
-        for (String reserved : List.of("admin", "api", "www", "app", "mail")) {
+        for (String reserved : List.of("admin", "api", "www", "app", "mail", "register", "signup", "password")) {
             assertThatThrownBy(() -> registration.register(new RegistrationRequest(
                     reserved, "Impostor", "x@" + reserved + ".example", "correct-horse-battery-staple", "X")))
                     .as(reserved).isInstanceOf(SlugAlreadyTakenException.class);

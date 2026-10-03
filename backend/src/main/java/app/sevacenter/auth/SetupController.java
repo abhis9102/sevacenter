@@ -1,6 +1,7 @@
 package app.sevacenter.auth;
 
 import app.sevacenter.user.UserManagementService;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -33,7 +34,8 @@ public class SetupController {
     }
 
     public record SetupRequest(
-            @NotBlank @Size(max = 100) String token,
+            @Schema(example = "q3Zt0b8lGkY1wJ2mN5pR7sT9vX4cE6hA0dF3gK8jL2o") @NotBlank @Size(max = 100) String token,
+            @Schema(example = "correct-horse-battery-staple")
             @NotBlank @Size(min = 12, max = 200, message = "password must be at least 12 characters")
             String password) {
     }

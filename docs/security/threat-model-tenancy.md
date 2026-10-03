@@ -44,7 +44,7 @@ superuser would bypass RLS. Every test was mutation-checked: each fails when its
 |---|---|---|
 | 1 | `TenantPinningDataSource` pins `app.tenant_id` on **every connection checkout** (or `''` = none); V3 policy treats `''` as unset | `noTenantPinnedSeesNothing`, `tenantPinDoesNotLeakIntoTheNextTransaction`, `repositoriesOnlySeeTheTenantInContext` |
 | 2 | Non-superuser, `NOBYPASSRLS`, not table owner; `FORCE ROW LEVEL SECURITY` | `appConnectsAsLeastPrivilegeRoleThatRlsAppliesTo`, `appRoleCannotSwitchRlsOff`, `everyTenantScopedTableHasForcedRlsAndAPolicy` (also guards **future** tables) |
-| 3 | RLS `USING` + `WITH CHECK` | `pinnedTenantSeesOnlyItsOwnRows`, `tenantCannotInsertIntoAnotherTenant`, `tenantCannotUpdateOrDeleteAnotherTenantsRows`, `repositoriesOnlySeeTheTenantInContext` (BOLA by id) |
+| 3 | RLS `USING` + `WITH CHECK` | `pinnedTenantSeesOnlyItsOwnRows`, `tenantCannotInsertIntoAnotherTenant`, `tenantCannotUpdateOrDeleteAnotherTenantsRows`, `repositoriesOnlySeeTheTenantInContext` (BOLA by id); against the built jar: `tools/security/authz_probe.py` (CI, DAST job) |
 | 4 | `ReservedSlugs`, shared by registration and routing | `reservedSubdomainsCannotBeRegistered` |
 | 5 | `@PreAuthorize` on every user-management endpoint, over a TRUST_ADMIN > LEADER > MEMBER hierarchy; authorities re-read from the DB on every request | `membersCannotListUsersLeadersAndAdminsCan`, `onlyAdminsCanCreateChangeRolesDeactivateOrReissueLinks`, `aDemotionAppliesToTheUsersVeryNextRequest` (`UserManagementTest`) |
 
