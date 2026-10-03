@@ -5,6 +5,8 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 
+import app.sevacenter.audit.AuditAction;
+import app.sevacenter.audit.AuditTrail;
 import app.sevacenter.devotee.DevoteeService;
 import app.sevacenter.tenant.TenantContext;
 import app.sevacenter.web.InvalidFieldException;
@@ -29,9 +31,12 @@ public class DonationService {
     private final DonationRepository donations;
     private final DevoteeService devotees;
     private final ReceiptService receipts;
+    private final AuditTrail auditTrail;
     private final Clock clock = Clock.system(IST);
 
-    public DonationService(DonationRepository donations, DevoteeService devotees, ReceiptService receipts) {
+    public DonationService(DonationRepository donations, DevoteeService devotees, ReceiptService receipts,
+                           AuditTrail auditTrail) {
+        this.auditTrail = auditTrail;
         this.donations = donations;
         this.devotees = devotees;
         this.receipts = receipts;
@@ -61,6 +66,7 @@ public class DonationService {
                 blankToNull(reference), blankToNull(purpose), receivedOn, staffId));
         audit.info("event=donation_recorded tenant={} user={} donation={} paise={}", currentTenant(), staffId,
                 saved.getId(), amountPaise);
+        auditTrail.record(AuditAction.DONATION_RECORDED, "donation", saved.getId(), "Rs " + Money.toRupees(amountPaise));
         return saved;
     }
 
@@ -77,6 +83,7 @@ public class DonationService {
         try {
             Donation reversal = donations.saveAndFlush(original.reversal(reason.strip(), LocalDate.now(clock), staffId));
             receipts.cancelForDonation(donationId, reason.strip(), staffId); // same transaction
+            auditTrail.record(AuditAction.DONATION_REVERSED, "donation", donationId, "reversal " + reversal.getId());
             audit.info("event=donation_reversed tenant={} user={} donation={} reversal={}", currentTenant(), staffId,
                     donationId, reversal.getId());
             return reversal;

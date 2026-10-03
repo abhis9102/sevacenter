@@ -5,6 +5,8 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 
+import app.sevacenter.audit.AuditAction;
+import app.sevacenter.audit.AuditTrail;
 import app.sevacenter.donation.DonationService.FinancialYear;
 import app.sevacenter.donation.DonationService.LedgerConflictException;
 import app.sevacenter.tenant.TenantContext;
@@ -31,11 +33,13 @@ public class ReceiptService {
     private final ReceiptCancellationRepository cancellations;
     private final TrustProfileRepository profiles;
     private final PanProtection pans;
+    private final AuditTrail auditTrail;
     private final Clock clock = Clock.system(DonationService.IST);
 
     public ReceiptService(DonationRepository donations, ReceiptRepository receipts,
                           ReceiptCancellationRepository cancellations, TrustProfileRepository profiles,
-                          PanProtection pans) {
+                          PanProtection pans, AuditTrail auditTrail) {
+        this.auditTrail = auditTrail;
         this.donations = donations;
         this.receipts = receipts;
         this.cancellations = cancellations;
@@ -78,6 +82,7 @@ public class ReceiptService {
                     staffId));
             audit.info("event=receipt_issued tenant={} user={} donation={} receipt={}", tenantId, staffId,
                     donationId, receipt.number());
+            auditTrail.record(AuditAction.RECEIPT_ISSUED, "donation", donationId, receipt.number());
             return receipt;
         } catch (DataIntegrityViolationException e) {
             // Two issuers at once for the same donation: UNIQUE (donation_id) lets one win, and this
@@ -138,6 +143,7 @@ public class ReceiptService {
         TrustProfile profile = profiles.findById(tenantId).orElseGet(() -> new TrustProfile(tenantId));
         profile.update(legalName.strip(), address.strip(), trustPan(pan), registration80g.strip(), validFrom, validTo,
                 staffId, OffsetDateTime.now(clock));
+        auditTrail.record(AuditAction.TRUST_PROFILE_SAVED, "trust_profile", null, null);
         return profiles.save(profile);
     }
 

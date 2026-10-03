@@ -6,6 +6,8 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Locale;
 
+import app.sevacenter.audit.AuditAction;
+import app.sevacenter.audit.AuditTrail;
 import app.sevacenter.devotee.DevoteeService;
 import app.sevacenter.donation.DonationService;
 import app.sevacenter.donation.OnlineDonationService;
@@ -32,9 +34,12 @@ public class PujaService implements PujaSettlement {
     private final PujaRepository pujas;
     private final PujaBookingRepository bookings;
     private final OnlineDonationService payments;
+    private final AuditTrail auditTrail;
     private final Clock clock = Clock.system(DonationService.IST);
 
-    public PujaService(PujaRepository pujas, PujaBookingRepository bookings, OnlineDonationService payments) {
+    public PujaService(PujaRepository pujas, PujaBookingRepository bookings, OnlineDonationService payments,
+                       AuditTrail auditTrail) {
+        this.auditTrail = auditTrail;
         this.pujas = pujas;
         this.bookings = bookings;
         this.payments = payments;
@@ -47,7 +52,9 @@ public class PujaService implements PujaSettlement {
         Puja p = id == null ? new Puja(currentTenant()) : pujas.findById(id).orElseThrow(PujaNotFoundException::new);
         p.edit(d.name().strip(), blankToNull(d.deity()), blankToNull(d.description()), d.dakshinaPaise(), d.active(),
                 d.displayOrder(), staffId, OffsetDateTime.now(clock));
-        return pujas.save(p);
+        Puja saved = pujas.save(p);
+        auditTrail.record(AuditAction.PUJA_SAVED, "puja", saved.getId(), null);
+        return saved;
     }
 
     @Transactional(readOnly = true)
@@ -135,6 +142,7 @@ public class PujaService implements PujaSettlement {
         }
         b.cancel();
         audit.info("event=puja_cancelled tenant={} user={} booking={}", currentTenant(), staffId, bookingId);
+        auditTrail.record(AuditAction.PUJA_BOOKING_CANCELLED, "puja_booking", bookingId, null);
         return b;
     }
 

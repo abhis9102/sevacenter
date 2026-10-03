@@ -5,6 +5,8 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Locale;
 
+import app.sevacenter.audit.AuditAction;
+import app.sevacenter.audit.AuditTrail;
 import app.sevacenter.devotee.DevoteeService;
 import app.sevacenter.tenant.TenantContext;
 import app.sevacenter.web.InvalidFieldException;
@@ -21,10 +23,12 @@ public class SevakService {
     private static final Logger audit = LoggerFactory.getLogger("audit");
 
     private final SevakSignupRepository signups;
+    private final AuditTrail auditTrail;
     private final Clock clock = Clock.systemUTC();
 
-    public SevakService(SevakSignupRepository signups) {
+    public SevakService(SevakSignupRepository signups, AuditTrail auditTrail) {
         this.signups = signups;
+        this.auditTrail = auditTrail;
     }
 
     @Transactional
@@ -56,6 +60,7 @@ public class SevakService {
         SevakSignup s = signups.findById(id).orElseThrow(SignupNotFoundException::new);
         s.review(approve, staffId, OffsetDateTime.now(clock));
         audit.info("event=sevak_reviewed tenant={} user={} signup={} approved={}", currentTenant(), staffId, id, approve);
+        auditTrail.record(AuditAction.SEVAK_REVIEWED, "sevak_signup", id, approve ? "approved" : "declined");
         return s;
     }
 

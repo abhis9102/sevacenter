@@ -133,6 +133,7 @@ public class AppUser {
     public String getDisplayName() { return displayName; }
     public Role getRole() { return role; }
     public UserStatus getStatus() { return status; }
+    public OffsetDateTime getDeletedAt() { return deletedAt; }
     public OffsetDateTime getCreatedAt() { return createdAt; }
     public boolean isNotifyDevotees() { return notifyDevotees; }
     public boolean isNotifyDonations() { return notifyDonations; }
