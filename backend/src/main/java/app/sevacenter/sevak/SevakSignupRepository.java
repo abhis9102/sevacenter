@@ -11,4 +11,8 @@ public interface SevakSignupRepository extends JpaRepository<SevakSignup, Long> 
 
     @Query("select s from SevakSignup s order by s.createdAt desc")
     List<SevakSignup> newestFirst(Pageable page);
+
+    /** A verified devotee's own signups (ADR 0018). */
+    @Query("select s from SevakSignup s where s.phone = ?1 or s.email = ?1 order by s.createdAt desc")
+    List<SevakSignup> forContact(String contact, Pageable page);
 }

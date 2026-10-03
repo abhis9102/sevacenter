@@ -388,6 +388,18 @@ class Probe:
         self.check("B's public page never shows A's content", "Probe announcement for A" not in json.dumps(theirs),
                    str(theirs)[:120])
 
+        print("\ndevotee login (ADR 0018)")
+        devotee = self.client(a)
+        self.expect("portal without a devotee session", 401, devotee.request("GET", "/api/v1/portal/me"))
+        self.expect("a staff session opens no portal API", 401, admin_a.request("GET", "/api/v1/portal/me"))
+        devotee.cookies["SC_DEVOTEE"] = "A" * 43
+        self.expect("a forged devotee cookie", 401, devotee.request("GET", "/api/v1/portal/me"))
+        self.expect("a forged devotee cookie opens no staff API", 401, devotee.request("GET", "/api/v1/devotees"))
+        status, body = devotee.request("POST", "/api/v1/public/devotee-login/verify",
+                                       body={"channel": "EMAIL", "contact": "probe@example.org", "code": "123456"})
+        self.check("a guessed code is refused without detail", status == 400 and body == {"error": "invalid_code"},
+                   f"{status} {body}")
+
         print("\nCSRF")
         self.expect("state change without the CSRF header", 403,
                     admin_a.request("POST", "/api/v1/users", body=new_user, csrf=False))

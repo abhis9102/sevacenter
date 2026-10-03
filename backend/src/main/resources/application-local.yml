@@ -15,10 +15,17 @@ spring:
     user: ${DB_USERNAME:sevacenter}
     password: ${DB_PASSWORD}
 
+  # Outgoing email goes to Mailpit (docker compose 'mail'), never to a real inbox.
+  mail:
+    host: ${SPRING_MAIL_HOST:localhost}
+    port: ${SPRING_MAIL_PORT:1025}
+
 # Allow the X-Tenant-Slug header locally (no real subdomains on localhost).
 sevacenter:
   tenant:
     allow-header-override: true
+  mail:
+    from: ${SEVACENTER_MAIL_FROM:no-reply@sevacenter.local}
 
 # Local dev runs on plain http, where a Secure cookie would never be sent back.
 server:

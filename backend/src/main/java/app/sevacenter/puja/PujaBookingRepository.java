@@ -21,4 +21,9 @@ public interface PujaBookingRepository extends JpaRepository<PujaBooking, Long> 
     Optional<PujaBooking> lockById(Long id);
 
     boolean existsByBookingCode(String code);
+
+    /** A verified devotee's own bookings (ADR 0018); unpaid attempts aren't bookings yet. */
+    @Query("select b from PujaBooking b where (b.phone = ?1 or b.email = ?1) and b.status <> 'AWAITING_PAYMENT' "
+            + "order by b.pujaDate desc")
+    List<PujaBooking> forContact(String contact, org.springframework.data.domain.Pageable page);
 }

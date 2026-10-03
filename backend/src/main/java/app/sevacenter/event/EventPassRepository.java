@@ -22,4 +22,8 @@ public interface EventPassRepository extends JpaRepository<EventPass, Long> {
     List<EventPass> findByEventIdOrderByCreatedAtAsc(Long eventId);
 
     boolean existsByPassCode(String passCode);
+
+    /** A verified devotee's own passes (ADR 0018). */
+    @Query("select p from EventPass p where p.phone = ?1 or p.email = ?1 order by p.createdAt desc")
+    List<EventPass> forContact(String contact, org.springframework.data.domain.Pageable page);
 }

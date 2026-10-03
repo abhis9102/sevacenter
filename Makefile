@@ -1,12 +1,12 @@
 .PHONY: help db-up db-down db-logs run test build hooks dast fe-dev fe-check
 help: ## show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  %-10s %s\n",$$1,$$2}'
-db-up: ## start local Postgres (needs .env)
-	docker compose up -d db
+db-up: ## start local Postgres + Mailpit (needs .env; mail UI http://localhost:8025)
+	docker compose up -d db mail
 db-down: ## stop local Postgres
 	docker compose down
 db-reset: ## wipe + recreate Postgres (re-runs db-init, drops all data)
-	docker compose down -v && docker compose up -d db
+	docker compose down -v && docker compose up -d db mail
 db-logs: ## tail Postgres logs
 	docker compose logs -f db
 run: ## run backend (local profile, 2-role DB) -> http://localhost:8080/api/v1/ping

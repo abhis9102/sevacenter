@@ -127,10 +127,31 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of("error", "gateway_unavailable"));
     }
 
+    @ExceptionHandler(app.sevacenter.portal.DevoteeLoginService.InvalidCodeException.class)
+    public ResponseEntity<Map<String, Object>> onInvalidCode() {
+        return ResponseEntity.badRequest().body(Map.of("error", "invalid_code"));
+    }
+
+    @ExceptionHandler(app.sevacenter.portal.DevoteeLoginService.ChannelUnavailableException.class)
+    public ResponseEntity<Map<String, Object>> onChannelUnavailable() {
+        return ResponseEntity.badRequest().body(Map.of("error", "channel_unavailable"));
+    }
+
+    @ExceptionHandler(app.sevacenter.portal.DevoteeLoginService.DeliveryFailedException.class)
+    public ResponseEntity<Map<String, Object>> onDeliveryFailed() {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of("error", "delivery_failed"));
+    }
+
+    @ExceptionHandler(app.sevacenter.portal.PortalController.NotLoggedInException.class)
+    public ResponseEntity<Map<String, Object>> onDevoteeNotLoggedIn() {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "not_logged_in"));
+    }
+
     @ExceptionHandler({app.sevacenter.event.EventService.EventNotFoundException.class,
             app.sevacenter.event.EventService.PassNotFoundException.class,
             app.sevacenter.sevak.SevakService.SignupNotFoundException.class,
-            app.sevacenter.puja.PujaService.PujaNotFoundException.class})
+            app.sevacenter.puja.PujaService.PujaNotFoundException.class,
+            app.sevacenter.portal.DevoteeLoginService.NotOnATrustHostException.class})
     public ResponseEntity<Map<String, Object>> onEventOrPassNotFound() {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
     }

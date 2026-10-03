@@ -38,6 +38,7 @@ export function TemplePublicPage() {
         temple.upcomingEvents && { href: "/upcoming", label: "Upcoming events", note: "Register for a pass" },
         temple.pujaBooking && { href: "/book-puja", label: "Book a puja", note: "Sankalp in your family's name" },
         { href: "/sevak", label: "Offer seva", note: "Volunteer at the temple" },
+        { href: "/my-seva", label: "My seva", note: "Your bookings, passes and seva" },
       ].filter(Boolean) as Array<{ href: string; label: string; note: string }>
     : [];
 

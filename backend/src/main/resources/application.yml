@@ -16,6 +16,14 @@ spring:
       hibernate:
         format_sql: true
 
+  # SMTP for devotee login codes (ADR 0018); host/credentials from SPRING_MAIL_* env only.
+  # JavaMail waits forever by default: bound it, so a slow provider can't pin request threads.
+  mail:
+    properties:
+      "[mail.smtp.connectiontimeout]": 5000
+      "[mail.smtp.timeout]": 10000
+      "[mail.smtp.writetimeout]": 10000
+
   flyway:
     enabled: true
     locations: classpath:db/migration
@@ -29,6 +37,11 @@ spring:
 
 # Expose only health/info. No env, beans, mappings, heapdump, etc. in prod.
 management:
+  # Liveness must not depend on the mail provider: an SMTP outage would otherwise mark every task
+  # unhealthy and the load balancer would take the whole app down (found by local DAST, ADR 0018).
+  health:
+    mail:
+      enabled: false
   endpoints:
     web:
       exposure:
@@ -53,6 +66,18 @@ sevacenter:
   # separate from the PAN key; empty default so the app refuses to start without it.
   secrets:
     key: ${SEVACENTER_SECRETS_KEY:}
+  # Devotee login codes (ADR 0018): HMAC key for stored codes and contacts. Own key; required.
+  otp:
+    key: ${SEVACENTER_OTP_KEY:}
+  # Sender address for login codes. Email login is offered only when this and spring.mail.host
+  # (SPRING_MAIL_HOST etc.: Mailpit locally, SES SMTP in production) are set.
+  mail:
+    from: ${SEVACENTER_MAIL_FROM:}
+  # SMS login via MSG91 (DLT template with an ##otp## variable). Offered only when both are set.
+  sms:
+    msg91:
+      auth-key: ${MSG91_AUTH_KEY:}
+      template-id: ${MSG91_OTP_TEMPLATE_ID:}
   pan:
     encryption-key: ${SEVACENTER_PAN_KEY:}
     index-key: ${SEVACENTER_PAN_INDEX_KEY:}
