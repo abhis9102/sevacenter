@@ -45,6 +45,13 @@ reason = "Abhi (AppSec): same heuristic as events/capacity (it picks a different
 
 [[accepted]]
 pluginId = "6" # Path Traversal (heuristic, low confidence)
+param = "name"
+uri = '/api/v1/pujas/[0-9]+$'
+ignoreUntil = 2026-12-31
+reason = "Abhi (AppSec): same heuristic as events/title: the attack value ('/10', built from the URL's last segment) is a valid puja name, stored as text and never used as a path, so the update succeeds while ZAP's random comparison value fails validation. Kept per param on purpose."
+
+[[accepted]]
+pluginId = "6" # Path Traversal (heuristic, low confidence)
 param = "dakshina"
 uri = '/api/v1/pujas/[0-9]+$'
 ignoreUntil = 2026-12-31
