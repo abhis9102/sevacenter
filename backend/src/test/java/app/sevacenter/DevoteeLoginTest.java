@@ -46,7 +46,8 @@ import tools.jackson.databind.json.JsonMapper;
  * session open strictly separate APIs on strictly their own trust.
  */
 @Import({TestcontainersConfiguration.class, DevoteeLoginTest.Senders.class})
-@SpringBootTest
+// A mail server that refuses connections: the app must still report healthy.
+@SpringBootTest(properties = {"spring.mail.host=127.0.0.1", "spring.mail.port=1", "sevacenter.mail.from=no-reply@test.example"})
 @AutoConfigureMockMvc
 class DevoteeLoginTest {
 
@@ -246,6 +247,11 @@ class DevoteeLoginTest {
         mvc.perform(on(a, get("/api/v1/portal/me")).cookie(session)).andExpect(status().isUnauthorized());
         mvc.perform(on(a, get("/api/v1/portal/me")).cookie(new Cookie("SC_DEVOTEE", "not-a-token")))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void anSmtpOutageDoesNotMakeTheAppUnhealthy() throws Exception {
+        mvc.perform(get("/actuator/health")).andExpect(status().isOk()).andExpect(jsonPath("$.status").value("UP"));
     }
 
     // --- helpers ----------------------------------------------------------------------------------

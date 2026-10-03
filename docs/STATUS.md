@@ -320,7 +320,8 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
   per-trust caps; SMS only to Indian mobiles; same answer for every contact.
 - `SC_DEVOTEE` cookie (HttpOnly, `Path=/api/v1/portal`) is not a Spring Security login: no staff
   API reachable with it, and no portal API with a staff session. Public **/my-seva** page.
-- `DevoteeLoginTest` (14), **mutation-checked 17/17** (found first: dead "supersede" code, removed; expiry untested, added); probe +5 rows.
+- `DevoteeLoginTest` (15), **mutation-checked 18/18** (found first: dead "supersede" code, removed; expiry untested, added).
+- **Local DAST found:** the mail health indicator made `/actuator/health` DOWN whenever SMTP was unreachable (an SES outage would have taken every task out of the load balancer), and JavaMail had no timeouts. Mail health is off, SMTP timeouts are 5/10 s; regression test added. Probe +5 rows.
 
 **MVP features are now complete.** Then: M5 containers → M6 AWS → M7 gates.
 
