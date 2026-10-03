@@ -298,8 +298,15 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
 - `V14`: `sevak_signup` (forced RLS, no DELETE). Public **/sevak** form; staff **Volunteers** screen
   (LEADER+, approve/decline). `SevakTest` (6), mutation-checked 6/6; probe +4 rows.
 
-**Next:** pujas (puja fees are seva income, **not** 80G donations: separate from the donation ledger;
-paid via the M3.3 verified flow), then the public temple page, then devotee OTP login.
+## Pujas ✅ (this PR, ADR 0016)
+- `V15`: `puja`, `puja_booking` (forced RLS, no DELETE); `payment_intent.kind` DONATION|PUJA.
+- **Dakshina is seva income, never a ledger donation** (no 80G receipt possible); DB CHECKs enforce it.
+- Public **/book-puja** (Razorpay Checkout for paid pujas; free ones confirmed at once); staff **Pujas**
+  screen: day's schedule (priest sees no contacts, marks performed), catalog, cancel (LEADER+).
+- `PujaTest` (11), mutation-checked 12/12 (incl. "puja payment into the ledger").
+
+**Next:** the public temple page (timings, announcements, links to donate/events/pujas/sevak), then
+devotee OTP login (needs an SMS/email provider).
 
 ## Next up — M1 slice 2
 - Login + sessions (cookie session per ADR 0007; set cookie flags HttpOnly/Secure/SameSite); tenant-aware `UserDetailsService` (scope lookup by `TenantContext`).

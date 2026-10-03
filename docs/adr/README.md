@@ -21,3 +21,4 @@ change a decision, add a new ADR that supersedes the old one.
 | [0013](0013-online-donations-razorpay.md) | Online donations into each trust's own Razorpay account: server-side orders, signature + API verification, idempotent settlement | Accepted |
 | [0014](0014-events-and-registration-passes.md) | Events with free registration passes: capacity under row lock, unguessable codes, check-in once, gate sees no contacts | Accepted |
 | [0015](0015-sevak-signups.md) | Sevak signups: public, rate-limited, contacts LEADER+ only, no deletion | Accepted |
+| [0016](0016-puja-bookings-seva-income.md) | Puja bookings: dakshina is seva income (never in the 80G ledger), verified payments only, priest sees no contacts | Accepted |

@@ -221,6 +221,20 @@ Tests in `EventTest`; rows in `authz_probe.py`.
 | Cross-trust review by id | Forced RLS → 404 | `anotherTrustsSignupsAreInvisibleAndUnreviewable` |
 | Spam signups | 20 per IP per 15 min | `signupsAreRateLimitedPerClient` |
 
+### Puja bookings (ADR 0016): threat → control → test
+
+Tests in `PujaTest` (fake gateway); rows in `authz_probe.py`.
+
+| Threat | Control | Test |
+|---|---|---|
+| 80G receipts for puja fees (dakshina recorded as a donation) | PUJA payments confirm the booking only; DB CHECK: PUJA intent never has a donation | `aVerifiedPaymentConfirmsTheBookingAndNeverTouchesTheDonationLedger` |
+| A paid puja confirmed without payment (bug or direct write) | Starts AWAITING_PAYMENT; DB CHECK requires `payment_ref` to confirm | `aForgedOrShortPaymentLeavesTheBookingUnconfirmed`, `theDatabaseRefusesAPaidBookingConfirmedWithoutPayment` |
+| Contacts exposed at the altar | MEMBER schedule omits phone/email | `thePriestSeesTheScheduleWithoutContactsAndMarksPujasPerformed` |
+| Performing unpaid/cancelled, cancelling performed | Status rules under row lock | `anUnpaidOrCancelledBookingCantBePerformed`, the priest test |
+| Booking hidden pujas / other trusts' pujas | Active-only; forced RLS → 404 | `leadersRunTheCatalog…`, `anotherTrustsPujasAndBookingsAreNotFound` |
+| Lost paid bookings (browser closed) | Reconciliation settles PUJA intents too | `reconciliationConfirmsAPujaPaidInAClosedBrowser` |
+| Spam bookings | 20 per IP per 15 min; dates today–1 year | `bookingsAreRateLimitedPerClient`, `bookingDatesAreTodayToAYearAhead` |
+
 ## Open questions
 
 - Public donor access: own login vs. link/OTP (affects the auth surface).

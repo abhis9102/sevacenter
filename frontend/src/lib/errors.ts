@@ -39,6 +39,8 @@ const MESSAGES: Record<string, string> = {
   cannot_delete_self: "You can't delete your own account. Ask another trust admin.",
   use_change_password: "For your own account, use Profile → Change password.",
   not_active: "Only active staff can get a password reset link.",
+  not_confirmed: "Only a confirmed booking can be marked performed.",
+  already_performed: "This puja was already performed.",
   registration_closed: "Registration for this event is closed.",
   event_full: "There aren't enough places left for this event.",
   event_cancelled: "This event was cancelled.",
