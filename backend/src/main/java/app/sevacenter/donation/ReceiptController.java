@@ -96,7 +96,7 @@ public class ReceiptController {
             @Schema(example = "AAATS1234F") @NotBlank @Size(max = 20) String pan,
             @Schema(example = "AAATS1234FF20214") @NotBlank @Size(min = 5, max = 60) String registration80g,
             @Schema(example = "2021-04-01") @NotNull LocalDate validFrom,
-            @Schema(example = "2026-03-31") @NotNull LocalDate validTo) {
+            @Schema(example = "2030-03-31") @NotNull LocalDate validTo) {
     }
 
     public record ProfileResponse(String legalName, String address, String pan, String registration80g,
