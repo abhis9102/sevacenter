@@ -19,6 +19,7 @@ unauthenticated ZAP pass attacks the login endpoint.
 from __future__ import annotations
 
 import argparse
+import datetime
 import http.client
 import json
 import pathlib
@@ -361,6 +362,23 @@ class Probe:
         self.expect("member cannot see volunteer signups", 403, member.request("GET", "/api/v1/sevaks"))
         _, theirs = admin_b.request("GET", "/api/v1/sevaks")
         self.check("A's signup is invisible to B", isinstance(theirs, list) and all(s.get("fullName") != "Probe Sevak" for s in theirs))
+
+        print("\npujas (ADR 0016): catalog roles, free booking, priest sees no contacts")
+        puja = {"name": "Probe Archana", "dakshina": "0", "active": True, "displayOrder": 1}
+        puja_day = (datetime.date.today() + datetime.timedelta(days=30)).isoformat()  # bookable: today to +1 year
+        self.expect("member cannot add pujas", 403, member.request("POST", "/api/v1/pujas", body=puja))
+        body = self.expect("leader adds a free puja", 201, leader.request("POST", "/api/v1/pujas", body=puja))
+        puja_id = (body or {}).get("id")
+        status, booked = anon.request("POST", f"/api/v1/public/pujas/{puja_id}/book",
+                                      body={"devoteeName": "Probe Bhakt", "gotra": "Kashyap", "pujaDate": puja_day,
+                                            "phone": "9876543210"})
+        self.expect("anyone books a free puja", 201, status)
+        _, schedule = member.request("GET", f"/api/v1/puja-bookings?date={puja_day}")
+        self.check("the priest's schedule has no contacts", isinstance(schedule, list) and len(schedule) == 1
+                   and "9876543210" not in json.dumps(schedule), str(schedule)[:160])
+        self.expect("A's puja is not bookable on B's host", 404,
+                    self.client(b).request("POST", f"/api/v1/public/pujas/{puja_id}/book",
+                                           body={"devoteeName": "X", "pujaDate": puja_day, "phone": "9876543210"}))
 
         print("\nCSRF")
         self.expect("state change without the CSRF header", 403,

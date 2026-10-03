@@ -129,9 +129,15 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({app.sevacenter.event.EventService.EventNotFoundException.class,
             app.sevacenter.event.EventService.PassNotFoundException.class,
-            app.sevacenter.sevak.SevakService.SignupNotFoundException.class})
+            app.sevacenter.sevak.SevakService.SignupNotFoundException.class,
+            app.sevacenter.puja.PujaService.PujaNotFoundException.class})
     public ResponseEntity<Map<String, Object>> onEventOrPassNotFound() {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
+    }
+
+    @ExceptionHandler(app.sevacenter.puja.PujaService.PujaConflictException.class)
+    public ResponseEntity<Map<String, Object>> onPujaConflict(app.sevacenter.puja.PujaService.PujaConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", ex.getMessage()));
     }
 
     @ExceptionHandler(app.sevacenter.event.EventService.EventConflictException.class)

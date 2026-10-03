@@ -22,7 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class DonationService {
 
     /** Indian financial years and "today" are in IST, whatever the server's zone. */
-    static final ZoneId IST = ZoneId.of("Asia/Kolkata");
+    public static final ZoneId IST = ZoneId.of("Asia/Kolkata");
     private static final Logger audit = LoggerFactory.getLogger("audit");
     private static final Sort NEWEST_FIRST = Sort.by(Sort.Direction.DESC, "receivedOn").and(Sort.by(Sort.Direction.DESC, "id"));
 

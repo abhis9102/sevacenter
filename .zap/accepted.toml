@@ -37,6 +37,20 @@ ignoreUntil = 2026-12-31
 reason = "Abhi (AppSec): reproduced from the report: the attack value is the URL's own last segment ('10'), a valid capacity, so the update succeeds while ZAP's random comparison value gets 400. No file access exists on this path. The same scan found startsAt='10' accepted as 1970: fixed (plausible dates only)."
 
 [[accepted]]
+pluginId = "6" # Path Traversal (heuristic, low confidence)
+param = "dakshina"
+uri = '/api/v1/pujas/[0-9]+$'
+ignoreUntil = 2026-12-31
+reason = "Abhi (AppSec): same heuristic as events/capacity: the attack value is the URL's own last segment ('10'), a valid dakshina (Rs 10, exact rupee strings only via Money.toPaise), so the update succeeds while ZAP's random comparison value gets 400. No file access exists on this path."
+
+[[accepted]]
+pluginId = "6" # Path Traversal (heuristic, low confidence)
+param = "displayOrder"
+uri = '/api/v1/pujas/[0-9]+$'
+ignoreUntil = 2026-12-31
+reason = "Abhi (AppSec): same heuristic as events/capacity: the attack value '10' (the URL's last segment) is a valid displayOrder (bounded 0..1000), so the update succeeds while ZAP's random comparison value gets 400. No file access exists on this path."
+
+[[accepted]]
 pluginId = "40014" # Cross Site Scripting Weakness (Persistent in JSON Response)
 uri = '/api/v1/(public/)?(events|pujas|sevaks|donations)(\?|$)'
 ignoreUntil = 2026-12-31

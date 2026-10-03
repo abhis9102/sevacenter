@@ -64,8 +64,9 @@ public class OnlineDonationController {
     @PostMapping("/api/v1/public/donations/confirm")
     public ConfirmResponse confirm(@Valid @RequestBody ConfirmRequest r) {
         requireTenant();
-        Donation d = service.confirm(r.orderId(), r.paymentId(), r.signature());
-        return new ConfirmResponse(d.getId(), Money.toRupees(d.getAmountPaise()), d.getDonorName(), d.getReceivedOn().toString());
+        OnlineDonationService.Settled s = service.confirm(r.orderId(), r.paymentId(), r.signature());
+        return new ConfirmResponse(s.kind(), s.donationId(), s.bookingCode(), Money.toRupees(s.amountPaise()), s.name(),
+                s.date().toString());
     }
 
     // --- staff --------------------------------------------------------------------------------
@@ -109,7 +110,9 @@ public class OnlineDonationController {
             @Schema(example = "0000000000000000000000000000000000000000000000000000000000000000")
             @NotBlank @Size(max = 128) String signature) { }
 
-    public record ConfirmResponse(long donationId, String amount, String donorName, String receivedOn) { }
+    /** donationId for a donation, bookingCode for a puja booking (ADR 0016). */
+    public record ConfirmResponse(String kind, Long donationId, String bookingCode, String amount, String donorName,
+                                  String receivedOn) { }
 
     public record SettingsRequest(
             @Schema(example = "rzp_test_ExampleKey01") @NotBlank @Size(max = 40) String keyId,

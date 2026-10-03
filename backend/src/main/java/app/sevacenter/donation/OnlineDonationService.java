@@ -43,10 +43,13 @@ public class OnlineDonationService {
     private final DonationRepository donations;
     private final PaymentGateway gateway;
     private final SecretBox secrets;
+    private final PujaSettlement pujas;
     private final Clock clock = Clock.system(DonationService.IST);
 
     public OnlineDonationService(PaymentSettingsRepository settings, PaymentIntentRepository intents,
-                                 DonationRepository donations, PaymentGateway gateway, SecretBox secrets) {
+                                 DonationRepository donations, PaymentGateway gateway, SecretBox secrets,
+                                 @org.springframework.context.annotation.Lazy PujaSettlement pujas) {
+        this.pujas = pujas;
         this.settings = settings;
         this.intents = intents;
         this.donations = donations;
@@ -111,12 +114,12 @@ public class OnlineDonationService {
      * the same donation. Any mismatch is the same generic error, so it can't be used to probe.
      */
     @Transactional
-    public Donation confirm(String orderId, String paymentId, String signature) {
+    public Settled confirm(String orderId, String paymentId, String signature) {
         long tenantId = currentTenant();
         PaymentIntent intent = intents.lockByOrderId(orderId).orElseThrow(PaymentNotVerifiedException::new);
         if (intent.isPaid()) {
             if (intent.getRazorpayPaymentId().equals(paymentId)) {
-                return donations.findById(intent.getDonationId()).orElseThrow();
+                return settledAgain(intent);
             }
             throw new PaymentNotVerifiedException();
         }
@@ -170,7 +173,32 @@ public class OnlineDonationService {
         return settled;
     }
 
-    private Donation settle(PaymentIntent intent, Payment p) {
+    /**
+     * Creates the gateway order for a puja booking's dakshina (ADR 0016). Same verification on
+     * confirm as a donation; settling confirms the booking instead of writing the ledger.
+     */
+    @Transactional
+    public CreatedOrder createPujaOrder(long bookingId, long amountPaise, String name, String purpose) {
+        long tenantId = currentTenant();
+        Credentials creds = credentials(tenantId);
+        String orderId;
+        try {
+            orderId = gateway.createOrder(creds, amountPaise, "p" + tenantId + "-" + bookingId);
+        } catch (GatewayException e) {
+            throw new GatewayUnavailableException();
+        }
+        intents.save(PaymentIntent.forPuja(tenantId, orderId, amountPaise, name, purpose, bookingId));
+        return new CreatedOrder(orderId, creds.keyId(), amountPaise);
+    }
+
+    private Settled settledAgain(PaymentIntent intent) {
+        if (intent.isPuja()) {
+            return Settled.puja(intent, pujas.bookingCode(intent.getPujaBookingId()));
+        }
+        return Settled.donation(donations.findById(intent.getDonationId()).orElseThrow());
+    }
+
+    private Settled settle(PaymentIntent intent, Payment p) {
         boolean matches = "captured".equals(p.status())
                 && intent.getRazorpayOrderId().equals(p.orderId())
                 && p.amountPaise() == intent.getAmountPaise()
@@ -180,12 +208,19 @@ public class OnlineDonationService {
                     intent.getRazorpayOrderId(), p.id(), p.status());
             throw new PaymentNotVerifiedException();
         }
+        if (intent.isPuja()) {
+            String code = pujas.confirmPaid(intent.getPujaBookingId(), p.id());
+            intent.markPaid(p.id(), null, OffsetDateTime.now(clock));
+            audit.info("event=puja_paid tenant={} booking={} paise={} payment={}", intent.getTenantId(),
+                    intent.getPujaBookingId(), intent.getAmountPaise(), p.id());
+            return Settled.puja(intent, code);
+        }
         Donation donation = donations.saveAndFlush(Donation.online(intent.getTenantId(), intent.getDonorName(),
                 intent.getAmountPaise(), mode(p.method()), intent.getPurpose(), LocalDate.now(clock), p.id()));
         intent.markPaid(p.id(), donation.getId(), OffsetDateTime.now(clock));
         audit.info("event=online_donation tenant={} donation={} paise={} payment={}", intent.getTenantId(),
                 donation.getId(), intent.getAmountPaise(), p.id());
-        return donation;
+        return Settled.donation(donation);
     }
 
     static boolean signatureValid(String orderId, String paymentId, String signature, String secret) {
@@ -231,6 +266,18 @@ public class OnlineDonationService {
     }
 
     public record CreatedOrder(String orderId, String keyId, long amountPaise) { }
+
+    /** What a verified payment settled: a ledger donation, or a puja booking. */
+    public record Settled(String kind, Long donationId, String bookingCode, long amountPaise, String name, LocalDate date) {
+        static Settled donation(Donation d) {
+            return new Settled("DONATION", d.getId(), null, d.getAmountPaise(), d.getDonorName(), d.getReceivedOn());
+        }
+
+        static Settled puja(PaymentIntent i, String bookingCode) {
+            return new Settled("PUJA", null, bookingCode, i.getAmountPaise(), i.getDonorName(),
+                    LocalDate.now(DonationService.IST));
+        }
+    }
 
     /** 400, deliberately unspecific: forged, mismatched, unknown or foreign-tenant payments alike. */
     public static class PaymentNotVerifiedException extends RuntimeException { }

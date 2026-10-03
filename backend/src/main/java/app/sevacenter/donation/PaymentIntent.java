@@ -45,6 +45,13 @@ public class PaymentIntent {
     @Column(name = "donation_id")
     private Long donationId;
 
+    /** DONATION settles into the ledger; PUJA confirms a puja booking (seva income, not 80G). */
+    @Column(nullable = false, updatable = false)
+    private String kind = "DONATION";
+
+    @Column(name = "puja_booking_id", updatable = false)
+    private Long pujaBookingId;
+
     @Column(name = "created_at", insertable = false, updatable = false)
     private OffsetDateTime createdAt;
 
@@ -61,7 +68,15 @@ public class PaymentIntent {
         this.purpose = purpose;
     }
 
-    void markPaid(String paymentId, long donationId, OffsetDateTime now) {
+    static PaymentIntent forPuja(long tenantId, String orderId, long amountPaise, String name, String purpose,
+                                 long bookingId) {
+        PaymentIntent i = new PaymentIntent(tenantId, orderId, amountPaise, name, purpose);
+        i.kind = "PUJA";
+        i.pujaBookingId = bookingId;
+        return i;
+    }
+
+    void markPaid(String paymentId, Long donationId, OffsetDateTime now) {
         this.status = "PAID";
         this.razorpayPaymentId = paymentId;
         this.donationId = donationId;
@@ -69,6 +84,10 @@ public class PaymentIntent {
     }
 
     boolean isPaid() { return "PAID".equals(status); }
+
+    boolean isPuja() { return "PUJA".equals(kind); }
+
+    public Long getPujaBookingId() { return pujaBookingId; }
 
     public Long getId() { return id; }
     public Long getTenantId() { return tenantId; }
