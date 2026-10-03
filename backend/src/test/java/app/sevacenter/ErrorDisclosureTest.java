@@ -85,6 +85,24 @@ class ErrorDisclosureTest {
         }
     }
 
+    /**
+     * Uploads over the 2 MB limit are refused by the container with a clean 4xx. The sanity filter
+     * reads parameters (which parses multipart) before authentication, so this holds even for
+     * anonymous requests, and the parse is bounded by the same limit.
+     */
+    @Test
+    void oversizedUploadsAreRefusedCleanly() throws Exception {
+        String boundary = "sevacenter-test";
+        String body = "--" + boundary + "\r\nContent-Disposition: form-data; name=\"file\"; filename=\"d.csv\"\r\n"
+                + "Content-Type: text/csv\r\n\r\n" + "x".repeat(3 * 1024 * 1024) + "\r\n--" + boundary + "--\r\n";
+        HttpResponse<String> response = http.send(HttpRequest.newBuilder(uri("/api/v1/devotees/import"))
+                        .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                        .POST(HttpRequest.BodyPublishers.ofString(body)).build(),
+                HttpResponse.BodyHandlers.ofString());
+        assertThat(response.statusCode()).isBetween(400, 499);
+        assertThat(response.body()).doesNotContain("Exception", "at org.");
+    }
+
     private URI uri(String path) {
         return URI.create("http://localhost:" + port + path);
     }

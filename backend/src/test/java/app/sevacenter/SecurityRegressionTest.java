@@ -40,7 +40,15 @@ class SecurityRegressionTest {
                 .andExpect(header().string("Cross-Origin-Resource-Policy", "same-origin"))
                 .andExpect(header().string("X-Content-Type-Options", "nosniff"))
                 .andExpect(header().string("X-Frame-Options", "DENY"))
-                .andExpect(header().string("Cache-Control", containsString("no-store")));
+                .andExpect(header().string("Cache-Control", containsString("no-store")))
+                .andExpect(header().string("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'; sandbox"));
+    }
+
+    /** The API-only CSP must not break the docs UI (it loads its own scripts and styles). */
+    @Test
+    void theApiCspIsScopedToTheApi() throws Exception {
+        mvc.perform(get("/swagger-ui/index.html"))
+                .andExpect(header().doesNotExist("Content-Security-Policy"));
     }
 
     @Test

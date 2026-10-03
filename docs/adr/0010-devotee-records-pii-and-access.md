@@ -18,7 +18,7 @@ scoped to the donation.
 | List / search / view | ✅ **masked** | ✅ full | ✅ full |
 | Create / edit | ❌ | ✅ | ✅ |
 | Erase | ❌ | ❌ | ✅ |
-| CSV export (M2 slice 2) | ❌ | ❌ | ✅ |
+| CSV export / import (M2 slice 2) | ❌ | ❌ | ✅ |
 
 - **Masked** = name, city and state in full. Phone shows its last 4 digits, email its first letter
   and domain. Address line, pincode and date of birth are left out. Masking happens on the

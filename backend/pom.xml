@@ -18,6 +18,7 @@
 	<properties>
 		<java.version>21</java.version>
 		<springdoc.version>3.1.1</springdoc.version>
+		<commons-csv.version>1.14.1</commons-csv.version>
 		<!-- SCA overrides (G3): patch-level bumps over Boot 4.1.1's managed versions to fix
 		     published CVEs. Remove each once a Boot release ships an equal or newer version;
 		     Dependabot (maven) will propose that Boot bump. -->
@@ -59,6 +60,12 @@
 			<artifactId>flyway-database-postgresql</artifactId>
 		</dependency>
 
+		<!-- RFC 4180 CSV for devotee import/export (M2): a hand-rolled parser is a classic bug source -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-csv</artifactId>
+			<version>${commons-csv.version}</version>
+		</dependency>
 		<!-- Self-documenting API: OpenAPI 3 + Swagger UI -->
 		<dependency>
 			<groupId>org.springdoc</groupId>

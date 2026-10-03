@@ -199,7 +199,29 @@ curl -s -b /tmp/jar -X POST localhost:8080/api/v1/register -H 'Content-Type: app
   Tomcat 11's `InvalidParameterException`. Fixed globally (`RequestSanityFilter`, `NulRejectingStrings`),
   tests written first and seen failing. Authenticated DAST must now also create devotees.
 
-**Next: M2 slice 2: CSV export (admin only) + import**, with CSV/formula-injection defence.
+## M2 slice 2 — devotee CSV export/import ✅ (this PR)
+- `GET /api/v1/devotees/export` + `POST /api/v1/devotees/import` (multipart): **TRUST_ADMIN only**
+  (bulk PII). Export: `Cache-Control: no-store`, attachment, audit-logged (`audit` logger, no PII).
+- **CSV/formula injection:** cells starting `= + - @ \t \r` get a leading `'` on export; import strips it,
+  so export → import round-trips exactly.
+- Import: same rules as the API (shared `normalise`), **all-or-nothing**, errors name line + field and
+  never echo cell values; strict header (unknown/duplicate/missing columns → reject: no CSV mass
+  assignment); consent required per row; Excel BOM handled; ≤ 5,000 rows, ≤ 2 MB (container limit).
+- Apache Commons CSV 1.14.1 (new dependency, SCA-scanned) instead of a hand-rolled parser.
+- NUL check moved into the shared write path, so CSV cells are covered too.
+- `DevoteeCsvTest` (11) + oversize-upload real-server test; **mutation-checked 12/12**; probe +7 rows.
+- DAST: "persistent XSS" on the CSV export reproduced → not exploitable as served; added an API-wide
+  `CSP: default-src 'none'; sandbox` anyway, then a scoped accepted risk. Three 500s fixed (bad
+  multipart → 400, oversize → 413, concurrent delete → 409). 96 tests.
+
+## Frontend track (started 2026-10-03)
+- Next.js + TS admin app (`frontend/`), being built in parallel: login, account setup, staff,
+  devotees + CSV, design-system theme, strict CSP. Same-origin `/api` proxy; `<slug>.localhost`
+  locally.
+- Gates to add with it: Semgrep TS/React/Next rules, `npm ci --ignore-scripts`, `npm audit
+  signatures`, SCA coverage for `package.json`, ZAP baseline on the UI.
+
+**Next: M3 Donations + 80G** (Razorpay, PAN encrypted, receipts; donor erasure → anonymise).
 
 ## Next up — M1 slice 2
 - Login + sessions (cookie session per ADR 0007; set cookie flags HttpOnly/Secure/SameSite); tenant-aware `UserDetailsService` (scope lookup by `TenantContext`).

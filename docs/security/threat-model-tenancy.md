@@ -121,6 +121,11 @@ Tests in `DevoteeTest`; every row is also exercised against the built jar by `au
 | `LIKE` wildcard injection (`%`, `_`) → full scans / data discovery | `escape()` in every search query | `likeWildcardsInSearchMatchLiterally` |
 | Unbounded pages, sort-property probing | Size ≤ 100, page clamped, fixed sort | `pageSizeIsCappedAndBadPagingIsClamped` |
 | Right to erasure | Hard delete by TRUST_ADMIN (M3: anonymise donors, keep 80G receipts) | `erasureRemovesThePersonalData` |
+| Bulk PII exfiltration via export | Export/import TRUST_ADMIN only; `no-store`; audit log | `onlyAdminsCanExportAndTheFileIsNeverCached`, `onlyAdminsCanImport` (`DevoteeCsvTest`) |
+| CSV/formula injection (`=HYPERLINK(…)` runs in Excel) | Leading `'` on cells starting `= + - @ \t \r`; stripped on import | `exportedCellsCannotRunAsSpreadsheetFormulas`, `anExportImportsBackUnchanged` |
+| Mass assignment via CSV columns (`tenantId`, audit fields) | Strict header: exactly the known columns | `unknownOrMissingColumnsRejectTheFile` |
+| Partial / poisoned imports; reflected content in error reports | All-or-nothing; errors give line + field, never cell values | `oneBadRowRejectsTheWholeFileAndNamesTheLineWithoutEchoingIt` |
+| Resource exhaustion via upload | 2 MB container limit; 5,000-row cap | `malformedEmptyAndOversizedFilesAreRejected`, `ErrorDisclosureTest.oversizedUploadsAreRefusedCleanly` |
 
 ## Open questions
 

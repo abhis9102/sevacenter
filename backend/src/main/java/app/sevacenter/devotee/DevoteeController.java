@@ -1,8 +1,11 @@
 package app.sevacenter.devotee;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.stream.Stream;
 
 import app.sevacenter.auth.StaffUser;
 import app.sevacenter.user.Role;
@@ -14,7 +17,14 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import org.apache.commons.csv.CSVPrinter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,6 +38,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Devotee records (ADR 0010). MEMBER: view/search, masked, by name only. LEADER: also create
@@ -40,10 +51,14 @@ public class DevoteeController {
 
     private static final LocalDate EARLIEST_BIRTH = LocalDate.of(1900, 1, 2);
 
-    private final DevoteeService service;
+    private static final Logger AUDIT = LoggerFactory.getLogger("audit");
 
-    public DevoteeController(DevoteeService service) {
+    private final DevoteeService service;
+    private final DevoteeImportService importer;
+
+    public DevoteeController(DevoteeService service, DevoteeImportService importer) {
         this.service = service;
+        this.importer = importer;
     }
 
     @GetMapping
@@ -57,6 +72,44 @@ public class DevoteeController {
         return new PageResponse(result.map(d -> DevoteeResponse.of(d, full)).getContent(),
                 result.getNumber(), result.getSize(), result.getTotalElements());
     }
+
+    /**
+     * The whole directory as CSV: TRUST_ADMIN only (bulk PII export is the highest-impact
+     * exfiltration path, ADR 0010), never cached, audit-logged, cells neutralised against
+     * formula injection.
+     */
+    @GetMapping(value = "/export", produces = "text/csv")
+    @PreAuthorize("hasRole('TRUST_ADMIN')")
+    public ResponseEntity<byte[]> export(@AuthenticationPrincipal StaffUser staff) throws IOException {
+        List<Devotee> all = service.exportAll();
+        StringBuilder out = new StringBuilder();
+        try (CSVPrinter csv = new CSVPrinter(out, DevoteeCsv.WRITE)) {
+            for (Devotee d : all) {
+                csv.printRecord(Stream.of(d.getId(), d.getFullName(), d.getPhone(), d.getEmail(), d.getAddressLine(),
+                        d.getCity(), d.getState(), d.getPincode(), d.getDateOfBirth(), d.getConsentSource(),
+                        d.getConsentGivenAt(), d.getCreatedAt()).map(DevoteeCsv::neutralise).toList());
+            }
+        }
+        AUDIT.info("event=devotee_export tenant={} user={} rows={}", staff.tenantId(), staff.userId(), all.size());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+                        .filename("devotees-" + LocalDate.now() + ".csv").build().toString())
+                .header(HttpHeaders.CACHE_CONTROL, "no-store")
+                .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
+                .body(out.toString().getBytes(StandardCharsets.UTF_8));
+    }
+
+    /** All-or-nothing CSV import (same rules as the API); TRUST_ADMIN only, like export. */
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('TRUST_ADMIN')")
+    public ImportResponse importCsv(@RequestParam("file") MultipartFile file,
+                                    @AuthenticationPrincipal StaffUser staff) throws IOException {
+        try (var in = file.getInputStream()) {
+            return new ImportResponse(importer.importCsv(in, staff.userId(), staff.tenantId()));
+        }
+    }
+
+    public record ImportResponse(int imported) { }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('MEMBER')")
