@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import app.sevacenter.auth.SlugAlreadyTakenException;
+import app.sevacenter.devotee.DevoteeService;
 import app.sevacenter.user.UserManagementService;
 
 /**
@@ -24,6 +25,19 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UserManagementService.UserNotFoundException.class)
     public ResponseEntity<Map<String, Object>> onUserNotFound() {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
+    }
+
+    @ExceptionHandler(DevoteeService.DevoteeNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> onDevoteeNotFound() {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
+    }
+
+    @ExceptionHandler(InvalidFieldException.class)
+    public ResponseEntity<Map<String, Object>> onInvalidField(InvalidFieldException ex) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("error", "validation_failed");
+        body.put("fields", Map.of(ex.field(), ex.getMessage()));
+        return ResponseEntity.badRequest().body(body);
     }
 
     @ExceptionHandler(UserManagementService.UserConflictException.class)

@@ -98,6 +98,23 @@ it asserts the expected status for each identity.
   `password`, …) are now reserved slugs, since tenant hosts serve login pages and those names
   would be ready-made phishing hosts.
 
+### First findings on M2 (devotees): two ways to turn input into a 500
+
+The gate passed (500s are Low), but the app log had 8 errors. Both were real bugs:
+
+| Finding | Root cause | Fix (global, not per endpoint) |
+|---|---|---|
+| 500 on `POST /devotees` and on search with `q=…%00…` | NUL (`\u0000`) passes bean validation; Postgres rejects it in text | `NulRejectingStrings` (Jackson: every JSON string) + `RequestSanityFilter` (every parameter) → 400 |
+| 500 on `GET /devotees?=x` | Tomcat 11 throws `InvalidParameterException` when the parameters are first read | `RequestSanityFilter` reads them first and answers 400 |
+
+They first appeared with devotees only because those are the first endpoints with free-text fields
+and query parameters. The user and register endpoints rejected those values through stricter
+format rules (email, slug), by luck rather than by design. Regression tests: `DevoteeTest.nulBytesAreABadRequestNotAServerError`,
+`ErrorDisclosureTest.malformedQueryParametersAreABadRequest` (real server; MockMvc has no Tomcat
+parameter parsing). Both failed before the fix.
+
+**Lesson:** read the app's ERROR log, not only the gate verdict. `dast.sh` prints the count.
+
 ## Known gaps
 
 - No beta/alpha ZAP rules: fetching add-ons at scan time would pull unpinned code into CI. If

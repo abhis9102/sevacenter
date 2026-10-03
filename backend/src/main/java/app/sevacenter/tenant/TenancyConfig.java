@@ -11,6 +11,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 
+import app.sevacenter.web.RequestSanityFilter;
+
 /**
  * Wires up multi-tenancy:
  * <ul>
@@ -35,6 +37,15 @@ public class TenancyConfig {
         };
     }
 
+    /** Runs first: malformed parameters never reach tenant resolution, security or controllers. */
+    @Bean
+    FilterRegistrationBean<RequestSanityFilter> requestSanityFilter() {
+        FilterRegistrationBean<RequestSanityFilter> reg = new FilterRegistrationBean<>(new RequestSanityFilter());
+        reg.addUrlPatterns("/*");
+        reg.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        return reg;
+    }
+
     @Bean
     FilterRegistrationBean<TenantResolutionFilter> tenantResolutionFilter(
             TenantRepository tenants,
@@ -43,7 +54,7 @@ public class TenancyConfig {
         FilterRegistrationBean<TenantResolutionFilter> reg = new FilterRegistrationBean<>();
         reg.setFilter(new TenantResolutionFilter(tenants, allowHeaderOverride, baseDomains));
         reg.addUrlPatterns("/*");
-        reg.setOrder(Ordered.HIGHEST_PRECEDENCE);   // before Spring Security (-100)
+        reg.setOrder(Ordered.HIGHEST_PRECEDENCE + 1);   // after the sanity filter, before Spring Security (-100)
         return reg;
     }
 }
