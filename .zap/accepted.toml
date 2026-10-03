@@ -38,6 +38,20 @@ reason = "Abhi (AppSec): reproduced from the report: the attack value is the URL
 
 [[accepted]]
 pluginId = "40014" # Cross Site Scripting Weakness (Persistent in JSON Response)
-uri = '/api/v1/(public/)?(events|pujas|sevaks)(\?|$)'
+uri = '/api/v1/(public/)?(events|pujas|sevaks|donations)(\?|$)'
 ignoreUntil = 2026-12-31
 reason = "Abhi (AppSec): stored titles/names come back verbatim as JSON data (application/json, nosniff, API CSP default-src 'none'; sandbox); the frontend renders them as text (React escapes; no dangerouslySetInnerHTML). Pinned by SecurityRegressionTest + frontend review."
+
+[[accepted]]
+pluginId = "40018" # SQL Injection (boolean/arithmetic heuristic)
+param = "page"
+uri = '/api/v1/receipts\?'
+ignoreUntil = 2026-12-31
+reason = "Abhi (AppSec): reproduced against the jar (2026-10-03): page=2-2 and size='25 AND 1=1 -- ' are rejected with 400 before any query (not integers); paging is a typed JPA PageRequest, no SQL text. First flagged only once the scan created a receipt (list non-empty)."
+
+[[accepted]]
+pluginId = "40018" # SQL Injection (boolean/arithmetic heuristic)
+param = "size"
+uri = '/api/v1/receipts\?'
+ignoreUntil = 2026-12-31
+reason = "Abhi (AppSec): reproduced against the jar (2026-10-03): page=2-2 and size='25 AND 1=1 -- ' are rejected with 400 before any query (not integers); paging is a typed JPA PageRequest, no SQL text. First flagged only once the scan created a receipt (list non-empty)."
