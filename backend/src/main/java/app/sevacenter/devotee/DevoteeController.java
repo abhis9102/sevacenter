@@ -78,7 +78,7 @@ public class DevoteeController {
      * exfiltration path, ADR 0010), never cached, audit-logged, cells neutralised against
      * formula injection.
      */
-    @GetMapping(value = "/export", produces = "text/csv")
+    @GetMapping(value = "/export", produces = {"text/csv", MediaType.ALL_VALUE})
     @PreAuthorize("hasRole('TRUST_ADMIN')")
     public ResponseEntity<byte[]> export(@AuthenticationPrincipal StaffUser staff) throws IOException {
         List<Devotee> all = service.exportAll();
@@ -111,7 +111,7 @@ public class DevoteeController {
 
     public record ImportResponse(int imported) { }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\d+}")
     @PreAuthorize("hasRole('MEMBER')")
     public DevoteeResponse get(@PathVariable long id, @AuthenticationPrincipal StaffUser staff) {
         return DevoteeResponse.of(service.get(id), seesContactDetails(staff));
@@ -128,14 +128,14 @@ public class DevoteeController {
         return DevoteeResponse.of(service.create(request.toDomain(), request.consentSource(), staff.userId()), true);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{id:\\d+}")
     @PreAuthorize("hasRole('LEADER')")
     public DevoteeResponse update(@PathVariable long id, @Valid @RequestBody DevoteeDetails request,
                                   @AuthenticationPrincipal StaffUser staff) {
         return DevoteeResponse.of(service.update(id, request.toDomain(), staff.userId()), true);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:\\d+}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasRole('TRUST_ADMIN')")
     public void erase(@PathVariable long id, @AuthenticationPrincipal StaffUser staff) {
