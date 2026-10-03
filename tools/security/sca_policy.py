@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """SCA policy checks that the scanner itself doesn't enforce.
 
-  coverage  Every <dependency> declared in each pom.xml must appear in osv-scanner's resolved
+  coverage  Every dependency declared in each pom.xml or package.json must appear in osv-scanner's resolved
             package list. A scanner that silently fails to resolve part of the tree reports
             "0 vulnerabilities" for the part it never saw. This happened during the Boot 4
             evaluation: 15 of 183 packages were resolved, and the scan came back clean.
@@ -31,6 +31,17 @@ DEP = re.compile(
     r"<dependency>\s*<groupId>([^<]+)</groupId>\s*<artifactId>([^<]+)</artifactId>", re.S)
 
 
+def declared_dependencies(manifest: str) -> list[str]:
+    """Direct dependencies a manifest declares: Maven <dependency> or npm (incl. dev) packages.
+    npm dev dependencies count too: they run in CI and on developer machines (supply chain)."""
+    text = pathlib.Path(manifest).read_text(encoding="utf-8")
+    if manifest.endswith("package.json"):
+        data = json.loads(text)
+        return sorted({*data.get("dependencies", {}), *data.get("devDependencies", {})})
+    text = re.sub(r"<!--.*?-->", "", text, flags=re.S)
+    return [f"{g.strip()}:{a.strip()}" for g, a in DEP.findall(text)]
+
+
 def coverage(osv_json: str, poms: list[str]) -> list[str]:
     with open(osv_json, encoding="utf-8") as f:
         report = json.load(f)
@@ -41,10 +52,9 @@ def coverage(osv_json: str, poms: list[str]) -> list[str]:
                 if p["package"].get("version")}
     errors = []
     for pom in poms:
-        text = re.sub(r"<!--.*?-->", "", pathlib.Path(pom).read_text(encoding="utf-8"), flags=re.S)
-        declared = [f"{g.strip()}:{a.strip()}" for g, a in DEP.findall(text)]
+        declared = declared_dependencies(pom)
         if not declared:
-            errors.append(f"{pom}: no <dependency> entries found (parser or file problem?)")
+            errors.append(f"{pom}: no dependencies found (parser or file problem?)")
         missing = [d for d in declared if d not in resolved]
         for d in missing:
             errors.append(f"{pom}: declared dependency {d} was not resolved by the scanner")
@@ -109,7 +119,7 @@ def main() -> int:
     sub = p.add_subparsers(dest="cmd", required=True)
     c = sub.add_parser("coverage", help="every declared dependency was scanned")
     c.add_argument("osv_json", help="osv-scanner --format json --all-packages output")
-    c.add_argument("poms", nargs="+")
+    c.add_argument("poms", nargs="+", metavar="manifest", help="pom.xml and/or package.json files")
     g = sub.add_parser("gate", help="fail on findings at or above a CVSS threshold")
     g.add_argument("osv_json", help="osv-scanner --format json output (with --config applied)")
     g.add_argument("--fail-at", type=float, default=7.0, help="CVSS threshold (default 7.0)")

@@ -28,7 +28,7 @@ repos:
 
       - id: semgrep
         name: semgrep (SAST, changed files)
-        entry: semgrep scan --config p/java --config p/python --config p/secrets --error --quiet --metrics=off
+        entry: semgrep scan --config p/java --config p/python --config p/typescript --config p/react --config p/nextjs --config p/secrets --error --quiet --metrics=off
         language: system
-        types_or: [java, python]
+        types_or: [java, python, ts, tsx, javascript]
         pass_filenames: true
