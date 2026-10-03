@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+import app.sevacenter.audit.AuditAction;
+import app.sevacenter.audit.AuditTrail;
 import app.sevacenter.devotee.DevoteeController.DevoteeDetails;
 import app.sevacenter.web.InvalidFieldException;
 import jakarta.validation.ConstraintViolation;
@@ -40,8 +42,10 @@ public class DevoteeImportService {
 
     private final DevoteeService devotees;
     private final Validator validator;
+    private final AuditTrail auditTrail;
 
-    public DevoteeImportService(DevoteeService devotees, Validator validator) {
+    public DevoteeImportService(DevoteeService devotees, Validator validator, AuditTrail auditTrail) {
+        this.auditTrail = auditTrail;
         this.devotees = devotees;
         this.validator = validator;
     }
@@ -50,8 +54,9 @@ public class DevoteeImportService {
     public int importCsv(InputStream csv, long staffId, long tenantId) {
         List<Row> rows = parse(csv);
         for (Row row : rows) {
-            devotees.create(row.details(), row.consent(), staffId);
+            devotees.createUnaudited(row.details(), row.consent(), staffId);
         }
+        auditTrail.record(AuditAction.DEVOTEES_IMPORTED, "devotee", null, rows.size() + " rows");
         audit.info("event=devotee_import tenant={} user={} rows={}", tenantId, staffId, rows.size());
         return rows.size();
     }

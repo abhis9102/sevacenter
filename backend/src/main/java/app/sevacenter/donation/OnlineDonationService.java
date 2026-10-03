@@ -14,6 +14,8 @@ import java.util.Optional;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+import app.sevacenter.audit.AuditAction;
+import app.sevacenter.audit.AuditTrail;
 import app.sevacenter.donation.PaymentGateway.Credentials;
 import app.sevacenter.donation.PaymentGateway.GatewayException;
 import app.sevacenter.donation.PaymentGateway.Payment;
@@ -43,12 +45,15 @@ public class OnlineDonationService {
     private final DonationRepository donations;
     private final PaymentGateway gateway;
     private final SecretBox secrets;
+    private final AuditTrail auditTrail;
     private final PujaSettlement pujas;
     private final Clock clock = Clock.system(DonationService.IST);
 
     public OnlineDonationService(PaymentSettingsRepository settings, PaymentIntentRepository intents,
                                  DonationRepository donations, PaymentGateway gateway, SecretBox secrets,
-                                 @org.springframework.context.annotation.Lazy PujaSettlement pujas) {
+                                 @org.springframework.context.annotation.Lazy PujaSettlement pujas,
+                                 AuditTrail auditTrail) {
+        this.auditTrail = auditTrail;
         this.pujas = pujas;
         this.settings = settings;
         this.intents = intents;
@@ -78,6 +83,7 @@ public class OnlineDonationService {
         PaymentSettings s = settings.findById(tenantId).orElseGet(() -> new PaymentSettings(tenantId));
         s.replace(id, secrets.seal(tenantId, PaymentSettings.SECRET_PURPOSE, secret), staffId, OffsetDateTime.now(clock));
         audit.info("event=payment_settings_saved tenant={} user={} keyId={}", tenantId, staffId, id);
+        auditTrail.record(AuditAction.PAYMENT_SETTINGS_SAVED, "payment_settings", null, id);
         return settings.save(s);
     }
 

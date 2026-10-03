@@ -6,6 +6,8 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Locale;
 
+import app.sevacenter.audit.AuditAction;
+import app.sevacenter.audit.AuditTrail;
 import app.sevacenter.devotee.DevoteeService;
 import app.sevacenter.tenant.TenantContext;
 import app.sevacenter.web.InvalidFieldException;
@@ -27,9 +29,11 @@ public class EventService {
 
     private final EventRepository events;
     private final EventPassRepository passes;
+    private final AuditTrail auditTrail;
     private final Clock clock = Clock.systemUTC();
 
-    public EventService(EventRepository events, EventPassRepository passes) {
+    public EventService(EventRepository events, EventPassRepository passes, AuditTrail auditTrail) {
+        this.auditTrail = auditTrail;
         this.events = events;
         this.passes = passes;
     }
@@ -61,6 +65,7 @@ public class EventService {
         }
         e.changeStatus(status, staffId, now());
         audit.info("event=event_status tenant={} user={} event={} status={}", currentTenant(), staffId, id, status);
+        auditTrail.record(AuditAction.EVENT_STATUS_CHANGED, "event", id, status.name());
         return e;
     }
 

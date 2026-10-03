@@ -12,6 +12,8 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
 
+import app.sevacenter.audit.AuditAction;
+import app.sevacenter.audit.AuditTrail;
 import app.sevacenter.auth.LoginThrottle;
 import app.sevacenter.tenant.TenantContext;
 import app.sevacenter.tenant.TenantRepository;
@@ -46,12 +48,14 @@ public class UserManagementService {
     private final UserAvatarRepository avatars;
     private final LoginThrottle throttle;
     private final PasswordResetService resets;
+    private final AuditTrail auditTrail;
     private final Clock clock;
 
     public UserManagementService(AppUserRepository users, SetupTokenRepository setupTokens,
                                  TenantRepository tenants, PasswordEncoder passwordEncoder,
                                  UserAvatarRepository avatars, LoginThrottle throttle,
-                                 PasswordResetService resets) {
+                                 PasswordResetService resets, AuditTrail auditTrail) {
+        this.auditTrail = auditTrail;
         this.users = users;
         this.setupTokens = setupTokens;
         this.tenants = tenants;
@@ -142,6 +146,7 @@ public class UserManagementService {
             throw new UserConflictException("email_taken");
         }
         AppUser user = users.saveAndFlush(AppUser.pending(tenantId, normalized, displayName.trim(), role));
+        auditTrail.record(AuditAction.USER_INVITED, "user", user.getId(), role.name());
         return new CreatedUser(user, issueSetupLink(user));
     }
 
@@ -159,6 +164,7 @@ public class UserManagementService {
             throw new UserConflictException("not_active");
         }
         String token = resets.issueFor(user);
+        auditTrail.record(AuditAction.USER_RESET_LINK_ISSUED, "user", user.getId(), null);
         String slug = tenants.findById(user.getTenantId()).orElseThrow().getSlug();
         // In the fragment, like setup links: never sent to a server, never in logs or Referer.
         return "https://" + slug + ".sevacenter.app/reset-password#token=" + token;
@@ -171,6 +177,7 @@ public class UserManagementService {
         if (user.getStatus() != UserStatus.PENDING) {
             throw new UserConflictException("not_pending");
         }
+        auditTrail.record(AuditAction.USER_SETUP_LINK_REISSUED, "user", user.getId(), null);
         return issueSetupLink(user);
     }
 
@@ -180,7 +187,9 @@ public class UserManagementService {
         if (user.getRole() == Role.TRUST_ADMIN && role != Role.TRUST_ADMIN) {
             requireAnotherActiveAdmin(user);
         }
+        Role before = user.getRole();
         user.changeRole(role);
+        auditTrail.record(AuditAction.USER_ROLE_CHANGED, "user", user.getId(), before.name() + " -> " + role.name());
         return user;
     }
 
@@ -191,6 +200,7 @@ public class UserManagementService {
             requireAnotherActiveAdmin(user);
         }
         user.disable();
+        auditTrail.record(AuditAction.USER_DEACTIVATED, "user", user.getId(), null);
         setupTokens.deleteAllForUser(user.getId());
         resets.invalidateFor(user.getId());
         return user;
@@ -212,6 +222,8 @@ public class UserManagementService {
         }
         setupTokens.deleteAllForUser(user.getId());
         resets.invalidateFor(user.getId());
+        auditTrail.record(AuditAction.USER_DELETED, "user", user.getId(),
+                user.getStatus() == UserStatus.PENDING ? "invitation withdrawn" : null);
         if (user.getStatus() == UserStatus.PENDING) {
             users.delete(user);
         } else {

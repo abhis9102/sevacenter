@@ -330,6 +330,19 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
   (others' 404, no session 401, `no-store`). Public **/donate** gains optional mobile/email.
 - `DonationHistoryTest` (6), **mutation-checked 11/11** (found first: cancelled receipts untested, added); probe +1 row.
 
+## Audit log ✅ (this PR, ADR 0020)
+- `V19`: `audit_log`, append-only (app role: SELECT/INSERT only), forced RLS, no free text.
+- `AuditTrail` writes in the **same transaction** as the action (`MANDATORY`): rolled-back actions leave
+  no entry, a failed entry rolls the action back; actor from the session. Covers user management (which
+  had no record at all before), devotee create/update/erase/import/export, donations, reversals,
+  receipts, trust profile, payment settings, events, pujas, sevak reviews, temple page.
+- TRUST_ADMIN **Audit log** screen (filter by action). `AuditTest` (8), mutation-checked 10/11 + 1
+  equivalent (found first: the same-transaction guarantee was untested, and a second annotated entry
+  point could bypass it; removed); probe +4 rows.
+
+Next (user decisions 2026-10-04): server-enforced module permissions → donation funds → staff
+dashboard → dark mode + logo.
+
 **MVP features are now complete.** Then: M5 containers → M6 AWS → M7 gates.
 
 ## Next up — M1 slice 2

@@ -3,6 +3,8 @@ package app.sevacenter.temple;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 
+import app.sevacenter.audit.AuditAction;
+import app.sevacenter.audit.AuditTrail;
 import app.sevacenter.auth.StaffUser;
 import app.sevacenter.devotee.DevoteeService;
 import app.sevacenter.donation.OnlineDonationService;
@@ -34,10 +36,12 @@ public class TempleController {
     private final OnlineDonationService payments;
     private final EventService events;
     private final PujaService pujas;
+    private final AuditTrail auditTrail;
     private final Clock clock = Clock.systemUTC();
 
     public TempleController(TempleProfileRepository profiles, TenantRepository tenants, OnlineDonationService payments,
-                            EventService events, PujaService pujas) {
+                            EventService events, PujaService pujas, AuditTrail auditTrail) {
+        this.auditTrail = auditTrail;
         this.profiles = profiles;
         this.tenants = tenants;
         this.payments = payments;
@@ -70,6 +74,7 @@ public class TempleController {
                 r.helpline() == null || r.helpline().isBlank() ? null : DevoteeService.phone(r.helpline()),
                 clean(r.timings()), clean(r.announcement()), staff.userId(), OffsetDateTime.now(clock));
         TempleProfile saved = profiles.save(p);
+        auditTrail.record(AuditAction.TEMPLE_PAGE_SAVED, "temple_profile", null, null);
         return new Profile(saved.getDeity(), saved.getAddress(), saved.getHelpline(), saved.getTimings(), saved.getAnnouncement());
     }
 

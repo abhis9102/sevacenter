@@ -4,6 +4,8 @@ import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.Locale;
 
+import app.sevacenter.audit.AuditAction;
+import app.sevacenter.audit.AuditTrail;
 import app.sevacenter.tenant.TenantContext;
 import app.sevacenter.web.InvalidFieldException;
 import org.springframework.data.domain.Page;
@@ -21,10 +23,12 @@ public class DevoteeService {
     private static final Sort ORDER = Sort.by("fullName").and(Sort.by("id"));
 
     private final DevoteeRepository devotees;
+    private final AuditTrail auditTrail;
     private final Clock clock = Clock.systemUTC();
 
-    public DevoteeService(DevoteeRepository devotees) {
+    public DevoteeService(DevoteeRepository devotees, AuditTrail auditTrail) {
         this.devotees = devotees;
+        this.auditTrail = auditTrail;
     }
 
     /** {@code contactSearch}: may the caller search by phone/email (roles that see them in full). */
@@ -36,9 +40,11 @@ public class DevoteeService {
     }
 
     /** Every devotee of the tenant, for the admin-only CSV export. */
-    @Transactional(readOnly = true)
+    @Transactional
     public java.util.List<Devotee> exportAll() {
-        return devotees.findAllByErasedAtIsNull(ORDER);
+        java.util.List<Devotee> all = devotees.findAllByErasedAtIsNull(ORDER);
+        auditTrail.record(AuditAction.DEVOTEES_EXPORTED, "devotee", null, all.size() + " rows");
+        return all;
     }
 
     @Transactional(readOnly = true)
@@ -48,6 +54,13 @@ public class DevoteeService {
 
     @Transactional
     public Devotee create(Devotee.Details details, ConsentSource consent, long staffId) {
+        Devotee saved = createUnaudited(details, consent, staffId);
+        auditTrail.record(AuditAction.DEVOTEE_CREATED, "devotee", saved.getId(), null);
+        return saved;
+    }
+
+    /** For the CSV import, which records one DEVOTEES_IMPORTED entry instead of one per row. */
+    Devotee createUnaudited(Devotee.Details details, ConsentSource consent, long staffId) {
         return devotees.save(new Devotee(currentTenant(), normalise(details), consent, staffId, now()));
     }
 
@@ -55,6 +68,7 @@ public class DevoteeService {
     public Devotee update(long id, Devotee.Details details, long staffId) {
         Devotee devotee = get(id);
         devotee.update(normalise(details), staffId, now());
+        auditTrail.record(AuditAction.DEVOTEE_UPDATED, "devotee", id, null);
         return devotee;
     }
 
@@ -65,6 +79,7 @@ public class DevoteeService {
     @Transactional
     public void erase(long id, long staffId) {
         Devotee devotee = get(id);
+        auditTrail.record(AuditAction.DEVOTEE_ERASED, "devotee", id, null);
         if (devotees.hasDonations(id)) {
             devotee.anonymise(staffId, now());
         } else {

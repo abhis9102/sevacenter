@@ -25,6 +25,7 @@ export interface Translations {
     staff: string;
     donations: string;
     payments: string;
+    audit: string;
     events: string;
     volunteers: string;
     pujas: string;
@@ -307,6 +308,7 @@ export const DICTIONARIES: Record<Language, Translations> = {
       staff: "Staff",
       donations: "Donations",
       payments: "Payments",
+      audit: "Audit log",
       events: "Events",
       volunteers: "Volunteers",
       pujas: "Pujas",
@@ -606,6 +608,7 @@ export const DICTIONARIES: Record<Language, Translations> = {
       staff: "कर्मचारी (Staff)",
       donations: "दान (Donations)",
       payments: "भुगतान (Payments)",
+      audit: "ऑडिट लॉग (Audit log)",
       events: "उत्सव (Events)",
       volunteers: "सेवक (Volunteers)",
       pujas: "पूजा (Pujas)",

@@ -401,6 +401,14 @@ class Probe:
         self.check("a guessed code is refused without detail", status == 400 and body == {"error": "invalid_code"},
                    f"{status} {body}")
 
+        print("\naudit log (ADR 0020)")
+        self.expect("leader cannot read the audit log", 403, leader.request("GET", "/api/v1/audit"))
+        self.expect("member cannot read the audit log", 403, member.request("GET", "/api/v1/audit"))
+        status, log = admin_a.request("GET", "/api/v1/audit?size=100")
+        self.check("admin reads A's audit log", status == 200 and isinstance(log, dict) and log.get("total", 0) > 0,
+                   f"{status}")
+        self.expect("anonymous cannot read an audit log", 401, self.client(b).request("GET", "/api/v1/audit"))
+
         print("\nCSRF")
         self.expect("state change without the CSRF header", 403,
                     admin_a.request("POST", "/api/v1/users", body=new_user, csrf=False))
