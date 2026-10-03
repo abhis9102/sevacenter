@@ -1,5 +1,6 @@
 package app.sevacenter.auth;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,7 +48,13 @@ public class RegistrationService {
             throw new SlugAlreadyTakenException(slug);
         }
 
-        Tenant tenant = tenants.saveAndFlush(new Tenant(slug, req.trustName().trim()));
+        Tenant tenant;
+        try {
+            tenant = tenants.saveAndFlush(new Tenant(slug, req.trustName().trim()));
+        } catch (DataIntegrityViolationException e) {
+            // Two registrations of one slug at once both pass the check; the unique index lets one win.
+            throw new SlugAlreadyTakenException(slug);
+        }
 
         // The one explicit pin: this transaction started with no tenant (TenantPinningDataSource
         // set ''), and the tenant it now writes into didn't exist until a moment ago.
