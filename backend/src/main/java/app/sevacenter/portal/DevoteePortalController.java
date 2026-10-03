@@ -152,6 +152,84 @@ public class DevoteePortalController {
         return ResponseEntity.ok(list.stream().map(DevoteeDonationItem::from).toList());
     }
 
+    @GetMapping("/schedule")
+    public ResponseEntity<DevoteePortalService.MandirSchedule> getSchedule() {
+        return ResponseEntity.ok(portalService.getMandirSchedule());
+    }
+
+    @GetMapping("/pujas")
+    public ResponseEntity<List<DevoteePortalService.PujaItem>> getPujas() {
+        return ResponseEntity.ok(portalService.getAvailablePujas());
+    }
+
+    @PostMapping("/pujas/book")
+    public ResponseEntity<DevoteePortalService.PujaBookingResponse> bookPuja(
+            @Valid @RequestBody DevoteePortalService.BookPujaRequest req,
+            HttpServletRequest request) {
+        Optional<Devotee> currentDevotee = resolveDevotee(request);
+        Long devoteeId = currentDevotee.map(Devotee::getId).orElse(req.devoteeId());
+        String devoteeName = (req.devoteeName() != null && !req.devoteeName().isBlank())
+                ? req.devoteeName()
+                : currentDevotee.map(Devotee::getFullName).orElse("Devotee");
+
+        DevoteePortalService.BookPujaRequest adjusted = new DevoteePortalService.BookPujaRequest(
+                devoteeId, req.pujaCode(), req.pujaDate(), req.timeSlot(), devoteeName,
+                req.gotra(), req.nakshatra(), req.rashi(), req.familyMembers(), req.contact(), req.paymentMode()
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(portalService.bookPuja(adjusted));
+    }
+
+    @GetMapping("/pujas/my-bookings")
+    public ResponseEntity<List<PujaBooking>> getMyPujaBookings(HttpServletRequest request) {
+        Devotee devotee = requireDevotee(request);
+        return ResponseEntity.ok(portalService.getDevoteePujaBookings(devotee.getId()));
+    }
+
+    @GetMapping("/events")
+    public ResponseEntity<List<DevoteePortalService.MandirEvent>> getEvents() {
+        return ResponseEntity.ok(portalService.getUpcomingEvents());
+    }
+
+    @PostMapping("/events/pass")
+    public ResponseEntity<DevoteePortalService.DarshanPassResponse> bookPass(
+            @Valid @RequestBody DevoteePortalService.BookPassRequest req,
+            HttpServletRequest request) {
+        Optional<Devotee> currentDevotee = resolveDevotee(request);
+        Long devoteeId = currentDevotee.map(Devotee::getId).orElse(req.devoteeId());
+        String primaryName = (req.primaryDevoteeName() != null && !req.primaryDevoteeName().isBlank())
+                ? req.primaryDevoteeName()
+                : currentDevotee.map(Devotee::getFullName).orElse("Devotee");
+
+        DevoteePortalService.BookPassRequest adjusted = new DevoteePortalService.BookPassRequest(
+                devoteeId, req.eventCode(), req.visitDate(), req.timeSlot(), primaryName,
+                req.attendeeCount(), req.contact()
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(portalService.bookDarshanPass(adjusted));
+    }
+
+    @GetMapping("/events/my-passes")
+    public ResponseEntity<List<DarshanPass>> getMyDarshanPasses(HttpServletRequest request) {
+        Devotee devotee = requireDevotee(request);
+        return ResponseEntity.ok(portalService.getDevoteeDarshanPasses(devotee.getId()));
+    }
+
+    @PostMapping("/volunteer")
+    public ResponseEntity<DevoteePortalService.SevakResponse> volunteer(
+            @Valid @RequestBody DevoteePortalService.SevakRequest req,
+            HttpServletRequest request) {
+        Optional<Devotee> currentDevotee = resolveDevotee(request);
+        Long devoteeId = currentDevotee.map(Devotee::getId).orElse(req.devoteeId());
+        String name = (req.fullName() != null && !req.fullName().isBlank())
+                ? req.fullName()
+                : currentDevotee.map(Devotee::getFullName).orElse("Devotee");
+
+        DevoteePortalService.SevakRequest adjusted = new DevoteePortalService.SevakRequest(
+                devoteeId, name, req.contact(), req.sevaArea(), req.availableDays(),
+                req.shiftPreference(), req.notes()
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(portalService.signupSevak(adjusted));
+    }
+
     private Devotee requireDevotee(HttpServletRequest request) {
         return resolveDevotee(request).orElseThrow(() -> new DevoteeUnauthorizedException("Devotee sign-in required"));
     }

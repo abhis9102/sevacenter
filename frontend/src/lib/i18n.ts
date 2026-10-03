@@ -277,7 +277,46 @@ export interface Translations {
   portal: {
     title: string;
     subtitle: string;
+    homeTab: string;
+    pujasTab: string;
     donateTab: string;
+    eventsTab: string;
+    volunteerTab: string;
+    myMandirTab: string;
+    darshanSchedule: string;
+    openForDarshan: string;
+    templeClosed: string;
+    dailyPanchang: string;
+    todayAarti: string;
+    announcements: string;
+    pujasHeading: string;
+    pujasSubtitle: string;
+    bookPuja: string;
+    sankalpForm: string;
+    gotraLabel: string;
+    nakshatraLabel: string;
+    rashiLabel: string;
+    familyMembersLabel: string;
+    pujaDateLabel: string;
+    timeSlotLabel: string;
+    dakshinaLabel: string;
+    confirmBooking: string;
+    bookingSuccess: string;
+    myPujaBookings: string;
+    eventsHeading: string;
+    eventsSubtitle: string;
+    bookPass: string;
+    attendeeCountLabel: string;
+    passSuccess: string;
+    eTokenNotice: string;
+    myPasses: string;
+    volunteerHeading: string;
+    volunteerSubtitle: string;
+    sevaAreaLabel: string;
+    availableDaysLabel: string;
+    shiftPreferenceLabel: string;
+    submitVolunteer: string;
+    volunteerSuccess: string;
     historyTab: string;
     donateHeading: string;
     donateSubtitle: string;
@@ -619,9 +658,48 @@ export const DICTIONARIES: Record<Language, Translations> = {
       },
     },
     portal: {
-      title: "Devotee & Seva Portal",
-      subtitle: "Offer online seva, make sacred donations, and download official receipts instantly.",
-      donateTab: "Make a Donation",
+      title: "Mandir Center",
+      subtitle: "Your sacred temple community hub for daily darshan, online seva offerings, puja bookings, festival passes, and volunteer seva.",
+      homeTab: "Mandir Home",
+      pujasTab: "Pujas & Sankalp",
+      donateTab: "Seva & Daan",
+      eventsTab: "Utsavs & Calendar",
+      volunteerTab: "Sevak Hub",
+      myMandirTab: "My Mandir",
+      darshanSchedule: "Darshan & Aarti Schedule",
+      openForDarshan: "Temple Open for Darshan",
+      templeClosed: "Temple Resting / Closed",
+      dailyPanchang: "Today's Sacred Panchang",
+      todayAarti: "Daily Aarti Timings",
+      announcements: "Temple Announcements & Updates",
+      pujasHeading: "Sacred Pujas & Vedic Rituals",
+      pujasSubtitle: "Book auspicious pujas, abhishek, and homas with personalized family Sankalpam performed by mandir priests.",
+      bookPuja: "Book Puja & Sankalp",
+      sankalpForm: "Devotee Sankalp Details",
+      gotraLabel: "Gotra (गोत्र)",
+      nakshatraLabel: "Janma Nakshatra (नक्षत्र)",
+      rashiLabel: "Rashi (राशि)",
+      familyMembersLabel: "Family Members for Sankalp",
+      pujaDateLabel: "Preferred Puja Date",
+      timeSlotLabel: "Time Slot",
+      dakshinaLabel: "Puja Dakshina / Seva Amount (₹)",
+      confirmBooking: "Confirm Booking & Sankalp",
+      bookingSuccess: "Puja Successfully Booked! Blessed by Mandir",
+      myPujaBookings: "My Booked Pujas & Sankalp Slips",
+      eventsHeading: "Upcoming Utsavs & Festivals",
+      eventsSubtitle: "Celebrate divine festivals, view holy schedules, and reserve hassle-free E-Token entry passes for your family.",
+      bookPass: "Get Darshan E-Token Pass",
+      attendeeCountLabel: "Number of Devotees / Family Members",
+      passSuccess: "Darshan E-Token Generated!",
+      eTokenNotice: "Show this digital pass QR code at the temple entry gate for priority check-in.",
+      myPasses: "My Festival Passes & E-Tokens",
+      volunteerHeading: "Join as a Temple Sevak",
+      volunteerSubtitle: "Serve the divine and community. Sign up to volunteer in bhandara, queue seva, decorations, and festival arrangements.",
+      sevaAreaLabel: "Area of Seva",
+      availableDaysLabel: "Availability",
+      shiftPreferenceLabel: "Preferred Shift",
+      submitVolunteer: "Register as Sevak",
+      volunteerSuccess: "Dhanyavad! You are registered as a temple Sevak.",
       historyTab: "My Receipts & History",
       donateHeading: "Offer Seva & Donation",
       donateSubtitle: "Support temple activities, annadanam, rituals and holy seva.",
@@ -962,9 +1040,48 @@ export const DICTIONARIES: Record<Language, Translations> = {
       },
     },
     portal: {
-      title: "भक्त एवं सेवा पोर्टल",
-      subtitle: "ऑनलाइन सेवा अर्पित करें, पवित्र दान करें और तुरंत आधिकारिक रसीद प्राप्त करें।",
-      donateTab: "दान / सेवा अर्पित करें",
+      title: "मंदिर सेंटर (Mandir Center)",
+      subtitle: "दैनिक दर्शन, ऑनलाइन सेवा दान, पूजा बुकिंग, उत्सव पास एवं सेवादार सहभागिता हेतु आपका पवित्र मंदिर पोर्टल।",
+      homeTab: "मंदिर दर्शन",
+      pujasTab: "पूजा एवं संकल्प",
+      donateTab: "सेवा एवं दान",
+      eventsTab: "उत्सव एवं कैलेंडर",
+      volunteerTab: "सेवादार केंद्र",
+      myMandirTab: "मेरा मंदिर",
+      darshanSchedule: "दर्शन एवं आरती समय सारिणी",
+      openForDarshan: "मंदिर दर्शन हेतु खुला है",
+      templeClosed: "मंदिर विश्राम समय / बंद",
+      dailyPanchang: "आज का पवित्र पंचांग एवं तिथि",
+      todayAarti: "दैनिक आरती समय",
+      announcements: "मंदिर सूचनाएं एवं विशेष समाचार",
+      pujasHeading: "पवित्र वैदिक पूजाएं एवं अनुष्ठान",
+      pujasSubtitle: "मंदिर के आचार्यों द्वारा परिवार सहित ससंकल्प वैदिक पूजा, रुद्राभिषेक एवं हवन हेतु ऑनलाइन बुकिंग करें।",
+      bookPuja: "पूजा एवं संकल्प बुक करें",
+      sankalpForm: "भक्त संकल्प विवरण",
+      gotraLabel: "गोत्र (Gotra)",
+      nakshatraLabel: "जन्म नक्षत्र (Nakshatra)",
+      rashiLabel: "राशि (Rashi)",
+      familyMembersLabel: "संकल्प हेतु परिवार के सदस्यों के नाम",
+      pujaDateLabel: "पूजा की तिथि",
+      timeSlotLabel: "समय स्लॉट",
+      dakshinaLabel: "पूजा दक्षिणा / सेवा राशि (₹)",
+      confirmBooking: "पूजा एवं संकल्प की पुष्टि करें",
+      bookingSuccess: "पूजा सफलतापूर्वक बुक हुई! मंदिर का आशीर्वाद",
+      myPujaBookings: "मेरी बुक की गई पूजाएं एवं संकल्प पत्र",
+      eventsHeading: "आगामी उत्सव एवं धार्मिक पर्व",
+      eventsSubtitle: "आगामी पर्वों के दर्शन समय देखें और अपने परिवार के लिए डिजिटल ई-टोकन दर्शन पास प्राप्त करें।",
+      bookPass: "दर्शन ई-टोकन पास प्राप्त करें",
+      attendeeCountLabel: "भक्तों / पारिवारिक सदस्यों की संख्या",
+      passSuccess: "दर्शन ई-टोकन पास तैयार!",
+      eTokenNotice: "मंदिर प्रवेश द्वार पर त्वरित प्रवेश के लिए इस डिजिटल QR पास को दिखाएं।",
+      myPasses: "मेरे उत्सव पास एवं ई-टोकन",
+      volunteerHeading: "मंदिर सेवादार (स्वयंसेवक) बनें",
+      volunteerSubtitle: "भंडारा, व्यवस्था, जल सेवा, पुष्प सज्जा आदि में निःस्वार्थ सेवा देकर पुण्य प्राप्त करें।",
+      sevaAreaLabel: "सेवा का क्षेत्र",
+      availableDaysLabel: "उपलब्धता",
+      shiftPreferenceLabel: "प्राथमिकता समय / पाली",
+      submitVolunteer: "सेवादार के रूप में पंजीकरण करें",
+      volunteerSuccess: "धन्यवाद! आपका सेवादार पंजीकरण स्वीकार कर लिया गया है।",
       historyTab: "मेरी रसीदें एवं इतिहास",
       donateHeading: "पवित्र सेवा एवं दान",
       donateSubtitle: "मंदिर गतिविधियों, अन्नदान, दैनिक पूजा-अर्चना और धार्मिक सेवा में सहयोग दें।",

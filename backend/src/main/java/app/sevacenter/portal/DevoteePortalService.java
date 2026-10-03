@@ -45,6 +45,9 @@ public class DevoteePortalService {
     private final DevoteeRepository devotees;
     private final DonationRepository donations;
     private final TenantRepository tenants;
+    private final PujaBookingRepository pujaBookings;
+    private final DarshanPassRepository darshanPasses;
+    private final SevakSignupRepository sevakSignups;
     private final Clock clock = Clock.system(IST);
     private final boolean devMode;
 
@@ -53,12 +56,18 @@ public class DevoteePortalService {
                                 DevoteeRepository devotees,
                                 DonationRepository donations,
                                 TenantRepository tenants,
+                                PujaBookingRepository pujaBookings,
+                                DarshanPassRepository darshanPasses,
+                                SevakSignupRepository sevakSignups,
                                 @Value("${sevacenter.dev-tokens:false}") boolean devTokens) {
         this.authTokens = authTokens;
         this.sessions = sessions;
         this.devotees = devotees;
         this.donations = donations;
         this.tenants = tenants;
+        this.pujaBookings = pujaBookings;
+        this.darshanPasses = darshanPasses;
+        this.sevakSignups = sevakSignups;
         this.devMode = devTokens;
     }
 
@@ -222,6 +231,352 @@ public class DevoteePortalService {
     @Transactional(readOnly = true)
     public List<Donation> getDevoteeDonations(long devoteeId) {
         return donations.findAllByDevoteeIdAndReversesIdIsNullOrderByReceivedOnDesc(devoteeId);
+    }
+
+    public record AartiTiming(String name, String time, String description) { }
+
+    public record MandirSchedule(
+            String mandirName,
+            String deity,
+            String address,
+            String helpline,
+            String morningHours,
+            String eveningHours,
+            boolean isOpenNow,
+            String panchangTithi,
+            String nakshatra,
+            String specialAnnouncement,
+            List<AartiTiming> aartis
+    ) { }
+
+    @Transactional(readOnly = true)
+    public MandirSchedule getMandirSchedule() {
+        long tenantId = currentTenant();
+        Tenant tenant = tenants.findById(tenantId).orElse(null);
+        String name = (tenant != null) ? tenant.getName() : "Shri Mandir";
+
+        List<AartiTiming> aartis = List.of(
+                new AartiTiming("Mangala Aarti", "05:30 AM", "Morning awakening prayer and first sacred darshan"),
+                new AartiTiming("Shringar Darshan", "07:30 AM", "Adorning the deity with fresh flowers and sacred vastram"),
+                new AartiTiming("Rajbhog Aarti", "12:00 PM", "Noon sacred bhog offering followed by afternoon temple rest"),
+                new AartiTiming("Sandhya Aarti", "07:00 PM", "Evening deepam aarti with holy chantings and bhajans"),
+                new AartiTiming("Shayan Aarti", "09:00 PM", "Night closing prayer and bedtime lullaby for the deity")
+        );
+
+        return new MandirSchedule(
+                name,
+                "Pradhan Devata",
+                "Temple Road, Central Sanctum",
+                "+91 98765 43210",
+                "05:00 AM – 01:00 PM",
+                "04:00 PM – 09:30 PM",
+                true,
+                "Shukla Paksha Ekadashi / Trayodashi",
+                "Rohini / Uttara Phalguni",
+                "Special Darshan arrangements for upcoming festival. Senior citizens can use Priority Queue Pass.",
+                aartis
+        );
+    }
+
+    public record PujaItem(String code, String name, String deity, String duration, long dakshinaRupees, String description, boolean prasadIncluded) { }
+
+    public static final List<PujaItem> AVAILABLE_PUJAS = List.of(
+            new PujaItem("RUDRABHISHEK", "Shri Rudrabhishek Seva", "Lord Shiva", "45 mins", 1100,
+                    "Vedic panchamrit abhishek with Bilva leaves, chanting Sri Rudram for health and peace.", true),
+            new PujaItem("ARCHANA", "Special Ashtothara Archana", "Pradhan Devata", "20 mins", 251,
+                    "108 sacred names chanting with individualized family Sankalp and floral offering.", true),
+            new PujaItem("SATYANARAYAN", "Shri Satyanarayan Maha Katha", "Lord Vishnu", "90 mins", 2100,
+                    "Sacred story recitation, family sankalp, panchamrit and prasad preparation.", true),
+            new PujaItem("VAHAN_PUJA", "Vahan / Vehicle Blessing Puja", "Lord Ganesha & Hanuman", "30 mins", 501,
+                    "Auspicious blessings, coconut breaking and raksha sutra for new vehicles.", false),
+            new PujaItem("NAVGRAH", "Navgrah Shanti Havan", "Navgrah Devatas", "60 mins", 3100,
+                    "Sacred fire offering to pacify planetary afflictions and invoke cosmic harmony.", true),
+            new PujaItem("ANNADANAM", "Nitya Annadanam Sponsorship", "Annapurna Devi", "Noon Seva", 5001,
+                    "Sponsor sacred Mahaprasad lunch distribution to 100 pilgrims in the temple annakshetra.", true)
+    );
+
+    public List<PujaItem> getAvailablePujas() {
+        return AVAILABLE_PUJAS;
+    }
+
+    public record BookPujaRequest(
+            Long devoteeId,
+            String pujaCode,
+            LocalDate pujaDate,
+            String timeSlot,
+            String devoteeName,
+            String gotra,
+            String nakshatra,
+            String rashi,
+            String familyMembers,
+            String contact,
+            String paymentMode
+    ) { }
+
+    public record PujaBookingResponse(
+            long id,
+            String bookingNumber,
+            String pujaCode,
+            String pujaName,
+            LocalDate pujaDate,
+            String timeSlot,
+            String devoteeName,
+            String gotra,
+            String nakshatra,
+            String rashi,
+            String familyMembers,
+            long amountRupees,
+            String status,
+            String mandirName
+    ) { }
+
+    @Transactional
+    public PujaBookingResponse bookPuja(BookPujaRequest req) {
+        long tenantId = currentTenant();
+        if (req.devoteeName() == null || req.devoteeName().trim().length() < 2) {
+            throw new InvalidFieldException("devoteeName", "Devotee name is required for Sankalp");
+        }
+        if (req.pujaDate() == null || req.pujaDate().isBefore(LocalDate.now(clock))) {
+            throw new InvalidFieldException("pujaDate", "Puja date must be today or in the future");
+        }
+
+        PujaItem puja = AVAILABLE_PUJAS.stream()
+                .filter(p -> p.code().equalsIgnoreCase(req.pujaCode()))
+                .findFirst()
+                .orElse(AVAILABLE_PUJAS.get(0));
+
+        long amountPaise = puja.dakshinaRupees() * 100L;
+        String bookingNumber = String.format("PJ-%d-%06d", tenantId, System.currentTimeMillis() % 1_000_000);
+
+        PujaBooking booking = new PujaBooking(
+                tenantId,
+                req.devoteeId(),
+                bookingNumber,
+                puja.code(),
+                puja.name(),
+                req.pujaDate(),
+                req.timeSlot() != null ? req.timeSlot() : "Morning (08:00 AM - 10:00 AM)",
+                req.devoteeName().trim(),
+                blankToNull(req.gotra()),
+                blankToNull(req.nakshatra()),
+                blankToNull(req.rashi()),
+                blankToNull(req.familyMembers()),
+                blankToNull(req.contact()),
+                amountPaise,
+                req.paymentMode() != null ? req.paymentMode() : "UPI"
+        );
+
+        PujaBooking saved = pujaBookings.save(booking);
+
+        if (amountPaise > 0) {
+            Donation donation = Donation.received(
+                    tenantId,
+                    req.devoteeId(),
+                    req.devoteeName().trim(),
+                    amountPaise,
+                    DonationMode.UPI,
+                    bookingNumber,
+                    "Puja Dakshina: " + puja.name(),
+                    req.pujaDate(),
+                    null
+            );
+            donations.save(donation);
+        }
+
+        Tenant tenant = tenants.findById(tenantId).orElse(null);
+        String mandirName = (tenant != null) ? tenant.getName() : "Shri Mandir";
+
+        audit.info("event=puja_booked tenant={} booking={} amountPaise={}", tenantId, bookingNumber, amountPaise);
+
+        return new PujaBookingResponse(
+                saved.getId(),
+                saved.getBookingNumber(),
+                saved.getPujaCode(),
+                saved.getPujaName(),
+                saved.getPujaDate(),
+                saved.getTimeSlot(),
+                saved.getDevoteeName(),
+                saved.getGotra(),
+                saved.getNakshatra(),
+                saved.getRashi(),
+                saved.getFamilyMembers(),
+                saved.getAmountPaise() / 100L,
+                saved.getStatus(),
+                mandirName
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public List<PujaBooking> getDevoteePujaBookings(long devoteeId) {
+        return pujaBookings.findAllByDevoteeIdOrderByPujaDateDesc(devoteeId);
+    }
+
+    public record MandirEvent(
+            String code,
+            String name,
+            LocalDate date,
+            String timeRange,
+            String description,
+            String highlights,
+            boolean registrationOpen
+    ) { }
+
+    public static final List<MandirEvent> UPCOMING_EVENTS = List.of(
+            new MandirEvent("MAHASHIVRATRI", "Maha Shivratri Mahotsav", LocalDate.of(2026, 2, 17),
+                    "All Day & Night Jagran", "Grand 4-Prahar Rudrabhishek, continuous bilva archana, and midnight aarti.",
+                    "Free Mahaprasad, Thandai distribution, special queue for seniors", true),
+            new MandirEvent("RAM_NAVAMI", "Shri Ram Navami Utsav", LocalDate.of(2026, 4, 18),
+                    "09:00 AM – 02:00 PM", "Birth celebration of Lord Rama, Sundarkand path, and grand Panakam distribution.",
+                    "Pushpa Abhishek at 12:00 Noon, Bhajan Sandhya", true),
+            new MandirEvent("JANMASHTAMI", "Shri Krishna Janmashtami", LocalDate.of(2026, 8, 25),
+                    "06:00 PM – Midnight 12:30 AM", "Midnight birth abhishek, Bhagavad Gita chanting, and Dahi Handi utsav.",
+                    "Makhan Mishri prasad, Bal Krishna fancy dress for children", true),
+            new MandirEvent("NAVRATRI", "Sharad Navratri & Chandi Havan", LocalDate.of(2026, 10, 11),
+                    "9 Days Sacred Utsav", "Nine sacred nights of Devi worship, daily kumkum archana and Durga Saptashati parayan.",
+                    "Garba & Dandiya in evening, Maha Havan on Ashtami", true)
+    );
+
+    public List<MandirEvent> getUpcomingEvents() {
+        return UPCOMING_EVENTS;
+    }
+
+    public record BookPassRequest(
+            Long devoteeId,
+            String eventCode,
+            LocalDate visitDate,
+            String timeSlot,
+            String primaryDevoteeName,
+            int attendeeCount,
+            String contact
+    ) { }
+
+    public record DarshanPassResponse(
+            long id,
+            String passNumber,
+            String eventCode,
+            String eventName,
+            LocalDate visitDate,
+            String timeSlot,
+            String primaryDevoteeName,
+            int attendeeCount,
+            String contact,
+            String status,
+            String qrString,
+            String mandirName
+    ) { }
+
+    @Transactional
+    public DarshanPassResponse bookDarshanPass(BookPassRequest req) {
+        long tenantId = currentTenant();
+        if (req.primaryDevoteeName() == null || req.primaryDevoteeName().trim().length() < 2) {
+            throw new InvalidFieldException("primaryDevoteeName", "Name is required for pass");
+        }
+        if (req.contact() == null || req.contact().trim().length() < 5) {
+            throw new InvalidFieldException("contact", "Contact number is required");
+        }
+
+        MandirEvent event = UPCOMING_EVENTS.stream()
+                .filter(e -> e.code().equalsIgnoreCase(req.eventCode()))
+                .findFirst()
+                .orElse(UPCOMING_EVENTS.get(0));
+
+        String passNumber = String.format("PASS-%d-%06d", tenantId, System.currentTimeMillis() % 1_000_000);
+        LocalDate visitDate = req.visitDate() != null ? req.visitDate() : event.date();
+        String timeSlot = req.timeSlot() != null ? req.timeSlot() : "Morning (07:00 AM - 10:00 AM)";
+        int count = Math.clamp(req.attendeeCount(), 1, 10);
+
+        DarshanPass pass = new DarshanPass(
+                tenantId,
+                req.devoteeId(),
+                passNumber,
+                event.code(),
+                event.name(),
+                visitDate,
+                timeSlot,
+                req.primaryDevoteeName().trim(),
+                count,
+                req.contact().trim()
+        );
+
+        DarshanPass saved = darshanPasses.save(pass);
+        Tenant tenant = tenants.findById(tenantId).orElse(null);
+        String mandirName = (tenant != null) ? tenant.getName() : "Shri Mandir";
+
+        String qrString = String.format("MANDIR_TOKEN:%s:%d:%s", passNumber, tenantId, saved.getPrimaryDevoteeName());
+        audit.info("event=darshan_pass_issued tenant={} pass={} attendees={}", tenantId, passNumber, count);
+
+        return new DarshanPassResponse(
+                saved.getId(),
+                saved.getPassNumber(),
+                saved.getEventCode(),
+                saved.getEventName(),
+                saved.getVisitDate(),
+                saved.getTimeSlot(),
+                saved.getPrimaryDevoteeName(),
+                saved.getAttendeeCount(),
+                saved.getContact(),
+                saved.getStatus(),
+                qrString,
+                mandirName
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public List<DarshanPass> getDevoteeDarshanPasses(long devoteeId) {
+        return darshanPasses.findAllByDevoteeIdOrderByVisitDateDesc(devoteeId);
+    }
+
+    public record SevakRequest(
+            Long devoteeId,
+            String fullName,
+            String contact,
+            String sevaArea,
+            String availableDays,
+            String shiftPreference,
+            String notes
+    ) { }
+
+    public record SevakResponse(
+            long id,
+            String fullName,
+            String sevaArea,
+            String availableDays,
+            String shiftPreference,
+            String message
+    ) { }
+
+    @Transactional
+    public SevakResponse signupSevak(SevakRequest req) {
+        long tenantId = currentTenant();
+        if (req.fullName() == null || req.fullName().trim().length() < 2) {
+            throw new InvalidFieldException("fullName", "Name is required");
+        }
+        if (req.contact() == null || req.contact().trim().length() < 5) {
+            throw new InvalidFieldException("contact", "Contact number is required");
+        }
+
+        SevakSignup signup = new SevakSignup(
+                tenantId,
+                req.devoteeId(),
+                req.fullName().trim(),
+                req.contact().trim(),
+                blankToNull(req.sevaArea()) != null ? req.sevaArea().trim() : "Prasad / Kitchen Seva",
+                blankToNull(req.availableDays()) != null ? req.availableDays().trim() : "Weekends & Festivals",
+                blankToNull(req.shiftPreference()) != null ? req.shiftPreference().trim() : "Morning Shift",
+                blankToNull(req.notes())
+        );
+
+        SevakSignup saved = sevakSignups.save(signup);
+        audit.info("event=sevak_signed_up tenant={} sevakId={} area={}", tenantId, saved.getId(), saved.getSevaArea());
+
+        return new SevakResponse(
+                saved.getId(),
+                saved.getFullName(),
+                saved.getSevaArea(),
+                saved.getAvailableDays(),
+                saved.getShiftPreference(),
+                "Dhanyavad! Your volunteer seva application has been received. The mandir committee will contact you before upcoming utsavs."
+        );
     }
 
     @Transactional

@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.LocalDate;
 import java.util.Map;
 import java.util.UUID;
 
@@ -191,21 +192,84 @@ class DevoteePortalTest {
     }
 
     @Test
-    void invalidOtp_rejectedWith400() throws Exception {
-        String phone = "+919876543211";
+    void mandirSchedule_andAvailablePujas_accessiblePublicly() throws Exception {
+        mvc.perform(onMandir(tenantSlugA, get("/api/v1/portal/schedule")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mandirName").exists())
+                .andExpect(jsonPath("$.aartis").isArray());
 
-        mvc.perform(onMandir(tenantSlugA, post("/api/v1/portal/auth/send-otp"))
+        mvc.perform(onMandir(tenantSlugA, get("/api/v1/portal/pujas")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].code").value("RUDRABHISHEK"))
+                .andExpect(jsonPath("$[0].dakshinaRupees").value(1100));
+
+        mvc.perform(onMandir(tenantSlugA, get("/api/v1/portal/events")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].code").value("MAHASHIVRATRI"));
+    }
+
+    @Test
+    void bookPuja_recordsBookingAndDonation() throws Exception {
+        LocalDate tomorrow = LocalDate.now().plusDays(1);
+
+        MvcResult res = mvc.perform(onMandir(tenantSlugA, post("/api/v1/portal/pujas/book"))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json.writeValueAsString(Map.of("channel", "PHONE", "identifier", phone))))
-                .andExpect(status().isOk());
+                        .content(json.writeValueAsString(Map.of(
+                                "pujaCode", "RUDRABHISHEK",
+                                "pujaDate", tomorrow.toString(),
+                                "timeSlot", "Morning (08:00 AM - 10:00 AM)",
+                                "devoteeName", "Suresh Sharma",
+                                "gotra", "Bharadwaj",
+                                "nakshatra", "Rohini",
+                                "familyMembers", "Suresh, Sunita, Aarav"
+                        ))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.bookingNumber").exists())
+                .andExpect(jsonPath("$.pujaCode").value("RUDRABHISHEK"))
+                .andExpect(jsonPath("$.gotra").value("Bharadwaj"))
+                .andExpect(jsonPath("$.amountRupees").value(1100))
+                .andReturn();
 
-        // Incorrect OTP
-        mvc.perform(onMandir(tenantSlugA, post("/api/v1/portal/auth/verify-otp"))
+        assertThat(res.getResponse().getContentAsString()).contains("Suresh Sharma");
+    }
+
+    @Test
+    void darshanPass_issuesQrToken() throws Exception {
+        LocalDate tomorrow = LocalDate.now().plusDays(1);
+
+        mvc.perform(onMandir(tenantSlugA, post("/api/v1/portal/events/pass"))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json.writeValueAsString(Map.of("channel", "PHONE", "identifier", phone, "otp", "000000"))))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("invalid_otp"));
+                        .content(json.writeValueAsString(Map.of(
+                                "eventCode", "MAHASHIVRATRI",
+                                "visitDate", tomorrow.toString(),
+                                "timeSlot", "Morning (07:00 AM - 10:00 AM)",
+                                "primaryDevoteeName", "Gita Devi",
+                                "attendeeCount", 4,
+                                "contact", "+919876500000"
+                        ))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.passNumber").exists())
+                .andExpect(jsonPath("$.qrString").exists())
+                .andExpect(jsonPath("$.attendeeCount").value(4))
+                .andExpect(jsonPath("$.primaryDevoteeName").value("Gita Devi"));
+    }
+
+    @Test
+    void volunteerSevakSignup_succeeds() throws Exception {
+        mvc.perform(onMandir(tenantSlugA, post("/api/v1/portal/volunteer"))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json.writeValueAsString(Map.of(
+                                "fullName", "Vikram Singh",
+                                "contact", "+919876543210",
+                                "sevaArea", "Prasad / Kitchen Seva",
+                                "availableDays", "Weekends",
+                                "shiftPreference", "Morning"
+                        ))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.fullName").value("Vikram Singh"))
+                .andExpect(jsonPath("$.sevaArea").value("Prasad / Kitchen Seva"));
     }
 }

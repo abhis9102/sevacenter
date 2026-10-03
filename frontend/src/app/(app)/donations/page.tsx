@@ -46,7 +46,6 @@ export default function DonationsPage() {
 
   // Receipt Modal
   const [viewingReceipt, setViewingReceipt] = useState<ReceiptDetail | null>(null);
-  const [receiptLoading, setReceiptLoading] = useState(false);
   const [receiptError, setReceiptError] = useState<string | null>(null);
   const [issueForDonation, setIssueForDonation] = useState<DonationItem | null>(null);
   const [issuePan, setIssuePan] = useState("");
@@ -83,7 +82,10 @@ export default function DonationsPage() {
   }
 
   useEffect(() => {
-    loadData();
+    void Promise.resolve().then(() => {
+      loadData();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, from, to]);
 
   // Client-side mode filter on current page items if selected
@@ -160,7 +162,6 @@ export default function DonationsPage() {
   }
 
   async function handleOpenReceipt(item: DonationItem) {
-    setReceiptLoading(true);
     setReceiptError(null);
     setViewingReceipt(null);
     setIssueForDonation(null);
@@ -168,13 +169,11 @@ export default function DonationsPage() {
     try {
       const receipt = await api.get<ReceiptDetail>(`/donations/${item.id}/receipt`);
       setViewingReceipt(receipt);
-    } catch (err) {
+    } catch {
       // If 404, prompt to issue 80G receipt
       setIssueForDonation(item);
       setIssuePan("");
       setIssueAddress("");
-    } finally {
-      setReceiptLoading(false);
     }
   }
 
@@ -383,7 +382,7 @@ export default function DonationsPage() {
                       <p className="text-stone-400 text-3xl mb-2">🪙</p>
                       <p className="font-semibold text-stone-700">{t.donations.emptyState}</p>
                       <p className="text-xs text-stone-400 mt-1">
-                        Use the "Record Counter Donation" button to add receipts or donate via Devotee Portal.
+                        Use the &quot;Record Counter Donation&quot; button to add receipts or donate via Devotee Portal.
                       </p>
                     </div>
                   </td>

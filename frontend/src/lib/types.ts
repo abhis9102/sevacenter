@@ -197,3 +197,84 @@ export interface RecordDonationInput {
   purpose?: string | null;
   receivedOn: string;
 }
+
+export interface AartiTiming {
+  name: string;
+  time: string;
+  description: string;
+}
+
+export interface MandirSchedule {
+  mandirName: string;
+  deity: string;
+  address: string;
+  helpline: string;
+  morningHours: string;
+  eveningHours: string;
+  isOpenNow: boolean;
+  panchangTithi: string;
+  nakshatra: string;
+  specialAnnouncement: string;
+  aartis: AartiTiming[];
+}
+
+export interface PujaItem {
+  code: string;
+  name: string;
+  deity: string;
+  duration: string;
+  dakshinaRupees: number;
+  description: string;
+  prasadIncluded: boolean;
+}
+
+export interface PujaBookingResponse {
+  id: number;
+  bookingNumber: string;
+  pujaCode: string;
+  pujaName: string;
+  pujaDate: string;
+  timeSlot: string;
+  devoteeName: string;
+  gotra: string | null;
+  nakshatra: string | null;
+  rashi: string | null;
+  familyMembers: string | null;
+  amountRupees: number;
+  status: string;
+  mandirName: string;
+}
+
+export interface MandirEvent {
+  code: string;
+  name: string;
+  date: string;
+  timeRange: string;
+  description: string;
+  highlights: string;
+  registrationOpen: boolean;
+}
+
+export interface DarshanPassResponse {
+  id: number;
+  passNumber: string;
+  eventCode: string;
+  eventName: string;
+  visitDate: string;
+  timeSlot: string;
+  primaryDevoteeName: string;
+  attendeeCount: number;
+  contact: string;
+  status: string;
+  qrString: string;
+  mandirName: string;
+}
+
+export interface SevakResponse {
+  id: number;
+  fullName: string;
+  sevaArea: string;
+  availableDays: string;
+  shiftPreference: string;
+  message: string;
+}
