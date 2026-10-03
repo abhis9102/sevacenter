@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/components/apiClient";
 import { Diya, Wordmark } from "@/components/Diya";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useLanguage } from "@/components/LanguageProvider";
 import { SessionProvider } from "@/components/Session";
 import { useTenant } from "@/components/TenantProvider";
@@ -131,6 +132,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               })}
             </nav>
             <div className="ml-auto flex items-center gap-3">
+              <ThemeToggle />
               <LanguageToggle />
               <UserMenu me={me} onSignOut={signOut} signingOut={signingOut} />
             </div>

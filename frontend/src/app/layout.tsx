@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, Mukta, Spectral } from "next/font/google";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 import { LanguageProvider } from "@/components/LanguageProvider";
 import { TenantProvider } from "@/components/TenantProvider";
 import { parseBaseDomains, slugFromHost } from "@/lib/tenant";
+import { parseTheme, THEME_COOKIE } from "@/lib/theme";
 
 import "./globals.css";
 
@@ -24,9 +25,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // Reading request headers makes every page dynamic, which per-request CSP nonces require.
   const host = (await headers()).get("host");
   const tenant = slugFromHost(host, parseBaseDomains(process.env.SC_TENANT_BASE_DOMAINS));
+  const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
 
   return (
-    <html lang="en" className={`${spectral.variable} ${mukta.variable} ${plexMono.variable}`}>
+    <html lang="en" data-theme={theme ?? undefined}
+          className={`${spectral.variable} ${mukta.variable} ${plexMono.variable}`}>
       <body className="min-h-dvh antialiased">
         <TenantProvider tenant={tenant}>
           <LanguageProvider>{children}</LanguageProvider>
