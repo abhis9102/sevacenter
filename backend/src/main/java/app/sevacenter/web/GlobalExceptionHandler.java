@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartException;
 import app.sevacenter.auth.SlugAlreadyTakenException;
 import app.sevacenter.devotee.DevoteeImportService;
 import app.sevacenter.devotee.DevoteeService;
+import app.sevacenter.donation.DonationService;
 import app.sevacenter.user.UserManagementService;
 
 /**
@@ -34,6 +35,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DevoteeService.DevoteeNotFoundException.class)
     public ResponseEntity<Map<String, Object>> onDevoteeNotFound() {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
+    }
+
+    @ExceptionHandler(DonationService.DonationNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> onDonationNotFound() {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
+    }
+
+    @ExceptionHandler(DonationService.LedgerConflictException.class)
+    public ResponseEntity<Map<String, Object>> onLedgerConflict(DonationService.LedgerConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", ex.getMessage()));
     }
 
     @ExceptionHandler(DevoteeImportService.ImportRejectedException.class)

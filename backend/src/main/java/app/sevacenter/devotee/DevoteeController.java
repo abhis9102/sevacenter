@@ -138,8 +138,8 @@ public class DevoteeController {
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasRole('TRUST_ADMIN')")
-    public void erase(@PathVariable long id) {
-        service.erase(id);
+    public void erase(@PathVariable long id, @AuthenticationPrincipal StaffUser staff) {
+        service.erase(id, staff.userId());
     }
 
     private static boolean seesContactDetails(StaffUser staff) {

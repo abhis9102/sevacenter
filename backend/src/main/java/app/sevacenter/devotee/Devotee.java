@@ -65,7 +65,20 @@ public class Devotee {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
+    @Column(name = "erased_at")
+    private OffsetDateTime erasedAt;
+
     protected Devotee() { }
+
+    /**
+     * Erasure for a devotee the ledger references (ADR 0011): every personal field goes; the row
+     * stays so donations still point somewhere. The ledger keeps its own donor-name snapshot
+     * (books of account, retained by law).
+     */
+    public void anonymise(Long staffId, OffsetDateTime now) {
+        update(new Details("Erased devotee", null, null, null, null, null, null, null), staffId, now);
+        this.erasedAt = now;
+    }
 
     public Devotee(Long tenantId, Details details, ConsentSource consentSource, Long staffId, OffsetDateTime now) {
         this.tenantId = tenantId;

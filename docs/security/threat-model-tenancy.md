@@ -127,6 +127,21 @@ Tests in `DevoteeTest`; every row is also exercised against the built jar by `au
 | Partial / poisoned imports; reflected content in error reports | All-or-nothing; errors give line + field, never cell values | `oneBadRowRejectsTheWholeFileAndNamesTheLineWithoutEchoingIt` |
 | Resource exhaustion via upload | 2 MB container limit; 5,000-row cap | `malformedEmptyAndOversizedFilesAreRejected`, `ErrorDisclosureTest.oversizedUploadsAreRefusedCleanly` |
 
+### Donations (M3.1, ADR 0011): threat → control → test
+
+Tests in `DonationTest`; rows also in `authz_probe.py`.
+
+| Threat | Control | Test |
+|---|---|---|
+| Rewriting financial history (app bug, injection, insider) | App DB role has **only `SELECT, INSERT`** on `donation`; entity `@Immutable`; no update/delete endpoints | `theAppRoleCannotUpdateOrDeleteLedgerRows`, probe: `PUT` → 405 |
+| Double or forged reversals | Reversal = negated new row, TRUST_ADMIN + reason; `UNIQUE (reverses_id)`; CHECK ties sign to reversal | `aDonationCanBeReversedOnceAndReversalsNetOut`, `theDatabaseRefusesASecondReversal`, `ledgerFieldsInTheBodyAreIgnored` |
+| Amount tampering / float rounding | Decimal string → exact paise (`BigDecimal`); strict pattern; `> 0`; DB bound | `tamperedAmountsAreRejected`, `amountsAreExactDecimalsNeverFloats` |
+| Members reading financial data about named donors | MEMBER has no donation access | `membersSeeNothingLeadersRecordOnlyAdminsReverse` |
+| BOLA: another tenant's donation or devotee id | Forced RLS → 404 | `anotherTenantsDonationsAndDevoteesAreNotFound` |
+| Back-dated / future-dated entries | `receivedOn` ≤ today (IST), ≥ 2000-01-01 | `receivedDatesCantBeInTheFutureOrImplausiblyOld` |
+| Wrong FY totals (UTC vs IST, Apr–Mar) | FY computed in `Asia/Kolkata`, 1 Apr – 31 Mar | `summariesFollowTheIndianFinancialYear` |
+| Erasure vs statutory retention | Donor with donations → anonymised (row kept, PII gone); ledger keeps its donor-name snapshot (legal obligation) | `erasingADonorAnonymisesThemAndKeepsTheLedger` |
+
 ## Open questions
 
 - Public donor access: own login vs. link/OTP (affects the auth surface).

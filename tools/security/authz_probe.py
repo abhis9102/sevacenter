@@ -5,7 +5,7 @@ ZAP finds injection, headers and error handling. It can't find broken access con
 GET /users/7 looks fine unless you know user 7 belongs to another tenant. This probe knows. It
 seeds two tenants with admins, a leader and a member, then runs a matrix of
 identity x endpoint x host and fails on any status other than the expected one. Every new
-endpoint gets rows here (users: M1; devotees + CSV: M2).
+endpoint gets rows here (users: M1; devotees + CSV: M2; donations: M3).
 
 Tenants are resolved from the real Host header (<slug>.sevacenter.app), as in production, not
 from the dev-only X-Tenant-Slug override.
@@ -255,6 +255,30 @@ class Probe:
         self.check("exported phone cells can't run as formulas", "'+919876543210" in exported and "\n+91" not in exported
                    and ",+91" not in exported, exported[:200])
         self.expect("A's admin erases A's devotee", 204, admin_a.request("DELETE", f"/api/v1/devotees/{dev_a}"))
+
+        print("\ndonations (M3.1, ADR 0011): append-only ledger, roles, tampering, cross-tenant ids")
+        gift = {"donorName": "Probe Donor", "amount": "1500.50", "mode": "UPI", "receivedOn": "2026-04-14"}
+        self.expect("member cannot record donations", 403, member.request("POST", "/api/v1/donations", body=gift))
+        self.expect("member cannot list donations", 403, member.request("GET", "/api/v1/donations"))
+        body = self.expect("leader records a donation", 201, leader.request("POST", "/api/v1/donations", body=gift))
+        gift_a = (body or {}).get("id")
+        self.check("amount is exact", isinstance(body, dict) and body.get("amount") == "1500.50", str(body)[:120])
+        for bad in ("-1500", "0", "1e5", "0.001"):
+            self.expect(f"amount {bad!r} is rejected", 400,
+                        leader.request("POST", "/api/v1/donations", body=dict(gift, amount=bad)))
+        self.expect("leader cannot reverse a donation", 403,
+                    leader.request("POST", f"/api/v1/donations/{gift_a}/reverse", body={"reason": "probe reversal test"}))
+        body = self.expect("B's admin records a donation", 201, admin_b.request("POST", "/api/v1/donations", body=gift))
+        gift_b = (body or {}).get("id")
+        self.expect("A reads B's donation by id", 404, admin_a.request("GET", f"/api/v1/donations/{gift_b}"))
+        self.expect("A reverses B's donation", 404,
+                    admin_a.request("POST", f"/api/v1/donations/{gift_b}/reverse", body={"reason": "cross-tenant reversal"}))
+        self.expect("admin reverses A's donation", 201,
+                    admin_a.request("POST", f"/api/v1/donations/{gift_a}/reverse", body={"reason": "probe reversal test"}))
+        self.expect("a second reversal is refused", 409,
+                    admin_a.request("POST", f"/api/v1/donations/{gift_a}/reverse", body={"reason": "probe reversal again"}))
+        self.expect("no endpoint edits the ledger", 405,
+                    admin_a.request("PUT", f"/api/v1/donations/{gift_a}", body=gift))
 
         print("\nCSRF")
         self.expect("state change without the CSRF header", 403,

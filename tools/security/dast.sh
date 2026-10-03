@@ -126,13 +126,15 @@ USERS=$(docker exec -e PGPASSWORD="$DB_PASSWORD" "$DB_NAME" psql -h 127.0.0.1 -U
   "select count(*) from app_user u join tenant t on t.id = u.tenant_id where t.slug = '$SLUG' and u.email <> 'admin@$SLUG.example'")
 DEVOTEES=$(docker exec -e PGPASSWORD="$DB_PASSWORD" "$DB_NAME" psql -h 127.0.0.1 -U sevacenter -d sevacenter -tAc \
   "select count(*) from devotee d join tenant t on t.id = d.tenant_id where t.slug = '$SLUG'")
-echo "session after scan: HTTP $SESSION_AFTER | created by the scan: $USERS users, $DEVOTEES devotees"
+DONATIONS=$(docker exec -e PGPASSWORD="$DB_PASSWORD" "$DB_NAME" psql -h 127.0.0.1 -U sevacenter -d sevacenter -tAc \
+  "select count(*) from donation d join tenant t on t.id = d.tenant_id where t.slug = '$SLUG'")
+echo "session after scan: HTTP $SESSION_AFTER | created by the scan: $USERS users, $DEVOTEES devotees, $DONATIONS donations"
 if [ "$SESSION_AFTER" != 200 ]; then
   echo "::error::the session died during the authenticated scan, so later requests were tested as anonymous"
   exit 1
 fi
 # One row per feature: an endpoint the scan can't get a valid request through is untested.
-for created in "users:$USERS" "devotees:$DEVOTEES"; do
+for created in "users:$USERS" "devotees:$DEVOTEES" "donations:$DONATIONS"; do
   if [ "${created#*:}" -lt 1 ]; then
     echo "::error::the authenticated scan created no ${created%%:*}: it never got past authz/CSRF/validation"
     exit 1

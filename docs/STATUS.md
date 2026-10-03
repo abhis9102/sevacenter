@@ -221,7 +221,16 @@ curl -s -b /tmp/jar -X POST localhost:8080/api/v1/register -H 'Content-Type: app
 - Gates to add with it: Semgrep TS/React/Next rules, `npm ci --ignore-scripts`, `npm audit
   signatures`, SCA coverage for `package.json`, ZAP baseline on the UI.
 
-**Next: M3 Donations + 80G** (Razorpay, PAN encrypted, receipts; donor erasure → anonymise).
+## M3.1 — donation ledger ✅ (this PR, ADR 0011)
+- `V6`: `donation` (forced RLS), signed paise, CHECK ties negative amounts to reversals, `UNIQUE (reverses_id)`.
+  **App role granted only `SELECT, INSERT`**: the ledger is append-only at the database.
+- `/api/v1/donations`: record/list/get/summary (LEADER+), reverse (TRUST_ADMIN, reason required).
+  MEMBER: no access. Amounts are decimal strings → exact paise. FY in IST (1 Apr – 31 Mar).
+- Devotee erasure: anonymised (row kept, PII removed, `erased_at`) when donations reference them.
+- Audit log lines for record/reverse. `DonationTest` (13), probe +14 checks.
+
+**Next: M3.2 80G receipts** (PAN encrypted at app level, gapless receipt numbers per FY, trust
+80G details), then **M3.3 Razorpay** (needs test-mode keys via env).
 
 ## Next up — M1 slice 2
 - Login + sessions (cookie session per ADR 0007; set cookie flags HttpOnly/Secure/SameSite); tenant-aware `UserDetailsService` (scope lookup by `TenantContext`).
