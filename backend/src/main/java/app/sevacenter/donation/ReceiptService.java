@@ -103,6 +103,11 @@ public class ReceiptService {
     }
 
     @Transactional(readOnly = true)
+    public Optional<Receipt> findByDonationId(long donationId) {
+        return receipts.findByDonationId(donationId);
+    }
+
+    @Transactional(readOnly = true)
     public Optional<ReceiptCancellation> cancellation(long receiptId) {
         return cancellations.findById(receiptId);
     }

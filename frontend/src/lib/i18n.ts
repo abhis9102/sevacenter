@@ -184,6 +184,42 @@ export interface Translations {
       chooseFileError: string;
     };
   };
+  donations: {
+    title: string;
+    description: string;
+    recordDonation: string;
+    totalCollection: string;
+    totalEntries: string;
+    filterFrom: string;
+    filterTo: string;
+    allModes: string;
+    colDate: string;
+    colDonor: string;
+    colAmount: string;
+    colMode: string;
+    colPurpose: string;
+    colSource: string;
+    colActions: string;
+    sourceOnline: string;
+    sourceCounter: string;
+    receiptButton: string;
+    reverseButton: string;
+    emptyState: string;
+    recordModalTitle: string;
+    donorNameLabel: string;
+    amountLabel: string;
+    modeLabel: string;
+    purposeLabel: string;
+    referenceLabel: string;
+    dateLabel: string;
+    submitRecord: string;
+    recording: string;
+    reversalModalTitle: string;
+    reversalReasonLabel: string;
+    submitReversal: string;
+    reversing: string;
+    pageShowing: (start: number, end: number, total: number) => string;
+  };
   errors: Record<string, string>;
   auth: {
     signIn: string;
@@ -472,6 +508,42 @@ export const DICTIONARIES: Record<Language, Translations> = {
         colProblem: "Problem",
         chooseFileError: "Choose a CSV file first.",
       },
+    },
+    donations: {
+      title: "Donation Ledger",
+      description: "Track all incoming contributions, counter donations, and online devotee seva offerings in real time.",
+      recordDonation: "Record Counter Donation",
+      totalCollection: "Total Collection",
+      totalEntries: "Total Contributions",
+      filterFrom: "From Date",
+      filterTo: "To Date",
+      allModes: "All Payment Modes",
+      colDate: "Date",
+      colDonor: "Donor Name",
+      colAmount: "Amount",
+      colMode: "Mode",
+      colPurpose: "Purpose / Seva",
+      colSource: "Source",
+      colActions: "Actions",
+      sourceOnline: "Online Portal",
+      sourceCounter: "Counter / Staff",
+      receiptButton: "Receipt",
+      reverseButton: "Reverse",
+      emptyState: "No donations recorded for the selected period.",
+      recordModalTitle: "Record Counter / Offline Donation",
+      donorNameLabel: "Donor Name",
+      amountLabel: "Amount (₹)",
+      modeLabel: "Payment Mode",
+      purposeLabel: "Purpose / Seva (optional)",
+      referenceLabel: "Payment Reference / Cheque No. / Transaction ID (optional)",
+      dateLabel: "Date Received",
+      submitRecord: "Record Donation",
+      recording: "Recording…",
+      reversalModalTitle: "Reverse Donation",
+      reversalReasonLabel: "Reason for reversal (minimum 10 characters)",
+      submitReversal: "Confirm Reversal",
+      reversing: "Reversing…",
+      pageShowing: (start, end, total) => `Showing ${start} to ${end} of ${total} donations`,
     },
     errors: {
       invalid_credentials: "That email and password don't match an account here.",
@@ -778,6 +850,42 @@ export const DICTIONARIES: Record<Language, Translations> = {
         colProblem: "समस्या (Problem)",
         chooseFileError: "पहले एक CSV फ़ाइल चुनें।",
       },
+    },
+    donations: {
+      title: "दान बहीखाता (Donations)",
+      description: "सभी ऑनलाइन भक्त सेवा और काउंटर से प्राप्त दानों का रीयल-टाइम रिकॉर्ड देखें।",
+      recordDonation: "काउंटर दान दर्ज करें",
+      totalCollection: "कुल संकलित राशि",
+      totalEntries: "कुल दान प्रविष्टियाँ",
+      filterFrom: "दिनांक से",
+      filterTo: "दिनांक तक",
+      allModes: "सभी भुगतान माध्यम",
+      colDate: "दिनांक",
+      colDonor: "दानदाता का नाम",
+      colAmount: "राशि",
+      colMode: "माध्यम",
+      colPurpose: "सेवा / प्रयोजन",
+      colSource: "स्रोत",
+      colActions: "कार्रवाई",
+      sourceOnline: "ऑनलाइन पोर्टल",
+      sourceCounter: "काउंटर / कार्यालय",
+      receiptButton: "रसीद",
+      reverseButton: "रद्द करें",
+      emptyState: "चयनित अवधि के लिए कोई दान दर्ज नहीं है।",
+      recordModalTitle: "काउंटर / ऑफ़लाइन दान दर्ज करें",
+      donorNameLabel: "दानदाता का नाम",
+      amountLabel: "राशि (₹)",
+      modeLabel: "भुगतान माध्यम",
+      purposeLabel: "सेवा / प्रयोजन (वैकल्पिक)",
+      referenceLabel: "संदर्भ / चेक नंबर / यूपीआई आईडी (वैकल्पिक)",
+      dateLabel: "प्राप्ति तिथि",
+      submitRecord: "दान दर्ज करें",
+      recording: "दर्ज हो रहा है…",
+      reversalModalTitle: "दान प्रविष्टि रद्द करें",
+      reversalReasonLabel: "रद्द करने का कारण (कम से कम 10 अक्षर)",
+      submitReversal: "रद्दीकरण की पुष्टि करें",
+      reversing: "रद्द किया जा रहा है…",
+      pageShowing: (start, end, total) => `${total} में से ${start} से ${end} दान प्रदर्शित`,
     },
     errors: {
       invalid_credentials: "ईमेल और पासवर्ड मेल नहीं खाते।",
