@@ -4,7 +4,8 @@
 ZAP finds injection, headers and error handling. It can't find broken access control: a 200 for
 GET /users/7 looks fine unless you know user 7 belongs to another tenant. This probe knows. It
 seeds two tenants with admins, a leader and a member, then runs a matrix of
-identity x endpoint x host and fails on any status other than the expected one.
+identity x endpoint x host and fails on any status other than the expected one. Every new
+endpoint gets rows here (users: M1; devotees: M2).
 
 Tenants are resolved from the real Host header (<slug>.sevacenter.app), as in production, not
 from the dev-only X-Tenant-Slug override.
@@ -204,6 +205,36 @@ class Probe:
                     self.client(b).request("POST", "/api/v1/auth/setup", body={"token": token_a, "password": PASSWORD}))
         self.expect("A's setup link still works on A's host", 204,
                     self.client(a).request("POST", "/api/v1/auth/setup", body={"token": token_a, "password": PASSWORD}))
+
+        print("\ndevotees (M2, ADR 0010): tiered access, masking, cross-tenant ids")
+        devotee = {"fullName": "Probe Devotee", "phone": "9876543210", "email": "devotee@probe.example",
+                   "addressLine": "1 Probe Road", "city": "Pune", "state": "Maharashtra", "pincode": "411001",
+                   "dateOfBirth": "1980-05-14", "consentSource": "IN_PERSON"}
+        self.expect("anonymous cannot list devotees", 401, anon.request("GET", "/api/v1/devotees"))
+        self.expect("member cannot create devotees", 403, member.request("POST", "/api/v1/devotees", body=devotee))
+        body = self.expect("leader creates a devotee", 201, leader.request("POST", "/api/v1/devotees", body=devotee))
+        dev_a = (body or {}).get("id")
+        status, seen = member.request("GET", f"/api/v1/devotees/{dev_a}")
+        self.expect("member can view a devotee", 200, status)
+        seen = seen if isinstance(seen, dict) else {}
+        self.check("member sees phone/email masked, no address or birth date",
+                   seen.get("masked") is True and "9876543210" not in json.dumps(seen)
+                   and not seen.get("addressLine") and not seen.get("dateOfBirth"), json.dumps(seen)[:200])
+        _, found = member.request("GET", "/api/v1/devotees?q=9876543210")
+        self.check("member cannot search by phone", isinstance(found, dict) and found.get("total") == 0)
+        self.expect("member cannot edit devotees", 403, member.request("PUT", f"/api/v1/devotees/{dev_a}", body=devotee))
+        self.expect("member cannot erase devotees", 403, member.request("DELETE", f"/api/v1/devotees/{dev_a}"))
+        self.expect("leader cannot erase devotees", 403, leader.request("DELETE", f"/api/v1/devotees/{dev_a}"))
+        body = self.expect("B's admin creates a devotee", 201,
+                           admin_b.request("POST", "/api/v1/devotees", body=dict(devotee, fullName="Tenant B Devotee")))
+        dev_b = (body or {}).get("id")
+        self.expect("A reads B's devotee by id", 404, admin_a.request("GET", f"/api/v1/devotees/{dev_b}"))
+        self.expect("A edits B's devotee by id", 404,
+                    admin_a.request("PUT", f"/api/v1/devotees/{dev_b}", body=dict(devotee, fullName="Hijacked")))
+        self.expect("A erases B's devotee by id", 404, admin_a.request("DELETE", f"/api/v1/devotees/{dev_b}"))
+        _, listed = admin_a.request("GET", "/api/v1/devotees?q=Tenant%20B")
+        self.check("A's devotee search never returns B's devotees", isinstance(listed, dict) and listed.get("total") == 0)
+        self.expect("A's admin erases A's devotee", 204, admin_a.request("DELETE", f"/api/v1/devotees/{dev_a}"))
 
         print("\nCSRF")
         self.expect("state change without the CSRF header", 403,

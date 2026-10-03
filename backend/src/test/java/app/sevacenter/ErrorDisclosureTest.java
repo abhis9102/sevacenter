@@ -74,6 +74,17 @@ class ErrorDisclosureTest {
         assertThat(direct.body()).doesNotContain("999", "None");
     }
 
+    /** Tomcat 11 throws on malformed parameters ("?=x"); found by DAST as 500s. */
+    @Test
+    void malformedQueryParametersAreABadRequest() throws Exception {
+        for (String query : new String[] {"?=x", "?q=%00", "?q=a&=b"}) {
+            HttpResponse<String> response = http.send(HttpRequest.newBuilder(uri("/api/v1/devotees" + query)).build(),
+                    HttpResponse.BodyHandlers.ofString());
+            assertThat(response.statusCode()).as(query).isEqualTo(400);
+            assertThat(response.body()).as(query).doesNotContain("Exception", "at org.");
+        }
+    }
+
     private URI uri(String path) {
         return URI.create("http://localhost:" + port + path);
     }

@@ -1,6 +1,6 @@
 # Dev Status — resume point
 
-_Last updated: 2026-10-03._
+_Last updated: 2026-10-03 (M2 in progress)._
 
 ## Where we are
 
@@ -183,7 +183,23 @@ curl -s -b /tmp/jar -X POST localhost:8080/api/v1/register -H 'Content-Type: app
   cause. Auth-flow names (`register`, `signup`, `password`, …) are now reserved slugs (phishing).
 - Policy: `docs/security/dast.md`.
 
-**Next: M2 Devotees.** Every new endpoint gets a row in `authz_probe.py`.
+## M2 slice 1 — devotee records ✅ (this PR, ADR 0010)
+- `V5`: `devotee` (forced RLS). Fields: name; optional phone (E.164), email, address, DOB; consent
+  record (source required; time + recorder set by the server, immutable); `created_by`/`updated_by`.
+- `/api/v1/devotees`: search/list/get (MEMBER+), create/update (LEADER+), erase (TRUST_ADMIN).
+  **Members get masked data from the server** (phone last 4, email first letter, no address/DOB) and
+  search by name only, so search can't be used to confirm a phone number the mask hides.
+- Phones typed Indian-style are normalised to `+91…`; every DB check has a matching request rule
+  (400, never a 500). `LIKE` wildcards escaped; page size ≤ 100; fixed sort.
+- `DevoteeTest` (14) + `authz_probe.py` devotee rows. **Mutation-checked: 15/15** after adding 2
+  tests for the first-round survivors (wildcards via the member query; `updated_by` on edit).
+- `TestStaff` test fixture: tenants + staff of any role through the real flows. Its own login IP
+  range: sharing `StaffAuthTest`'s range made 3 tests fail with 429 in the full suite only.
+- **DAST found 2 real 500s** (gate green, but 8 ERROR lines in the app log): NUL bytes in text and
+  Tomcat 11's `InvalidParameterException`. Fixed globally (`RequestSanityFilter`, `NulRejectingStrings`),
+  tests written first and seen failing. Authenticated DAST must now also create devotees.
+
+**Next: M2 slice 2: CSV export (admin only) + import**, with CSV/formula-injection defence.
 
 ## Next up — M1 slice 2
 - Login + sessions (cookie session per ADR 0007; set cookie flags HttpOnly/Secure/SameSite); tenant-aware `UserDetailsService` (scope lookup by `TenantContext`).

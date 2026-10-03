@@ -10,7 +10,7 @@ role) runs *inside* every milestone, not after.
 |---|---|---|---|---|---|
 | **M0** ✅ | Repo + guardrails | Spring Boot skeleton (Maven), hello-world endpoint, Postgres via docker-compose | pre-commit hooks (gitleaks/trufflehog/semgrep), PR template + AI-declaration, threat-model the tenancy model; **Python** CI glue | local docker-compose | ~1 wk |
 | **M1** ✅ | Auth + tenancy core | registration, login/sessions (**Spring Security**), RBAC (trust-admin/leader/member via `@PreAuthorize`), **tenant model + Postgres RLS** (session var per request), Host-based tenant routing (servlet filter) | threat model auth+tenancy; test RLS bypass, Host-header tenant confusion, reserved subdomains, authz-per-endpoint | — | ~3-4 wks |
-| **M2** | Devotees (People) | devotee CRUD, search, CSV import/export, invites | test IDOR/BOLA, cross-tenant leaks, mass-assignment, CSV/formula injection, export authz | — | ~2 wks |
+| **M2** 🚧 | Devotees (People) | devotee CRUD, search, CSV import/export, invites | test IDOR/BOLA, cross-tenant leaks, mass-assignment, CSV/formula injection, export authz | — | ~2 wks |
 | **M3** | Donations + 80G | Razorpay order + webhook, donation history, **80G receipt + PAN capture**, FY reporting | test amount tampering, webhook-signature bypass, idempotency/replay, refund abuse, PAN PII exposure; map to PCI SAQ + DPDP | — | ~3 wks |
 | **M4** | Events/Registrations | public event pages, registration forms, (optional) file upload | test public-form abuse, rate limiting, upload validation, enumeration, CSRF | — | ~2 wks |
 | **M5** | Containerize | Dockerfiles, compose parity | image scanning (Trivy) in the loop | Docker, local k8s optional | ~1-2 wks |

@@ -104,6 +104,24 @@ admin can see them. Email delivery is a later slice.
 Known limit: RLS stops application *bugs*, not SQL injection. Injected SQL runs as the same role
 and can call `set_config` itself. Injection is covered by SAST, DAST and parameterized queries.
 
+### Devotees (M2, ADR 0010): threat → control → test
+
+Tests in `DevoteeTest`; every row is also exercised against the built jar by `authz_probe.py`.
+
+| Threat | Control | Test |
+|---|---|---|
+| Member edits/erases devotees; leader erases | `@PreAuthorize`: MEMBER read, LEADER write, TRUST_ADMIN erase | `membersReadLeadersWriteOnlyAdminsErase` |
+| Member harvests contact details | Server-side masking (last 4 phone digits, first letter of email; no address/DOB) | `membersSeeMaskedContactDetailsAndNoAddressOrBirthDate` |
+| Member confirms a phone/email via search (oracle around the mask) | Members search by name only | `membersCanOnlySearchByNameSoTheyCantConfirmAPhoneNumber` |
+| Demoted staff keep seeing full PII | Role re-read per request (`StaffSessionFilter`) | `aDemotedLeaderSeesMaskedDataOnTheVeryNextRequest` |
+| BOLA: another tenant's devotee by id | Forced RLS on `devotee` → 404 | `anotherTenantsDevoteeIsNotFound`, `everyTenantScopedTableHasForcedRlsAndAPolicy` |
+| Mass assignment: tenant, consent, audit fields | Explicit request record; server sets tenant, consent time/recorder, created/updated by | `tenantConsentAndAuditFieldsInTheBodyAreIgnored` |
+| Records without consent (DPDP) / consent rewritten later | Consent source required on create; consent columns not updatable | `consentIsRequiredAndCannotBeChangedByAnEdit` |
+| Bad input reaching DB checks (500s, DAST noise) | Request rules mirror every V5 check | `invalidInputIsRejectedBeforeTheDatabase`, `phonesAreNormalisedToE164` |
+| `LIKE` wildcard injection (`%`, `_`) → full scans / data discovery | `escape()` in every search query | `likeWildcardsInSearchMatchLiterally` |
+| Unbounded pages, sort-property probing | Size ≤ 100, page clamped, fixed sort | `pageSizeIsCappedAndBadPagingIsClamped` |
+| Right to erasure | Hard delete by TRUST_ADMIN (M3: anonymise donors, keep 80G receipts) | `erasureRemovesThePersonalData` |
+
 ## Open questions
 
 - Public donor access: own login vs. link/OTP (affects the auth surface).
