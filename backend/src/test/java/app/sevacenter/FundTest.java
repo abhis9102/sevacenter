@@ -79,6 +79,32 @@ class FundTest {
                 .andExpect(jsonPath("$.fields.name").exists());
     }
 
+    /** Found by DAST: parallel saves of one name raced past the check and surfaced a 500. */
+    @Test
+    void concurrentSavesOfOneNameGiveOneFundAndCleanErrors() throws Exception {
+        int n = 8;
+        java.util.concurrent.CountDownLatch go = new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.ExecutorService pool = java.util.concurrent.Executors.newFixedThreadPool(n);
+        try {
+            java.util.List<java.util.concurrent.Future<Integer>> results = new java.util.ArrayList<>();
+            for (int i = 0; i < n; i++) {
+                results.add(pool.submit(() -> {
+                    go.await();
+                    return saveFund(admin, null, "Race fund", true).andReturn().getResponse().getStatus();
+                }));
+            }
+            go.countDown();
+            java.util.List<Integer> statuses = new java.util.ArrayList<>();
+            for (var r : results) {
+                statuses.add(r.get());
+            }
+            org.assertj.core.api.Assertions.assertThat(statuses).containsOnly(201, 400);
+            org.assertj.core.api.Assertions.assertThat(statuses).filteredOn(st -> st == 201).hasSize(1);
+        } finally {
+            pool.shutdownNow();
+        }
+    }
+
     @Test
     void donationsAreTotalledPerFundAndAReversalNetsOutOfItsFund() throws Exception {
         long annadanam = fund("Annadanam fund");

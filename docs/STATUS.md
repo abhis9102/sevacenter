@@ -356,9 +356,11 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
   `payment_intent.fund_id`. Reversals carry their fund; only active funds of this trust take new gifts.
 - Summary `byFund`; Donations screen fund picker, by-fund totals and admin fund list; donate page "Give to".
 - Composite FKs `(tenant_id, fund_id)`: the DB refuses a cross-trust fund link.
-- `FundTest` (7), **mutation-checked 11/11** (found first: an online order's fund wasn't validated,
+- `FundTest` (8), **mutation-checked 11/11** (found first: an online order's fund wasn't validated,
   and a plain FK would have accepted another trust's fund id; both closed); probe +5 rows.
   Replaces a free-text category proposal.
+- **DAST found a race:** parallel saves of one fund name both passed the name check and the unique
+  index turned the loser into a 500. Now the same 400 as a plain duplicate; concurrent test (8 threads).
 
 Next (user decisions 2026-10-04): staff dashboard → dark mode + logo.
 

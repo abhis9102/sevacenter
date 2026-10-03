@@ -8,6 +8,7 @@ import app.sevacenter.audit.AuditAction;
 import app.sevacenter.audit.AuditTrail;
 import app.sevacenter.tenant.TenantContext;
 import app.sevacenter.web.InvalidFieldException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,7 +47,14 @@ public class FundService {
         DonationFund f = id == null ? new DonationFund(currentTenant())
                 : funds.findById(id).orElseThrow(FundNotFoundException::new);
         f.edit(name, active, staffId, OffsetDateTime.now(clock));
-        DonationFund saved = funds.save(f);
+        DonationFund saved;
+        try {
+            saved = funds.saveAndFlush(f);
+        } catch (DataIntegrityViolationException e) {
+            // Two saves of the same name at once both pass the check above; the unique index lets
+            // one win, and the other gets the same answer as a plain duplicate (found by DAST).
+            throw new InvalidFieldException("name", "a fund with this name already exists");
+        }
         auditTrail.record(AuditAction.FUND_SAVED, "donation_fund", saved.getId(), active ? "active" : "inactive");
         return saved;
     }
