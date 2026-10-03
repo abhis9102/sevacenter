@@ -46,7 +46,7 @@ superuser would bypass RLS. Every test was mutation-checked: each fails when its
 | 2 | Non-superuser, `NOBYPASSRLS`, not table owner; `FORCE ROW LEVEL SECURITY` | `appConnectsAsLeastPrivilegeRoleThatRlsAppliesTo`, `appRoleCannotSwitchRlsOff`, `everyTenantScopedTableHasForcedRlsAndAPolicy` (also guards **future** tables) |
 | 3 | RLS `USING` + `WITH CHECK` | `pinnedTenantSeesOnlyItsOwnRows`, `tenantCannotInsertIntoAnotherTenant`, `tenantCannotUpdateOrDeleteAnotherTenantsRows`, `repositoriesOnlySeeTheTenantInContext` (BOLA by id) |
 | 4 | `ReservedSlugs`, shared by registration and routing | `reservedSubdomainsCannotBeRegistered` |
-| 5 | Roles / `@PreAuthorize` (M1 slice 2b), over a TRUST_ADMIN > LEADER > MEMBER hierarchy (wired in 2a) | *pending: first role-protected endpoints arrive in 2b* |
+| 5 | `@PreAuthorize` on every user-management endpoint, over a TRUST_ADMIN > LEADER > MEMBER hierarchy; authorities re-read from the DB on every request | `membersCannotListUsersLeadersAndAdminsCan`, `onlyAdminsCanCreateChangeRolesDeactivateOrReissueLinks`, `aDemotionAppliesToTheUsersVeryNextRequest` (`UserManagementTest`) |
 
 ### Staff authentication (M1 slice 2a, ADR 0009): threat → control → test
 
@@ -54,7 +54,7 @@ superuser would bypass RLS. Every test was mutation-checked: each fails when its
 |---|---|---|
 | Host-header tenant confusion (`Host: siddheshwar.attacker.example`) | Tenant resolved only from `<slug>.<configured base domain>` | `TenantHostResolutionTest` (10 hosts) |
 | Logging in to another tenant | User lookup scoped by RLS to the Host's tenant | `staffCannotLogInOnAnotherTenantsHost`, `noTenantHostMeansNoLogin` |
-| Session replayed on another tenant's host | `TenantBindingFilter`: 401 + session invalidated | `aSessionIsWorthlessOnAnotherTenantsHostAndIsDestroyed` |
+| Session replayed on another tenant's host | `StaffSessionFilter`: 401 + session invalidated | `aSessionIsWorthlessOnAnotherTenantsHostAndIsDestroyed` |
 | Session fixation | Framework form login: session ID changes at login | `sessionIdChangesAtLogin` |
 | Login CSRF | CSRF required on login; token rotates after login | `loginRequiresCsrf`, `SessionCookieTest` |
 | User enumeration | One generic 401; dummy hash check for unknown users | `wrongPasswordAndUnknownEmailAreIndistinguishable` |
@@ -63,6 +63,33 @@ superuser would bypass RLS. Every test was mutation-checked: each fails when its
 
 All mutation-checked (removing the binding filter, the throttle, fixation protection or the
 cookie flags turns the matching test red).
+
+### Staff management (M1 slice 2b): threat → control → test
+
+Tests in `UserManagementTest` unless noted. 22 mutations, all killed.
+
+| Threat | Control | Test |
+|---|---|---|
+| Member/leader manages users | `@PreAuthorize` (invariant 5) | `onlyAdminsCanCreateChangeRolesDeactivateOrReissueLinks`, `membersCannotListUsersLeadersAndAdminsCan` |
+| Mass assignment (`tenantId`, `status`, `passwordHash` in the body) | Explicit request records; new users are always PENDING in the caller's tenant | `tenantStatusAndPasswordInTheRequestBodyAreIgnored` |
+| BOLA: acting on another tenant's user id | RLS hides it → 404 | `anotherTenantsUserIdIsNotFound` |
+| Setup link leaked from the DB | Only SHA-256 stored; token in the URL fragment (not logged, no Referer) | `newUsersArePendingAndOnlyTheTokenHashIsStored` |
+| Setup link replayed / redeemed late / redeemed twice concurrently | Single use, 72 h expiry, row lock on redemption | `aSetupLinkWorksOnceAndThenTheUserCanLogIn`, `aUsedTokenIsRejectedEvenWhileTheUserIsStillPending`, `expiredLinksAreRejected`, `aTokenIsLockedWhileBeingRedeemed` |
+| Setup link used as a password reset (account takeover) | Only a PENDING user can be set up; links only issued to PENDING users | `aValidTokenCannotResetAnActiveUsersPassword`, `linksAreOnlyIssuedToPendingUsers` |
+| Setup link redeemed on another tenant's host | `user_setup_token` under forced RLS | `aLinkOnlyWorksOnItsOwnTenantsHost`, `everyTenantScopedTableHasForcedRlsAndAPolicy` |
+| Stale links after reissue / deactivation | Reissue and deactivation delete the user's links | `reissuingALinkKillsTheOldOne`, `deactivatingAPendingUserDeletesTheirLink` |
+| Weak first password | ≥ 12 characters | `weakPasswordsAreRefusedAtSetup` |
+| Trust locked out (no admin left), incl. two admins demoting each other at once | Last-admin check counted under a row lock | `theLastAdminCannotBeDemotedOrDeactivated`, `adminsAreCountedUnderARowLock` |
+| Deactivated / demoted user keeps acting until the session expires | `StaffSessionFilter` re-reads the user on every request | `deactivationEndsTheUsersSessionOnTheirNextRequest`, `aDemotionAppliesToTheUsersVeryNextRequest` |
+| Session replayed on another tenant's host if RLS were misconfigured | The filter's own tenant check, independent of RLS | `StaffSessionFilterTest` (unit) |
+
+**Found by mutation testing:** 6 of the first 22 mutations survived. Each was a defence that
+another layer covered for in end-to-end tests: e.g. a reusable token was masked by the PENDING
+check and vice versa, and RLS masked the filter's tenant check. Each layer now has a test
+that defeats the other layers first.
+
+Accepted for now: setup links are returned to the admin to deliver (no email yet), so the
+admin can see them. Email delivery is a later slice.
 
 
 **Found while writing these tests (all fixed):**

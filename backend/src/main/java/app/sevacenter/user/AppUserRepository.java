@@ -3,7 +3,10 @@ package app.sevacenter.user;
 import java.util.List;
 import java.util.Optional;
 
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
 
 /**
  * Queries never mention tenant_id — Row-Level Security scopes every result to the current
@@ -17,4 +20,13 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> {
     boolean existsByEmail(String email);
 
     List<AppUser> findAllByOrderByCreatedAtAsc();
+
+    /**
+     * The tenant's active admins, row-locked: demoting or disabling an admin re-counts under the
+     * lock, so two admins demoting each other at the same moment can't leave the trust with none.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select u from AppUser u where u.role = app.sevacenter.user.Role.TRUST_ADMIN "
+            + "and u.status = app.sevacenter.user.UserStatus.ACTIVE")
+    List<AppUser> lockActiveAdmins();
 }

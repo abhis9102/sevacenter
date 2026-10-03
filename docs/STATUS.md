@@ -1,6 +1,6 @@
 # Dev Status — resume point
 
-_Last updated: 2026-10-02 (late session)._
+_Last updated: 2026-10-03._
 
 ## Where we are
 
@@ -156,8 +156,22 @@ curl -s -b /tmp/jar -X POST localhost:8080/api/v1/register -H 'Content-Type: app
   repository, so MockMvc cookie checks were order-dependent → cookie flags tested over a real server.
 - 42 tests; auth controls mutation-checked.
 
-**Next: M1 slice 2b: user management with setup links (`@PreAuthorize`, invariant 5); then 2c:
-authenticated DAST including cross-tenant attack attempts.**
+## M1 slice 2b — user management + setup links ✅ (this PR)
+- `V4`: user lifecycle PENDING → ACTIVE → DISABLED (DB-checked: active ⇒ password); `user_setup_token`
+  (SHA-256 only, forced RLS, 72 h, single use).
+- `/api/v1/users`: list (LEADER+), create / change role / deactivate / reissue link (TRUST_ADMIN) via
+  `@PreAuthorize` (**invariant 5 now tested**). `POST /api/v1/auth/setup` is public + CSRF. Link
+  token goes in the URL fragment, so it's never logged or sent as Referer.
+- Last-admin rule, counted under a row lock (deterministic lock test; a "race" test passed without it).
+- `TenantBindingFilter` → `StaffSessionFilter`: also re-reads the user on every request, so
+  deactivation ends sessions and role changes apply immediately.
+- **Mutation testing: 22 mutations, 6 survived at first** — all defence-in-depth layers masked by
+  another layer (reusable token ↔ PENDING check, RLS ↔ filter tenant check, missing token lock).
+  Each now has a test that defeats the other layers. Lesson: a passing end-to-end test proves the
+  stack holds, not that each layer does.
+- 64 tests. Setup links are returned to the admin for now (no email yet).
+
+**Next: M1 slice 2c: authenticated DAST including cross-tenant attack attempts.**
 
 ## Next up — M1 slice 2
 - Login + sessions (cookie session per ADR 0007; set cookie flags HttpOnly/Secure/SameSite); tenant-aware `UserDetailsService` (scope lookup by `TenantContext`).
