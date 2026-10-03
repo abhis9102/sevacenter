@@ -29,7 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Self-service staff profile dashboard: view details, update display name, notification
- * preferences, privacy controls, and change password.
+ * preferences, avatar, and change password.
  */
 @RestController
 @RequestMapping("/api/v1/profile")
@@ -57,11 +57,9 @@ public class ProfileController {
         boolean notifyDevotees = request.notifyDevotees() != null ? request.notifyDevotees() : current.isNotifyDevotees();
         boolean notifyDonations = request.notifyDonations() != null ? request.notifyDonations() : current.isNotifyDonations();
         boolean notifySecurity = request.notifySecurity() != null ? request.notifySecurity() : current.isNotifySecurity();
-        boolean privacyActivityLog = request.privacyActivityLog() != null ? request.privacyActivityLog() : current.isPrivacyActivityLog();
-        boolean privacyShowInStaffDirectory = request.privacyShowInStaffDirectory() != null ? request.privacyShowInStaffDirectory() : current.isPrivacyShowInStaffDirectory();
 
         AppUser updated = service.updateProfile(user.userId(), displayName, notifyDevotees, notifyDonations,
-                notifySecurity, privacyActivityLog, privacyShowInStaffDirectory);
+                notifySecurity);
         return ProfileResponse.of(updated, tenants);
     }
 
@@ -108,8 +106,6 @@ public class ProfileController {
             boolean notifyDevotees,
             boolean notifyDonations,
             boolean notifySecurity,
-            boolean privacyActivityLog,
-            boolean privacyShowInStaffDirectory,
             boolean hasAvatar
     ) {
         public static ProfileResponse of(AppUser u, TenantRepository tenants) {
@@ -125,8 +121,6 @@ public class ProfileController {
                     u.isNotifyDevotees(),
                     u.isNotifyDonations(),
                     u.isNotifySecurity(),
-                    u.isPrivacyActivityLog(),
-                    u.isPrivacyShowInStaffDirectory(),
                     u.hasAvatar()
             );
         }
@@ -136,9 +130,7 @@ public class ProfileController {
             @Schema(example = "Ravi Kumar") @Size(max = 120) String displayName,
             Boolean notifyDevotees,
             Boolean notifyDonations,
-            Boolean notifySecurity,
-            Boolean privacyActivityLog,
-            Boolean privacyShowInStaffDirectory
+            Boolean notifySecurity
     ) {}
 
     public record ChangePasswordRequest(

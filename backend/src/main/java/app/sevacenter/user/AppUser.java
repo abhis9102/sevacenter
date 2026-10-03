@@ -60,16 +60,11 @@ public class AppUser {
     @Column(name = "notify_security", nullable = false)
     private boolean notifySecurity = true;
 
-    @Column(name = "privacy_activity_log", nullable = false)
-    private boolean privacyActivityLog = true;
-
-    @Column(name = "privacy_show_in_staff_directory", nullable = false)
-    private boolean privacyShowInStaffDirectory = true;
-
-    @Column(name = "avatar_data")
-    private byte[] avatarData;
-
-    @Column(name = "avatar_content_type")
+    /**
+     * Read-only here: {@link UserAvatar} owns the image columns, so the bytes (up to 2 MB) never
+     * load with the user, which StaffSessionFilter re-reads on every request.
+     */
+    @Column(name = "avatar_content_type", insertable = false, updatable = false)
     private String avatarContentType;
 
     protected AppUser() { }
@@ -102,27 +97,14 @@ public class AppUser {
         this.displayName = newDisplayName;
     }
 
-    public void updatePreferences(boolean notifyDevotees, boolean notifyDonations, boolean notifySecurity,
-                                  boolean privacyActivityLog, boolean privacyShowInStaffDirectory) {
+    public void updatePreferences(boolean notifyDevotees, boolean notifyDonations, boolean notifySecurity) {
         this.notifyDevotees = notifyDevotees;
         this.notifyDonations = notifyDonations;
         this.notifySecurity = notifySecurity;
-        this.privacyActivityLog = privacyActivityLog;
-        this.privacyShowInStaffDirectory = privacyShowInStaffDirectory;
-    }
-
-    public void updateAvatar(byte[] data, String contentType) {
-        this.avatarData = data;
-        this.avatarContentType = contentType;
-    }
-
-    public void removeAvatar() {
-        this.avatarData = null;
-        this.avatarContentType = null;
     }
 
     public boolean hasAvatar() {
-        return this.avatarData != null && this.avatarData.length > 0;
+        return this.avatarContentType != null;
     }
 
     public void disable() {
@@ -155,8 +137,4 @@ public class AppUser {
     public boolean isNotifyDevotees() { return notifyDevotees; }
     public boolean isNotifyDonations() { return notifyDonations; }
     public boolean isNotifySecurity() { return notifySecurity; }
-    public boolean isPrivacyActivityLog() { return privacyActivityLog; }
-    public boolean isPrivacyShowInStaffDirectory() { return privacyShowInStaffDirectory; }
-    public byte[] getAvatarData() { return avatarData; }
-    public String getAvatarContentType() { return avatarContentType; }
 }

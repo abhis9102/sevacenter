@@ -44,7 +44,6 @@ export interface Translations {
     tabs: {
       account: string;
       security: string;
-      privacy: string;
       notifications: string;
     };
     account: {
@@ -71,17 +70,6 @@ export interface Translations {
       passwordMismatch: string;
       passwordTooShort: string;
       passwordSame: string;
-      savedSuccess: string;
-    };
-    privacy: {
-      heading: string;
-      description: string;
-      auditLogTitle: string;
-      auditLogDesc: string;
-      directoryTitle: string;
-      directoryDesc: string;
-      dataProtectionNotice: string;
-      savePrivacy: string;
       savedSuccess: string;
     };
     notifications: {
@@ -237,12 +225,7 @@ export interface Translations {
       title: string;
       subtitle: string;
       instructions: string;
-      emailLabel: string;
-      submit: string;
-      submitting: string;
       backToLogin: string;
-      devTokenNotice: string;
-      proceedToReset: string;
     };
     reset: {
       title: string;
@@ -254,6 +237,54 @@ export interface Translations {
       mismatch: string;
       tokenMissing: string;
     };
+  };
+  portal: {
+    title: string;
+    subtitle: string;
+    donateTab: string;
+    historyTab: string;
+    donateHeading: string;
+    donateSubtitle: string;
+    quickAmounts: string;
+    customAmount: string;
+    purpose: string;
+    purposes: {
+      general: string;
+      annadanam: string;
+      puja: string;
+      construction: string;
+      gaushala: string;
+      deepam: string;
+    };
+    paymentMode: string;
+    donorName: string;
+    phoneOrEmail: string;
+    city: string;
+    donateButton: string;
+    donating: string;
+    noPanNotice: string;
+    receiptSuccessTitle: string;
+    receiptNumber: string;
+    downloadReceipt: string;
+    printReceipt: string;
+    closeReceipt: string;
+    loginToViewHistory: string;
+    signInDevotee: string;
+    phoneOtp: string;
+    emailOtp: string;
+    enterPhone: string;
+    enterEmail: string;
+    sendOtp: string;
+    sendingOtp: string;
+    enterOtp: string;
+    verifyOtp: string;
+    verifyingOtp: string;
+    devOtpNotice: string;
+    registerPrompt: string;
+    registerButton: string;
+    consentNotice: string;
+    noDonationsYet: string;
+    viewReceipt: string;
   };
 }
 
@@ -298,11 +329,10 @@ export const DICTIONARIES: Record<Language, Translations> = {
     },
     profile: {
       title: "My Profile",
-      description: "Manage your account credentials, security settings, privacy controls, and notification preferences.",
+      description: "Manage your account details, password and notification preferences.",
       tabs: {
         account: "Account",
         security: "Security & Password",
-        privacy: "Privacy",
         notifications: "Notifications",
       },
       account: {
@@ -330,17 +360,6 @@ export const DICTIONARIES: Record<Language, Translations> = {
         passwordTooShort: "Password must be at least 12 characters.",
         passwordSame: "New password must be different from your current password.",
         savedSuccess: "Your password has been changed successfully.",
-      },
-      privacy: {
-        heading: "Privacy controls",
-        description: "SevaCenter protects devotee data and maintains transparent audit records for religious trusts.",
-        auditLogTitle: "Record my staff activity in audit trails",
-        auditLogDesc: "Creates an immutable audit log entry whenever you add, edit, or export devotee records.",
-        directoryTitle: "Show my profile in the trust staff directory",
-        directoryDesc: "Allows leaders and admins in your trust to see your name in the staff team roster.",
-        dataProtectionNotice: "Role-based data masking is active. Members cannot view full devotee contact numbers, email addresses, or dates of birth.",
-        savePrivacy: "Save privacy settings",
-        savedSuccess: "Privacy settings updated successfully.",
       },
       notifications: {
         heading: "Notification preferences",
@@ -512,14 +531,9 @@ export const DICTIONARIES: Record<Language, Translations> = {
       },
       forgot: {
         title: "Forgot your password?",
-        subtitle: "Enter your registered email address and we'll send you instructions to reset your password.",
-        instructions: "Enter the email address associated with your staff account.",
-        emailLabel: "Registered Email",
-        submit: "Send Reset Link",
-        submitting: "Sending…",
+        subtitle: "For your security, password reset links are issued by your trust admin.",
+        instructions: "Ask a trust admin to open Staff and choose “Reset password link” next to your name. The link works once, for one hour, and only on your trust's address.",
         backToLogin: "Back to Sign in",
-        devTokenNotice: "Local development mode: A reset token was generated for you.",
-        proceedToReset: "Proceed to Reset Password",
       },
       reset: {
         title: "Reset your password",
@@ -531,6 +545,54 @@ export const DICTIONARIES: Record<Language, Translations> = {
         mismatch: "Passwords do not match.",
         tokenMissing: "Password reset link is missing or invalid. Please request a new link.",
       },
+    },
+    portal: {
+      title: "Devotee & Seva Portal",
+      subtitle: "Offer online seva, make sacred donations, and download official receipts instantly.",
+      donateTab: "Make a Donation",
+      historyTab: "My Receipts & History",
+      donateHeading: "Offer Seva & Donation",
+      donateSubtitle: "Support temple activities, annadanam, rituals and holy seva.",
+      quickAmounts: "Suggested Seva Amounts",
+      customAmount: "Custom Amount (₹)",
+      purpose: "Seva Purpose / Category",
+      purposes: {
+        general: "General Temple Fund",
+        annadanam: "Annadanam / Prasadam Offering",
+        puja: "Special Puja & Archana",
+        construction: "Mandir Renovation & Nirman",
+        gaushala: "Gaushala & Cow Protection",
+        deepam: "Deepam & Holy Flowers",
+      },
+      paymentMode: "Payment Method",
+      donorName: "Devotee / Donor Name",
+      phoneOrEmail: "Mobile Number or Email",
+      city: "City / Town (Optional)",
+      donateButton: "Donate & Get Instant Receipt",
+      donating: "Processing donation…",
+      noPanNotice: "No PAN card required for general donations. Official temple receipt is generated immediately.",
+      receiptSuccessTitle: "Donation Successful! Blessed by Mandir",
+      receiptNumber: "Receipt Number",
+      downloadReceipt: "Download Receipt",
+      printReceipt: "Print Receipt",
+      closeReceipt: "Close",
+      loginToViewHistory: "Sign in with your mobile number or email to view past donations and receipts.",
+      signInDevotee: "Devotee Sign In",
+      phoneOtp: "Mobile Number (OTP)",
+      emailOtp: "Email (OTP)",
+      enterPhone: "Mobile Number (e.g. +91 98765 43210)",
+      enterEmail: "Email Address",
+      sendOtp: "Send Login OTP",
+      sendingOtp: "Sending OTP…",
+      enterOtp: "Enter 6-digit OTP",
+      verifyOtp: "Verify & Sign In",
+      verifyingOtp: "Verifying…",
+      devOtpNotice: "Local Dev: Your test OTP is",
+      registerPrompt: "Welcome to our Mandir! Complete your profile to proceed:",
+      registerButton: "Complete Registration",
+      consentNotice: "I agree to receive seva updates and receipts from the temple (DPDP 2023 compliant).",
+      noDonationsYet: "No donations recorded yet on this account.",
+      viewReceipt: "View Receipt",
     },
   },
   hi: {
@@ -577,7 +639,6 @@ export const DICTIONARIES: Record<Language, Translations> = {
       tabs: {
         account: "खाता",
         security: "सुरक्षा व पासवर्ड",
-        privacy: "गोपनीयता",
         notifications: "सूचनाएं",
       },
       account: {
@@ -605,17 +666,6 @@ export const DICTIONARIES: Record<Language, Translations> = {
         passwordTooShort: "पासवर्ड कम से कम 12 अक्षरों का होना चाहिए।",
         passwordSame: "नया पासवर्ड वर्तमान पासवर्ड से भिन्न होना चाहिए।",
         savedSuccess: "आपका पासवर्ड सफलतापूर्वक बदल दिया गया है।",
-      },
-      privacy: {
-        heading: "गोपनीयता नियंत्रण",
-        description: "सेवाकेंद्र भक्त डेटा की सुरक्षा करता है और धार्मिक ट्रस्टों के लिए पारदर्शी ऑडिट रिकॉर्ड रखता है।",
-        auditLogTitle: "ऑडिट लॉग में मेरी कार्यप्रणाली दर्ज करें",
-        auditLogDesc: "भक्त रिकॉर्ड जोड़ने, बदलने या एक्सपोर्ट करने पर स्थायी ऑडिट रिकॉर्ड तैयार करता है।",
-        directoryTitle: "ट्रस्ट कर्मचारी सूची में मेरी प्रोफ़ाइल दिखाएं",
-        directoryDesc: "आपके ट्रस्ट के पदाधिकारियों को टीम रोस्टर में आपका नाम देखने की अनुमति देता है।",
-        dataProtectionNotice: "भूमिका-आधारित डेटा मास्किंग सक्रिय है। सदस्य भक्तों के पूर्ण संपर्क नंबर, ईमेल या जन्म तिथि नहीं देख सकते।",
-        savePrivacy: "गोपनीयता सेटिंग्स सुरक्षित करें",
-        savedSuccess: "गोपनीयता सेटिंग्स सफलतापूर्वक अपडेट की गईं।",
       },
       notifications: {
         heading: "सूचना प्राथमिकताएं",
@@ -788,14 +838,9 @@ export const DICTIONARIES: Record<Language, Translations> = {
       },
       forgot: {
         title: "पासवर्ड भूल गए?",
-        subtitle: "अपना पंजीकृत ईमेल दर्ज करें और हम आपको पासवर्ड रीसेट करने के निर्देश भेजेंगे।",
-        instructions: "अपने कर्मचारी खाते से जुड़ा ईमेल पता दर्ज करें।",
-        emailLabel: "पंजीकृत ईमेल",
-        submit: "रीसेट लिंक भेजें",
-        submitting: "भेजा जा रहा है…",
+        subtitle: "आपकी सुरक्षा के लिए, पासवर्ड रीसेट लिंक आपके ट्रस्ट एडमिन द्वारा दिए जाते हैं।",
+        instructions: "किसी ट्रस्ट एडमिन से कहें कि वे स्टाफ़ खोलें और आपके नाम के आगे “पासवर्ड रीसेट लिंक” चुनें। यह लिंक केवल एक बार, एक घंटे के लिए और केवल आपके ट्रस्ट के पते पर काम करता है।",
         backToLogin: "वापस लॉग इन पर जाएं",
-        devTokenNotice: "लोकल डेवलपमेंट मोड: आपके लिए एक रीसेट टोकन उत्पन्न किया गया है।",
-        proceedToReset: "पासवर्ड रीसेट करने के लिए आगे बढ़ें",
       },
       reset: {
         title: "अपना पासवर्ड रीसेट करें",
@@ -807,6 +852,54 @@ export const DICTIONARIES: Record<Language, Translations> = {
         mismatch: "पासवर्ड मेल नहीं खा रहे हैं।",
         tokenMissing: "पासवर्ड रीसेट लिंक अमान्य या गायब है। कृपया नया लिंक मांगें।",
       },
+    },
+    portal: {
+      title: "भक्त एवं सेवा पोर्टल",
+      subtitle: "ऑनलाइन सेवा अर्पित करें, पवित्र दान करें और तुरंत आधिकारिक रसीद प्राप्त करें।",
+      donateTab: "दान / सेवा अर्पित करें",
+      historyTab: "मेरी रसीदें एवं इतिहास",
+      donateHeading: "पवित्र सेवा एवं दान",
+      donateSubtitle: "मंदिर गतिविधियों, अन्नदान, दैनिक पूजा-अर्चना और धार्मिक सेवा में सहयोग दें।",
+      quickAmounts: "सुझावित सेवा राशि",
+      customAmount: "अपनी इच्छानुसार राशि (₹)",
+      purpose: "सेवा का उद्देश्य / श्रेणी",
+      purposes: {
+        general: "सामान्य मंदिर निधि",
+        annadanam: "अन्नदानम् / महाप्रसाद सेवा",
+        puja: "विशेष पूजा एवं अर्चना",
+        construction: "मंदिर निर्माण एवं जीर्णोद्धार",
+        gaushala: "गौशाला एवं गो-सेवा",
+        deepam: "अखंड दीप एवं पुष्प सेवा",
+      },
+      paymentMode: "भुगतान का माध्यम",
+      donorName: "भक्त / दानदाता का नाम",
+      phoneOrEmail: "मोबाइल नंबर या ईमेल",
+      city: "शहर / नगर (वैकल्पिक)",
+      donateButton: "दान करें एवं तुरंत रसीद पाएं",
+      donating: "दान प्रक्रिया में है…",
+      noPanNotice: "सामान्य दान के लिए पैन कार्ड की आवश्यकता नहीं है। मंदिर की आधिकारिक रसीद तुरंत प्रदान की जाएगी।",
+      receiptSuccessTitle: "दान सफल! मंदिर का आशीर्वाद",
+      receiptNumber: "रसीद संख्या",
+      downloadReceipt: "रसीद डाउनलोड करें",
+      printReceipt: "रसीद प्रिंट करें",
+      closeReceipt: "बंद करें",
+      loginToViewHistory: "अपने पिछले दान और रसीदें देखने के लिए अपने मोबाइल नंबर या ईमेल से लॉग इन करें।",
+      signInDevotee: "भक्त लॉग इन",
+      phoneOtp: "मोबाइल नंबर (OTP)",
+      emailOtp: "ईमेल (OTP)",
+      enterPhone: "मोबाइल नंबर (उदा. +91 98765 43210)",
+      enterEmail: "ईमेल पता",
+      sendOtp: "लॉग इन OTP भेजें",
+      sendingOtp: "OTP भेजा जा रहा है…",
+      enterOtp: "6 अंकों का OTP दर्ज करें",
+      verifyOtp: "सत्यापित करें एवं लॉग इन करें",
+      verifyingOtp: "सत्यापित हो रहा है…",
+      devOtpNotice: "लोकल डेवलपमेंट: आपका टेस्ट OTP है",
+      registerPrompt: "हमारे मंदिर में आपका स्वागत है! कृपया अपनी जानकारी पूरी करें:",
+      registerButton: "रजिस्ट्रेशन पूरा करें",
+      consentNotice: "मैं मंदिर से सेवा संदेश और रसीदें प्राप्त करने की सहमति देता/देती हूँ (DPDP 2023 अनुपालन)।",
+      noDonationsYet: "इस खाते पर अभी तक कोई दान दर्ज नहीं है।",
+      viewReceipt: "रसीद देखें",
     },
   },
 };

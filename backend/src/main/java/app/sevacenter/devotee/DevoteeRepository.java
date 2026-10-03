@@ -28,6 +28,10 @@ public interface DevoteeRepository extends JpaRepository<Devotee, Long> {
 
     java.util.List<Devotee> findAllByErasedAtIsNull(org.springframework.data.domain.Sort sort);
 
+    java.util.Optional<Devotee> findFirstByTenantIdAndPhoneAndErasedAtIsNull(Long tenantId, String phone);
+
+    java.util.Optional<Devotee> findFirstByTenantIdAndEmailIgnoreCaseAndErasedAtIsNull(Long tenantId, String email);
+
     /** Whether the ledger references this devotee (then erasure anonymises instead of deleting). */
     @Query(value = "select exists (select 1 from donation where devotee_id = ?1)", nativeQuery = true)
     boolean hasDonations(long devoteeId);

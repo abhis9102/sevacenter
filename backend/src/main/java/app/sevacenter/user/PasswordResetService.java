@@ -8,8 +8,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.HexFormat;
-import java.util.Locale;
-import java.util.Optional;
 
 import app.sevacenter.tenant.TenantContext;
 import app.sevacenter.web.InvalidFieldException;
@@ -20,7 +18,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Handles one-time password reset flows with enumeration defence and SHA-256 token hashing.
+ * One-time password reset links (SHA-256 of the token stored, 1 h, single use, RLS-scoped so a
+ * link only works on its own trust's host). Links are issued by a trust admin, never to whoever
+ * asks: self-service "forgot password" needs email delivery first.
  */
 @Service
 public class PasswordResetService {
@@ -48,30 +48,28 @@ public class PasswordResetService {
         this.clock = clock;
     }
 
+    /**
+     * A fresh one-time reset token for an ACTIVE staff member; earlier ones stop working. Issued by
+     * a trust admin (UserManagementService#issueResetLink) and handed over like a setup link: there
+     * is no email delivery yet, and a token must never be returned to whoever merely asks.
+     */
     @Transactional
-    public Optional<String> requestReset(String email) {
-        if (email == null || email.isBlank()) {
-            return Optional.empty();
+    public String issueFor(AppUser user) {
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new IllegalStateException("reset links are only for active staff");
         }
-        String cleanEmail = email.trim().toLowerCase(Locale.ROOT);
-        Optional<AppUser> userOpt = users.findByEmail(cleanEmail);
-        if (userOpt.isEmpty()) {
-            return Optional.empty();
-        }
-        AppUser user = userOpt.get();
-        if (user.getStatus() != UserStatus.ACTIVE || user.getPasswordHash() == null) {
-            return Optional.empty();
-        }
-
         resetTokens.invalidateAllForUser(user.getId());
-
         String rawToken = generateToken();
-        String hash = hashToken(rawToken);
-        OffsetDateTime expiresAt = OffsetDateTime.now(clock).plus(RESET_TTL);
+        resetTokens.save(new PasswordResetToken(user.getTenantId(), user.getId(), hashToken(rawToken),
+                OffsetDateTime.now(clock).plus(RESET_TTL)));
+        audit.info("event=password_reset_issued tenant={} user={}", user.getTenantId(), user.getId());
+        return rawToken;
+    }
 
-        resetTokens.save(new PasswordResetToken(user.getTenantId(), user.getId(), hash, expiresAt));
-        audit.info("event=password_reset_requested tenant={} user={}", user.getTenantId(), user.getId());
-        return Optional.of(rawToken);
+    /** Called when staff are deactivated or deleted: their outstanding reset links die. */
+    @Transactional
+    public void invalidateFor(long userId) {
+        resetTokens.invalidateAllForUser(userId);
     }
 
     @Transactional
@@ -92,7 +90,9 @@ public class PasswordResetService {
             throw new InvalidResetTokenException();
         }
 
+        // Only someone who can still sign in: not a deactivated or deleted (tombstoned) account.
         AppUser user = users.findById(token.getUserId())
+                .filter(u -> u.getStatus() == UserStatus.ACTIVE)
                 .orElseThrow(InvalidResetTokenException::new);
 
         user.updatePassword(passwordEncoder.encode(newPassword));

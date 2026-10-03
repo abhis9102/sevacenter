@@ -1,15 +1,10 @@
 package app.sevacenter.auth;
 
-import java.util.Optional;
-
 import app.sevacenter.user.PasswordResetService;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import org.springframework.core.env.Environment;
-import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,26 +12,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Redeems a one-time password reset link (issued by a trust admin, see UserController). Public
+ * (the user can't sign in) but CSRF-protected. There is deliberately no "forgot password" endpoint
+ * that hands out tokens: without email delivery, whoever asked would get the token.
+ */
 @RestController
 @RequestMapping("/api/v1/auth")
 public class PasswordResetController {
 
     private final PasswordResetService passwordResetService;
-    private final boolean isDev;
 
-    public PasswordResetController(PasswordResetService passwordResetService, Environment env) {
+    public PasswordResetController(PasswordResetService passwordResetService) {
         this.passwordResetService = passwordResetService;
-        this.isDev = env.acceptsProfiles(Profiles.of("local", "test", "default"));
-    }
-
-    @PostMapping("/forgot-password")
-    public ForgotPasswordResponse forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
-        Optional<String> tokenOpt = passwordResetService.requestReset(request.email());
-        String devToken = (isDev && tokenOpt.isPresent()) ? tokenOpt.get() : null;
-        return new ForgotPasswordResponse(
-                "If an account exists with this email, password reset instructions have been sent.",
-                devToken
-        );
     }
 
     @PostMapping("/reset-password")
@@ -45,19 +33,10 @@ public class PasswordResetController {
         passwordResetService.resetPassword(request.token(), request.newPassword());
     }
 
-    public record ForgotPasswordRequest(
-            @Schema(example = "priya@example.org")
-            @NotBlank @Email String email
-    ) { }
-
-    public record ForgotPasswordResponse(
-            String message,
-            @Schema(description = "Only populated in local/test environments for development convenience")
-            String devToken
-    ) { }
-
     public record ResetPasswordRequest(
-            @NotBlank String token,
+            @Schema(example = "3f2a9c1e7b6d4a5f8e0c2b1a9d7f6e5c4b3a2918f7e6d5c4b3a29180f7e6d5c4")
+            @NotBlank @Size(max = 100) String token,
+            @Schema(example = "correct-horse-battery-staple")
             @NotBlank @Size(min = 12, max = 200, message = "password must be at least 12 characters")
             String newPassword
     ) { }

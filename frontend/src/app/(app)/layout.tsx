@@ -15,11 +15,6 @@ import { UserMenu } from "@/components/UserMenu";
 import { ApiError, describeError } from "@/lib/errors";
 import { hasRole, type Me, type Role } from "@/lib/types";
 
-const NAV: ReadonlyArray<{ href: string; label: string; min: Role }> = [
-  { href: "/devotees", label: "Devotees", min: "MEMBER" },
-  { href: "/staff", label: "Staff", min: "LEADER" },
-];
-
 /** Signed-in shell: loads the current user (401 -> login), nav, user + role, sign out. */
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const tenant = useTenant();
@@ -109,6 +104,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <span className="hidden rounded-full bg-surface-2 px-2.5 py-0.5 font-mono text-xs sm:inline">
               {me.tenant ?? tenant}
             </span>
+            <Link
+              href="/portal"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden items-center gap-1 rounded-full border border-line bg-surface px-2.5 py-0.5 text-xs text-muted hover:text-fg hover:border-primary/50 transition-colors sm:inline-flex"
+              title="Open public devotee & donation portal"
+            >
+              <span>Devotee Portal</span>
+              <span className="text-[10px]">↗</span>
+            </Link>
             <nav aria-label="Main" className="order-last flex w-full gap-1 sm:order-none sm:w-auto">
               {navItems.filter((n) => hasRole(me.role, n.min)).map((n) => {
                 const active = pathname === n.href || pathname.startsWith(`${n.href}/`);

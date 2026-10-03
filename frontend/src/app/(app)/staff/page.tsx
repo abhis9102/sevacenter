@@ -36,7 +36,7 @@ export default function StaffPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ tone: "success" | "danger"; text: string } | null>(null);
   const [creating, setCreating] = useState(false);
-  const [link, setLink] = useState<{ name: string; url: string } | null>(null);
+  const [link, setLink] = useState<{ name: string; url: string; kind?: "setup" | "reset" } | null>(null);
   const [toDeactivate, setToDeactivate] = useState<StaffUser | null>(null);
   const [toDelete, setToDelete] = useState<StaffUser | null>(null);
 
@@ -70,6 +70,16 @@ export default function StaffPage() {
     try {
       const res = await api.request<{ setupUrl: string }>(`/users/${user.id}/setup-link`, { method: "POST" });
       setLink({ name: user.displayName, url: res.setupUrl });
+    } catch (err) {
+      setNotice({ tone: "danger", text: describeError(err) });
+    }
+  }
+
+  async function resetLink(user: StaffUser) {
+    setNotice(null);
+    try {
+      const res = await api.request<{ resetUrl: string }>(`/users/${user.id}/reset-link`, { method: "POST" });
+      setLink({ name: user.displayName, url: res.resetUrl, kind: "reset" });
     } catch (err) {
       setNotice({ tone: "danger", text: describeError(err) });
     }
@@ -170,6 +180,11 @@ export default function StaffPage() {
                               New setup link
                             </Button>
                           ) : null}
+                          {u.status === "ACTIVE" && !self ? (
+                            <Button variant="secondary" onClick={() => void resetLink(u)}>
+                              Reset password link
+                            </Button>
+                          ) : null}
                           {u.status !== "DISABLED" && !self ? (
                             <Button variant="ghost" className="text-danger" onClick={() => setToDeactivate(u)}>
                               Deactivate
@@ -205,7 +220,14 @@ export default function StaffPage() {
         />
       ) : null}
 
-      <Dialog open={link !== null} onClose={() => setLink(null)} title="Setup link">
+      <Dialog open={link !== null} onClose={() => setLink(null)}
+              title={link?.kind === "reset" ? "Password reset link" : "Setup link"}>
+        {link?.kind === "reset" ? (
+          <p className="text-sm text-muted">
+            Works once, for one hour, only on this trust&apos;s address. Any earlier reset link for{" "}
+            {link.name} has stopped working.
+          </p>
+        ) : null}
         {link ? <SetupLinkPanel name={link.name} setupUrl={link.url} /> : null}
         <div className="flex justify-end">
           <Button onClick={() => setLink(null)}>I&apos;ve copied it</Button>

@@ -79,7 +79,7 @@ public class Receipt {
     @Column(name = "trust_registration_80g", nullable = false)
     private String trustRegistration80g;
 
-    @Column(name = "issued_by", nullable = false)
+    @Column(name = "issued_by")
     private Long issuedBy;
 
     @Column(name = "created_at", insertable = false, updatable = false)
@@ -88,7 +88,7 @@ public class Receipt {
     protected Receipt() { }
 
     static Receipt issue(long tenantId, Donation donation, int fyStart, int seq, LocalDate issuedOn, String donorAddress,
-                         String panEnc, String panLast4, String panIndex, TrustProfile trust, long staffId) {
+                         String panEnc, String panLast4, String panIndex, TrustProfile trust, Long staffId) {
         Receipt r = new Receipt();
         r.tenantId = tenantId;
         r.donationId = donation.getId();

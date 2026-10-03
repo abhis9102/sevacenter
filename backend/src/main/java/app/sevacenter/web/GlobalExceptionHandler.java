@@ -88,6 +88,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(Map.of("error", "invalid_or_expired_link"));
     }
 
+    @ExceptionHandler(app.sevacenter.portal.DevoteePortalService.InvalidOtpException.class)
+    public ResponseEntity<Map<String, Object>> onInvalidOtp(app.sevacenter.portal.DevoteePortalService.InvalidOtpException ex) {
+        return ResponseEntity.badRequest().body(Map.of("error", "invalid_otp", "message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(app.sevacenter.portal.DevoteePortalController.DevoteeUnauthorizedException.class)
+    public ResponseEntity<Map<String, Object>> onDevoteeUnauthorized(app.sevacenter.portal.DevoteePortalController.DevoteeUnauthorizedException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "devotee_unauthorized", "message", ex.getMessage()));
+    }
+
     // Found by DAST (M2 slice 2): these surfaced as 500s.
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)

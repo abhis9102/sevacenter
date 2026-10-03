@@ -82,6 +82,13 @@ final class TestStaff {
                 .contentType(MediaType.APPLICATION_JSON).content(body("role", role))).andExpect(status().isOk());
     }
 
+    /** A login attempt with any password; the caller checks the status. */
+    org.springframework.test.web.servlet.ResultActions login(String slug, String email, String password) throws Exception {
+        return mvc.perform(on(slug, post("/api/v1/auth/login")).with(csrf())
+                .with(r -> { r.setRemoteAddr(ip); return r; })
+                .param("email", email).param("password", password));
+    }
+
     MockHttpSession login(String slug, String email) throws Exception {
         return (MockHttpSession) mvc.perform(on(slug, post("/api/v1/auth/login")).with(csrf())
                         .with(r -> { r.setRemoteAddr(ip); return r; })

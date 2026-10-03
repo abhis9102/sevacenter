@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- the avatar is a private, session-authenticated API image; next/image would proxy and cache it */
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";

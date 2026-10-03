@@ -23,6 +23,7 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     const extracted = takeSetupTokenFromUrl(window);
     if (extracted) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- read once from the browser (URL fragment / cookie)
       setToken(extracted);
     }
   }, []);

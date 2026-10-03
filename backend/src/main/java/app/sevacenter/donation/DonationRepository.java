@@ -18,6 +18,8 @@ public interface DonationRepository extends JpaRepository<Donation, Long> {
 
     boolean existsByDevoteeId(Long devoteeId);
 
+    List<Donation> findAllByDevoteeIdAndReversesIdIsNullOrderByReceivedOnDesc(Long devoteeId);
+
     /** Net totals per mode for a date range: reversals are negative, so they net out. */
     @Query("select d.mode as mode, sum(d.amountPaise) as netPaise, "
             + "sum(case when d.reversesId is null then 1 else 0 end) as donations, "

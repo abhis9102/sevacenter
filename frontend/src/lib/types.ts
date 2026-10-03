@@ -113,8 +113,6 @@ export interface UserProfile {
   notifyDevotees: boolean;
   notifyDonations: boolean;
   notifySecurity: boolean;
-  privacyActivityLog: boolean;
-  privacyShowInStaffDirectory: boolean;
   hasAvatar: boolean;
 }
 
@@ -123,8 +121,6 @@ export interface UpdateProfileInput {
   notifyDevotees?: boolean;
   notifyDonations?: boolean;
   notifySecurity?: boolean;
-  privacyActivityLog?: boolean;
-  privacyShowInStaffDirectory?: boolean;
 }
 
 export interface ChangePasswordInput {

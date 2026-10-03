@@ -50,13 +50,13 @@ public class Devotee {
     @Column(name = "consent_given_at", nullable = false, updatable = false)
     private OffsetDateTime consentGivenAt;
 
-    @Column(name = "consent_recorded_by", nullable = false, updatable = false)
+    @Column(name = "consent_recorded_by", updatable = false)
     private Long consentRecordedBy;
 
-    @Column(name = "created_by", nullable = false, updatable = false)
+    @Column(name = "created_by", updatable = false)
     private Long createdBy;
 
-    @Column(name = "updated_by", nullable = false)
+    @Column(name = "updated_by")
     private Long updatedBy;
 
     @Column(name = "created_at", insertable = false, updatable = false)

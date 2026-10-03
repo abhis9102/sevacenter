@@ -26,6 +26,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const initial = getInitialLanguage();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- read once from the browser (URL fragment / cookie)
     setLangState(initial);
     document.documentElement.lang = initial;
   }, []);

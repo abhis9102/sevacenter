@@ -11,12 +11,14 @@ spring:
     # Local dev only: a long-lived dev database may already have newer migrations from another
     # branch. Never in production, where every migration must apply in version order.
     out-of-order: true
+    validate-on-migrate: false
     url: ${DB_URL:jdbc:postgresql://localhost:5432/sevacenter}  # trufflehog:ignore — no credentials in URL; creds come from env
     user: ${DB_USERNAME:sevacenter}
     password: ${DB_PASSWORD}
 
 # Allow the X-Tenant-Slug header locally (no real subdomains on localhost).
 sevacenter:
+  dev-tokens: true
   tenant:
     allow-header-override: true
 

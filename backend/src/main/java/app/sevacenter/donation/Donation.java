@@ -55,7 +55,7 @@ public class Donation {
     @Column(name = "reversal_reason")
     private String reversalReason;
 
-    @Column(name = "recorded_by", nullable = false)
+    @Column(name = "recorded_by")
     private Long recordedBy;
 
     @Column(name = "created_at", insertable = false, updatable = false)
@@ -63,8 +63,8 @@ public class Donation {
 
     protected Donation() { }
 
-    static Donation received(long tenantId, Long devoteeId, String donorName, long amountPaise, DonationMode mode,
-                             String reference, String purpose, LocalDate receivedOn, long recordedBy) {
+    public static Donation received(long tenantId, Long devoteeId, String donorName, long amountPaise, DonationMode mode,
+                                    String reference, String purpose, LocalDate receivedOn, Long recordedBy) {
         Donation d = new Donation();
         d.tenantId = tenantId;
         d.devoteeId = devoteeId;
