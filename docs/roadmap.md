@@ -1,7 +1,10 @@
 # Roadmap
 
-MVP (locked 2026-10-02): tenant registration + per-temple subdomain, Devotees, Donations (with 80G),
-Events/Registrations. Publishing + custom domains = wave 2.
+MVP (locked 2026-10-02, extended 2026-10-03): tenant registration + per-temple subdomain, Devotees,
+Donations (with 80G and online payments), Events/Registrations, **and the MandirCenter operations
+set**: public temple page (timings, announcements), events and darshan passes with gate check-in,
+puja/sankalp bookings (paid through the verified payment flow), sevak/volunteer signups, and the
+staff screens to run them. Publishing (CMS) and custom domains are wave 2.
 
 Each milestone ends with something that runs and is demoable to a customer. Security work (AppSec
 role) runs *inside* every milestone, not after.

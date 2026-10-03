@@ -91,7 +91,7 @@ public class DevoteeService {
      * Indian numbers as typed ("98765 43210", "098765-43210", "+91 98765 43210") become E.164
      * ("+919876543210"); other countries must already start with "+".
      */
-    static String phone(String raw) {
+    public static String phone(String raw) {
         String s = blankToNull(raw);
         if (s == null) {
             return null;
