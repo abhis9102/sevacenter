@@ -55,8 +55,17 @@ public class Donation {
     @Column(name = "reversal_reason")
     private String reversalReason;
 
-    @Column(name = "recorded_by", nullable = false)
+    /** The staff member who recorded it; null only for ONLINE entries (V12 CHECK). */
+    @Column(name = "recorded_by")
     private Long recordedBy;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private DonationChannel channel = DonationChannel.STAFF;
+
+    /** The gateway payment id of an ONLINE entry (unique: a payment is never counted twice). */
+    @Column(name = "payment_ref")
+    private String paymentRef;
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private OffsetDateTime createdAt;
@@ -75,6 +84,22 @@ public class Donation {
         d.purpose = purpose;
         d.receivedOn = receivedOn;
         d.recordedBy = recordedBy;
+        return d;
+    }
+
+    /** A donation paid online and verified with the trust's gateway (ADR 0013). */
+    static Donation online(long tenantId, String donorName, long amountPaise, DonationMode mode, String purpose,
+                           LocalDate receivedOn, String paymentRef) {
+        Donation d = new Donation();
+        d.tenantId = tenantId;
+        d.donorName = donorName;
+        d.amountPaise = amountPaise;
+        d.mode = mode;
+        d.reference = paymentRef;
+        d.purpose = purpose;
+        d.receivedOn = receivedOn;
+        d.channel = DonationChannel.ONLINE;
+        d.paymentRef = paymentRef;
         return d;
     }
 
@@ -99,5 +124,7 @@ public class Donation {
     public Long getReversesId() { return reversesId; }
     public String getReversalReason() { return reversalReason; }
     public Long getRecordedBy() { return recordedBy; }
+    public DonationChannel getChannel() { return channel; }
+    public String getPaymentRef() { return paymentRef; }
     public OffsetDateTime getCreatedAt() { return createdAt; }
 }

@@ -5,7 +5,7 @@ ZAP finds injection, headers and error handling. It can't find broken access con
 GET /users/7 looks fine unless you know user 7 belongs to another tenant. This probe knows. It
 seeds two tenants with admins, a leader and a member, then runs a matrix of
 identity x endpoint x host and fails on any status other than the expected one. Every new
-endpoint gets rows here (users: M1; devotees + CSV: M2; donations + receipts: M3).
+endpoint gets rows here (users: M1; devotees + CSV: M2; donations, receipts, online payments: M3).
 
 Tenants are resolved from the real Host header (<slug>.sevacenter.app), as in production, not
 from the dev-only X-Tenant-Slug override.
@@ -314,6 +314,19 @@ class Probe:
         self.expect("a second receipt for one donation is refused", 409,
                     leader.request("POST", f"/api/v1/donations/{to_receipt}/receipt", body=issue))
         self.expect("receipts can't be edited", 405, admin_a.request("PUT", f"/api/v1/receipts/{receipt_a}", body=issue))
+
+        print("\nonline donations (M3.3, ADR 0013): gateway settings, forged confirms")
+        rzp = {"keyId": "rzp_test_ProbeKey0001", "keySecret": "probe-secret-value"}
+        self.expect("leader cannot read payment settings", 403, leader.request("GET", "/api/v1/payment-settings"))
+        self.expect("leader cannot connect a gateway", 403, leader.request("PUT", "/api/v1/payment-settings", body=rzp))
+        self.expect("member cannot reconcile payments", 403, member.request("POST", "/api/v1/payment-settings/reconcile"))
+        self.expect("a trust without a gateway takes no online orders", 409,
+                    anon.request("POST", "/api/v1/public/donations/orders", body={"amount": "501", "donorName": "Probe"}))
+        forged = {"orderId": "order_Forged000001", "paymentId": "pay_Forged000001", "signature": "0" * 64}
+        self.expect("a forged confirm records nothing", 400,
+                    anon.request("POST", "/api/v1/public/donations/confirm", body=forged))
+        self.expect("a confirm on another trust's host resolves no order", 400,
+                    self.client(b).request("POST", "/api/v1/public/donations/confirm", body=forged))
 
         print("\nCSRF")
         self.expect("state change without the CSRF header", 403,

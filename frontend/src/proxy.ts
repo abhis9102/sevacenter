@@ -8,7 +8,10 @@ import { buildCsp } from "@/lib/securityHeaders";
  */
 export function proxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.getRandomValues(new Uint8Array(18))).toString("base64");
-  const csp = buildCsp(nonce, process.env.NODE_ENV === "development");
+  // The donate page embeds Razorpay Checkout (ADR 0013): its frames are allowed there only, and
+  // it may open the bank's / UPI app's window, which COOP same-origin would cut off.
+  const donate = request.nextUrl.pathname === "/donate" || request.nextUrl.pathname.startsWith("/donate/");
+  const csp = buildCsp(nonce, process.env.NODE_ENV === "development", { razorpay: donate });
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
@@ -16,6 +19,7 @@ export function proxy(request: NextRequest) {
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", csp);
+  response.headers.set("Cross-Origin-Opener-Policy", donate ? "same-origin-allow-popups" : "same-origin");
   return response;
 }
 

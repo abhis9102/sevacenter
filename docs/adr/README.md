@@ -18,3 +18,4 @@ change a decision, add a new ADR that supersedes the old one.
 | [0010](0010-devotee-records-pii-and-access.md) | Devotee records: PII scope, tiered access with server-side masking, consent, erasure | Accepted |
 | [0011](0011-donations-ledger-and-80g.md) | Donations: append-only ledger (DB-enforced), exact paise, reversals, FY in IST, donor erasure = anonymise | Accepted |
 | [0012](0012-80g-receipts-and-pan-protection.md) | 80G receipts: gapless per-FY numbers, snapshots, cancellation; donor PAN AES-GCM (tenant-bound) + blind index | Accepted |
+| [0013](0013-online-donations-razorpay.md) | Online donations into each trust's own Razorpay account: server-side orders, signature + API verification, idempotent settlement | Accepted |

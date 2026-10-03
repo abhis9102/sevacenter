@@ -4,13 +4,20 @@
  * README.md ("Security headers") explains each choice.
  */
 
-export function buildCsp(nonce: string, isDev: boolean): string {
+/** Razorpay Checkout's origins: allowed on the donate page only (ADR 0013). */
+const RAZORPAY_SCRIPT = "https://checkout.razorpay.com";
+const RAZORPAY_FRAMES = "https://api.razorpay.com https://checkout.razorpay.com";
+
+export function buildCsp(nonce: string, isDev: boolean, options: { razorpay?: boolean } = {}): string {
+  const rzp = options.razorpay === true;
   const directives: string[] = [
     "default-src 'self'",
     // Nonce + strict-dynamic: only scripts Next.js rendered with this request's nonce run (and
     // what they load). No 'unsafe-inline'; 'unsafe-eval' only in `next dev`, where React needs
     // it to rebuild server error stacks. Production never gets it.
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
+    // With 'strict-dynamic', modern browsers ignore host lists: checkout.js is injected by our own
+    // nonce'd code. The host is listed only as a fallback for browsers without strict-dynamic.
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${rzp ? ` ${RAZORPAY_SCRIPT}` : ""}${isDev ? " 'unsafe-eval'" : ""}`,
     // Dev only: the dev server injects CSS through <style> tags for hot reload.
     `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}'`}`,
     "img-src 'self' data:",
@@ -20,7 +27,7 @@ export function buildCsp(nonce: string, isDev: boolean): string {
     "object-src 'none'",
     "base-uri 'none'",
     "form-action 'self'",
-    "frame-src 'none'",
+    rzp ? `frame-src ${RAZORPAY_FRAMES}` : "frame-src 'none'",
     "frame-ancestors 'none'",
     "manifest-src 'self'",
     "worker-src 'self'",
@@ -59,7 +66,6 @@ export const STATIC_SECURITY_HEADERS: ReadonlyArray<{ key: string; value: string
       "clipboard-write=(self)",
     ].join(", "),
   },
-  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
   { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
   // Ignored by browsers over plain http (local dev); enforced once served over TLS.
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },

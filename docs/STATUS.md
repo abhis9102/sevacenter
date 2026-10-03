@@ -273,8 +273,19 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
 - Rebuild with M3.3 (Razorpay, payment verified server-side), real OTP delivery + throttling,
   verified registration, attribution kept NOT NULL for staff paths (`created_via` instead).
 
-**Next: M3.3 Razorpay** (needs test-mode keys via env), then **frontend screens for donations and
-receipts**, then M4 Events.
+## M3.3 — online donations via Razorpay ✅ (this PR, ADR 0013)
+- **Each trust's own Razorpay account** (money never passes through the platform). TRUST_ADMIN connects
+  key id + secret on **Payments**; the secret is verified with Razorpay, AES-GCM encrypted under
+  `SEVACENTER_SECRETS_KEY`, write-only.
+- Public **/donate** page on the trust's host: server-side order → Razorpay Checkout → confirm =
+  signature (constant time) **and** payment re-fetched from Razorpay (captured, same order, exact
+  amount, INR) → one ONLINE ledger entry, idempotent. Reconciliation recovers closed-browser payments.
+- `V12`: `payment_settings`, `payment_intent` (RLS); `donation.channel` + `payment_ref` with a CHECK
+  that keeps staff attribution mandatory; `WALLET` mode.
+- Tests: `OnlineDonationTest` (13, fake gateway), `RazorpayGatewayLiveTest` (opt-in, real test mode, passes);
+  mutation-checked 12/12 (one survivor found first: order match, masked by amount match).
+
+**Next: admin screens for donations and receipts**, then M4 Events (incl. a safe devotee portal).
 
 ## Next up — M1 slice 2
 - Login + sessions (cookie session per ADR 0007; set cookie flags HttpOnly/Secure/SameSite); tenant-aware `UserDetailsService` (scope lookup by `TenantContext`).

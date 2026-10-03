@@ -24,6 +24,7 @@ export interface Translations {
     devotees: string;
     staff: string;
     donations: string;
+    payments: string;
     home: string;
     profile: string;
   };
@@ -265,6 +266,7 @@ export const DICTIONARIES: Record<Language, Translations> = {
       devotees: "Devotees",
       staff: "Staff",
       donations: "Donations",
+      payments: "Payments",
       home: "Home",
       profile: "Profile",
     },
@@ -523,6 +525,7 @@ export const DICTIONARIES: Record<Language, Translations> = {
       devotees: "भक्त (Devotees)",
       staff: "कर्मचारी (Staff)",
       donations: "दान (Donations)",
+      payments: "भुगतान (Payments)",
       home: "मुख्य पृष्ठ",
       profile: "प्रोफ़ाइल (Profile)",
     },

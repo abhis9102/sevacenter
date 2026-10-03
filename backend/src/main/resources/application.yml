@@ -49,6 +49,10 @@ springdoc:
 # from the environment only (KMS in M6). Empty default on purpose: the app refuses to start with
 # a clear message (PanProtection) instead of running without protection.
 sevacenter:
+  # Encrypts credentials trusts give us, e.g. their Razorpay key secret (ADR 0013). Own key,
+  # separate from the PAN key; empty default so the app refuses to start without it.
+  secrets:
+    key: ${SEVACENTER_SECRETS_KEY:}
   pan:
     encryption-key: ${SEVACENTER_PAN_KEY:}
     index-key: ${SEVACENTER_PAN_INDEX_KEY:}
