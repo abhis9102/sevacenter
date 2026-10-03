@@ -309,6 +309,9 @@ class Probe:
                                                                         body=issue))
         receipt_b = (body or {}).get("id")
         self.expect("A reads B's receipt by id", 404, admin_a.request("GET", f"/api/v1/receipts/{receipt_b}"))
+        self.expect("member cannot read a donation's receipt", 403,
+                    member.request("GET", f"/api/v1/donations/{to_receipt}/receipt"))
+        self.expect("A reads B's receipt via B's donation id", 404, admin_a.request("GET", f"/api/v1/donations/{gift_b}/receipt"))
         self.expect("A receipts B's donation", 404,
                     admin_a.request("POST", f"/api/v1/donations/{gift_b}/receipt", body=issue))
         self.expect("a second receipt for one donation is refused", 409,
