@@ -1,0 +1,659 @@
+export type Language = "en" | "hi";
+
+export interface Translations {
+  common: {
+    loading: string;
+    save: string;
+    saving: string;
+    cancel: string;
+    delete: string;
+    deleting: string;
+    edit: string;
+    back: string;
+    signOut: string;
+    required: string;
+    optional: string;
+    search: string;
+    close: string;
+    confirm: string;
+    error: string;
+    success: string;
+    permanentAction: string;
+  };
+  nav: {
+    devotees: string;
+    staff: string;
+    donations: string;
+    home: string;
+    profile: string;
+  };
+  roles: {
+    TRUST_ADMIN: string;
+    LEADER: string;
+    MEMBER: string;
+  };
+  consent: {
+    IN_PERSON: string;
+    PHONE: string;
+    ONLINE_FORM: string;
+    WRITTEN: string;
+  };
+  profile: {
+    title: string;
+    description: string;
+    tabs: {
+      account: string;
+      security: string;
+      privacy: string;
+      notifications: string;
+    };
+    account: {
+      heading: string;
+      role: string;
+      tenant: string;
+      email: string;
+      memberSince: string;
+      status: string;
+      displayName: string;
+      displayNamePlaceholder: string;
+      saveDisplayName: string;
+      savedSuccess: string;
+    };
+    security: {
+      heading: string;
+      description: string;
+      currentPassword: string;
+      newPassword: string;
+      confirmPassword: string;
+      newPasswordHint: string;
+      savePassword: string;
+      savingPassword: string;
+      passwordMismatch: string;
+      passwordTooShort: string;
+      passwordSame: string;
+      savedSuccess: string;
+    };
+    privacy: {
+      heading: string;
+      description: string;
+      auditLogTitle: string;
+      auditLogDesc: string;
+      directoryTitle: string;
+      directoryDesc: string;
+      dataProtectionNotice: string;
+      savePrivacy: string;
+      savedSuccess: string;
+    };
+    notifications: {
+      heading: string;
+      description: string;
+      devoteesTitle: string;
+      devoteesDesc: string;
+      donationsTitle: string;
+      donationsDesc: string;
+      securityTitle: string;
+      securityDesc: string;
+      saveNotifications: string;
+      savedSuccess: string;
+    };
+    avatar: {
+      heading: string;
+      changePhoto: string;
+      uploadPhoto: string;
+      uploading: string;
+      removePhoto: string;
+      removing: string;
+      photoRemoved: string;
+      photoUploaded: string;
+      hint: string;
+      tooLarge: string;
+      invalidFormat: string;
+    };
+  };
+  devotees: {
+    title: string;
+    description: string;
+    addDevotee: string;
+    exportCsv: string;
+    exporting: string;
+    importCsv: string;
+    searchPlaceholderMember: string;
+    searchPlaceholderLeader: string;
+    searchButton: string;
+    clearSearch: string;
+    colName: string;
+    colPhone: string;
+    colEmail: string;
+    colCity: string;
+    colState: string;
+    colPincode: string;
+    colDob: string;
+    colConsent: string;
+    colAdded: string;
+    contactHiddenNote: string;
+    maskedLabel: string;
+    maskedNoteTitle: string;
+    maskedNoteBody: string;
+    emptyState: string;
+    pageShowing: (start: number, end: number, total: number) => string;
+    prev: string;
+    next: string;
+    form: {
+      newTitle: string;
+      newDescription: string;
+      editTitle: string;
+      fullNameLabel: string;
+      fullNamePlaceholder: string;
+      phoneLabel: string;
+      phonePlaceholder: string;
+      emailLabel: string;
+      emailPlaceholder: string;
+      addressLabel: string;
+      addressPlaceholder: string;
+      cityLabel: string;
+      cityPlaceholder: string;
+      stateLabel: string;
+      statePlaceholder: string;
+      pincodeLabel: string;
+      pincodePlaceholder: string;
+      dobLabel: string;
+      consentLabel: string;
+      consentHelp: string;
+      saveButton: string;
+      savingButton: string;
+    };
+    detail: {
+      contactDetails: string;
+      addressHeading: string;
+      consentHeading: string;
+      consentRecordedAt: string;
+      consentRecordedBy: string;
+      auditHeading: string;
+      createdAt: string;
+      updatedAt: string;
+      eraseButton: string;
+      eraseConfirmTitle: string;
+      eraseConfirmMessage: string;
+      eraseConfirmAction: string;
+    };
+    importPage: {
+      title: string;
+      description: string;
+      backLink: string;
+      formatTitle: string;
+      formatDescription: string;
+      downloadTemplate: string;
+      fileLabel: string;
+      importButton: string;
+      importing: string;
+      importCompleteSingle: string;
+      importCompleteMultiple: (count: number) => string;
+      viewDevotees: string;
+      rowsToFix: string;
+      colLine: string;
+      colColumn: string;
+      colProblem: string;
+      chooseFileError: string;
+    };
+  };
+  errors: Record<string, string>;
+}
+
+export const DICTIONARIES: Record<Language, Translations> = {
+  en: {
+    common: {
+      loading: "Loading…",
+      save: "Save",
+      saving: "Saving…",
+      cancel: "Cancel",
+      delete: "Delete",
+      deleting: "Deleting…",
+      edit: "Edit",
+      back: "Back",
+      signOut: "Sign out",
+      required: "Required",
+      optional: "Optional",
+      search: "Search",
+      close: "Close",
+      confirm: "Confirm",
+      error: "Error",
+      success: "Success",
+      permanentAction: "This action cannot be undone.",
+    },
+    nav: {
+      devotees: "Devotees",
+      staff: "Staff",
+      donations: "Donations",
+      home: "Home",
+      profile: "Profile",
+    },
+    roles: {
+      TRUST_ADMIN: "Trust admin",
+      LEADER: "Leader",
+      MEMBER: "Member",
+    },
+    consent: {
+      IN_PERSON: "In person",
+      PHONE: "By phone",
+      ONLINE_FORM: "Online form",
+      WRITTEN: "In writing",
+    },
+    profile: {
+      title: "My Profile",
+      description: "Manage your account credentials, security settings, privacy controls, and notification preferences.",
+      tabs: {
+        account: "Account",
+        security: "Security & Password",
+        privacy: "Privacy",
+        notifications: "Notifications",
+      },
+      account: {
+        heading: "Account details",
+        role: "Role",
+        tenant: "Trust subdomain",
+        email: "Email address",
+        memberSince: "Member since",
+        status: "Status",
+        displayName: "Display name",
+        displayNamePlaceholder: "e.g. Ramesh Sharma",
+        saveDisplayName: "Save name",
+        savedSuccess: "Display name updated successfully.",
+      },
+      security: {
+        heading: "Change password",
+        description: "Choose a strong password of at least 12 characters to protect your account and your trust's data.",
+        currentPassword: "Current password",
+        newPassword: "New password",
+        confirmPassword: "Confirm new password",
+        newPasswordHint: "At least 12 characters. Avoid simple patterns.",
+        savePassword: "Change password",
+        savingPassword: "Updating password…",
+        passwordMismatch: "New passwords do not match.",
+        passwordTooShort: "Password must be at least 12 characters.",
+        passwordSame: "New password must be different from your current password.",
+        savedSuccess: "Your password has been changed successfully.",
+      },
+      privacy: {
+        heading: "Privacy controls",
+        description: "SevaCenter protects devotee data and maintains transparent audit records for religious trusts.",
+        auditLogTitle: "Record my staff activity in audit trails",
+        auditLogDesc: "Creates an immutable audit log entry whenever you add, edit, or export devotee records.",
+        directoryTitle: "Show my profile in the trust staff directory",
+        directoryDesc: "Allows leaders and admins in your trust to see your name in the staff team roster.",
+        dataProtectionNotice: "Role-based data masking is active. Members cannot view full devotee contact numbers, email addresses, or dates of birth.",
+        savePrivacy: "Save privacy settings",
+        savedSuccess: "Privacy settings updated successfully.",
+      },
+      notifications: {
+        heading: "Notification preferences",
+        description: "Choose which updates and alerts you wish to receive.",
+        devoteesTitle: "Devotee updates",
+        devoteesDesc: "Notifications when new devotees are added or bulk imports complete.",
+        donationsTitle: "Donations & 80G receipt alerts",
+        donationsDesc: "Notifications when donations are recorded or 80G tax receipts generated.",
+        securityTitle: "Security alerts",
+        securityDesc: "Alerts on new logins, session renewals, or password changes.",
+        saveNotifications: "Save preferences",
+        savedSuccess: "Notification preferences updated successfully.",
+      },
+      avatar: {
+        heading: "Profile photo",
+        changePhoto: "Change photo",
+        uploadPhoto: "Upload photo",
+        uploading: "Uploading…",
+        removePhoto: "Remove photo",
+        removing: "Removing…",
+        photoRemoved: "Profile photo removed.",
+        photoUploaded: "Profile photo updated successfully.",
+        hint: "PNG, JPEG, or WebP. Max 2 MB.",
+        tooLarge: "Image must be 2 MB or less.",
+        invalidFormat: "Only PNG, JPEG, and WebP images are allowed.",
+      },
+    },
+    devotees: {
+      title: "Devotees",
+      description: "People connected to the trust, recorded with their consent.",
+      addDevotee: "Add devotee",
+      exportCsv: "Export CSV",
+      exporting: "Exporting…",
+      importCsv: "Import CSV",
+      searchPlaceholderMember: "Search devotees by name…",
+      searchPlaceholderLeader: "Search devotees by name, phone or email…",
+      searchButton: "Search",
+      clearSearch: "Clear",
+      colName: "Name",
+      colPhone: "Phone",
+      colEmail: "Email",
+      colCity: "City",
+      colState: "State",
+      colPincode: "Pincode",
+      colDob: "Date of birth",
+      colConsent: "Consent",
+      colAdded: "Added",
+      contactHiddenNote: "Contact details hidden for your role.",
+      maskedLabel: "Hidden",
+      maskedNoteTitle: "Contact details hidden for your role",
+      maskedNoteBody: "As a member you see names, city and state in full; phone numbers show only the last 4 digits and emails only their first letter. Address, pincode and date of birth are hidden. Search works on names only.",
+      emptyState: "No devotees found.",
+      pageShowing: (start, end, total) => `Showing ${start}–${end} of ${total} devotees`,
+      prev: "Previous",
+      next: "Next",
+      form: {
+        newTitle: "New devotee",
+        newDescription: "Record a new devotee. Consent is required before storing personal details.",
+        editTitle: "Edit devotee",
+        fullNameLabel: "Full name",
+        fullNamePlaceholder: "e.g. Ramesh Sharma",
+        phoneLabel: "Phone number",
+        phonePlaceholder: "e.g. 98765 43210",
+        emailLabel: "Email address",
+        emailPlaceholder: "e.g. ramesh@example.org",
+        addressLabel: "Street address",
+        addressPlaceholder: "e.g. 12 Mandir Marg",
+        cityLabel: "City",
+        cityPlaceholder: "e.g. Varanasi",
+        stateLabel: "State",
+        statePlaceholder: "e.g. Uttar Pradesh",
+        pincodeLabel: "Pincode",
+        pincodePlaceholder: "e.g. 221001",
+        dobLabel: "Date of birth",
+        consentLabel: "Consent source",
+        consentHelp: "How did this person consent to having their details stored?",
+        saveButton: "Save devotee",
+        savingButton: "Saving…",
+      },
+      detail: {
+        contactDetails: "Contact details",
+        addressHeading: "Address",
+        consentHeading: "Consent record",
+        consentRecordedAt: "Recorded at",
+        consentRecordedBy: "Recorded by",
+        auditHeading: "Audit log",
+        createdAt: "Created",
+        updatedAt: "Last updated",
+        eraseButton: "Erase devotee",
+        eraseConfirmTitle: "Erase devotee permanently?",
+        eraseConfirmMessage: "This will erase this devotee's personal details. This action cannot be undone.",
+        eraseConfirmAction: "Erase permanently",
+      },
+      importPage: {
+        title: "Import devotees",
+        description: "Add many devotees at once from a CSV file. Every row is checked with the same rules as the form; if any row has an error, nothing is imported.",
+        backLink: "← All devotees",
+        formatTitle: "File format",
+        formatDescription: "CSV (UTF-8) with a header row and these columns. Only fullName and consentSource are required on each row.",
+        downloadTemplate: "Download sample template",
+        fileLabel: "CSV file",
+        importButton: "Import",
+        importing: "Importing…",
+        importCompleteSingle: "1 devotee was added.",
+        importCompleteMultiple: (count) => `${count} devotees were added.`,
+        viewDevotees: "View devotees",
+        rowsToFix: "Rows to fix",
+        colLine: "Line",
+        colColumn: "Column",
+        colProblem: "Problem",
+        chooseFileError: "Choose a CSV file first.",
+      },
+    },
+    errors: {
+      invalid_credentials: "That email and password don't match an account here.",
+      too_many_attempts: "Too many attempts. Wait a few minutes before trying again.",
+      email_taken: "A staff member with this email already exists.",
+      last_admin: "The trust must keep at least one active trust admin. Make someone else an admin first.",
+      not_pending: "This person has already set up their account, so they don't need a new setup link.",
+      invalid_or_expired_link: "This setup link is invalid, expired or already used. Ask your trust admin for a new one.",
+      not_found: "That record doesn't exist (or was removed).",
+      validation_failed: "Some fields need attention.",
+      concurrent_modification: "Someone else changed this record at the same time. Reload it and try again.",
+      upload_too_large: "That file is too large. The limit is 2 MB.",
+      malformed_upload: "The upload was not readable. Choose the file again and retry.",
+      too_many_rows: "The file has too many rows for one import. Split it into smaller files.",
+      malformed_csv: "That file isn't valid CSV. Save it as CSV (UTF-8) and try again.",
+      empty: "The file has no devotee rows.",
+      invalid_rows: "Some rows have errors, so nothing was imported. Fix the rows below and upload again.",
+      bad_header: "The header row doesn't match the expected columns. Start from an exported file or the template.",
+      backend_unavailable: "The SevaCenter service isn't reachable right now. Try again in a moment.",
+      network_error: "Can't reach SevaCenter. Check your connection and try again.",
+      csrf_unavailable: "Security token unavailable. Please refresh the page.",
+    },
+  },
+  hi: {
+    common: {
+      loading: "लोड हो रहा है…",
+      save: "सुरक्षित करें",
+      saving: "सुरक्षित हो रहा है…",
+      cancel: "रद्द करें",
+      delete: "हटाएं",
+      deleting: "हटाया जा रहा है…",
+      edit: "संपादित करें",
+      back: "वापस",
+      signOut: "लॉग आउट",
+      required: "अनिवार्य",
+      optional: "वैकल्पिक",
+      search: "खोजें",
+      close: "बंद करें",
+      confirm: "पुष्टि करें",
+      error: "त्रुटि",
+      success: "सफल",
+      permanentAction: "यह क्रिया पूर्ववत नहीं की जा सकती।",
+    },
+    nav: {
+      devotees: "भक्त (Devotees)",
+      staff: "कर्मचारी (Staff)",
+      donations: "दान (Donations)",
+      home: "मुख्य पृष्ठ",
+      profile: "प्रोफ़ाइल (Profile)",
+    },
+    roles: {
+      TRUST_ADMIN: "ट्रस्ट प्रबंधक (Admin)",
+      LEADER: "कार्यकारी (Leader)",
+      MEMBER: "सदस्य (Member)",
+    },
+    consent: {
+      IN_PERSON: "व्यक्तिगत रूप से (In Person)",
+      PHONE: "फ़ोन द्वारा (Phone)",
+      ONLINE_FORM: "ऑनलाइन फ़ॉर्म (Online)",
+      WRITTEN: "लिखित रूप में (Written)",
+    },
+    profile: {
+      title: "मेरी प्रोफ़ाइल (Profile)",
+      description: "अपने खाते का विवरण, सुरक्षा सेटिंग्स, गोपनीयता और सूचना प्राथमिकताएं प्रबंधित करें।",
+      tabs: {
+        account: "खाता",
+        security: "सुरक्षा व पासवर्ड",
+        privacy: "गोपनीयता",
+        notifications: "सूचनाएं",
+      },
+      account: {
+        heading: "खाता विवरण",
+        role: "भूमिका",
+        tenant: "ट्रस्ट सबडोमेन",
+        email: "ईमेल पता",
+        memberSince: "सदस्यता आरंभ",
+        status: "खाता स्थिति",
+        displayName: "प्रदर्शित नाम",
+        displayNamePlaceholder: "उदा. रमेश शर्मा",
+        saveDisplayName: "नाम सुरक्षित करें",
+        savedSuccess: "प्रदर्शित नाम सफलतापूर्वक अपडेट किया गया।",
+      },
+      security: {
+        heading: "पासवर्ड बदलें",
+        description: "ट्रस्ट के डेटा और अपने खाते की सुरक्षा हेतु कम से कम 12 अक्षरों का सुदृढ़ पासवर्ड चुनें।",
+        currentPassword: "वर्तमान पासवर्ड",
+        newPassword: "नया पासवर्ड",
+        confirmPassword: "नए पासवर्ड की पुष्टि करें",
+        newPasswordHint: "कम से कम 12 अक्षर। सामान्य शब्दों से बचें।",
+        savePassword: "पासवर्ड बदलें",
+        savingPassword: "पासवर्ड अपडेट हो रहा है…",
+        passwordMismatch: "नए पासवर्ड मेल नहीं खाते हैं।",
+        passwordTooShort: "पासवर्ड कम से कम 12 अक्षरों का होना चाहिए।",
+        passwordSame: "नया पासवर्ड वर्तमान पासवर्ड से भिन्न होना चाहिए।",
+        savedSuccess: "आपका पासवर्ड सफलतापूर्वक बदल दिया गया है।",
+      },
+      privacy: {
+        heading: "गोपनीयता नियंत्रण",
+        description: "सेवाकेंद्र भक्त डेटा की सुरक्षा करता है और धार्मिक ट्रस्टों के लिए पारदर्शी ऑडिट रिकॉर्ड रखता है।",
+        auditLogTitle: "ऑडिट लॉग में मेरी कार्यप्रणाली दर्ज करें",
+        auditLogDesc: "भक्त रिकॉर्ड जोड़ने, बदलने या एक्सपोर्ट करने पर स्थायी ऑडिट रिकॉर्ड तैयार करता है।",
+        directoryTitle: "ट्रस्ट कर्मचारी सूची में मेरी प्रोफ़ाइल दिखाएं",
+        directoryDesc: "आपके ट्रस्ट के पदाधिकारियों को टीम रोस्टर में आपका नाम देखने की अनुमति देता है।",
+        dataProtectionNotice: "भूमिका-आधारित डेटा मास्किंग सक्रिय है। सदस्य भक्तों के पूर्ण संपर्क नंबर, ईमेल या जन्म तिथि नहीं देख सकते।",
+        savePrivacy: "गोपनीयता सेटिंग्स सुरक्षित करें",
+        savedSuccess: "गोपनीयता सेटिंग्स सफलतापूर्वक अपडेट की गईं।",
+      },
+      notifications: {
+        heading: "सूचना प्राथमिकताएं",
+        description: "चुनें कि आप कौन से अपडेट और अलर्ट प्राप्त करना चाहते हैं।",
+        devoteesTitle: "भक्त संबंधी अपडेट",
+        devoteesDesc: "नए भक्त जुड़ने या बल्क आयात पूर्ण होने पर सूचनाएं।",
+        donationsTitle: "दान एवं 80G रसीद सूचनाएं",
+        donationsDesc: "दान दर्ज होने या कर रसीदें जारी होने पर सूचनाएं।",
+        securityTitle: "सुरक्षा अलर्ट",
+        securityDesc: "नए लॉगिन या पासवर्ड परिवर्तन पर तत्काल सुरक्षा सूचना।",
+        saveNotifications: "प्राथमिकताएं सुरक्षित करें",
+        savedSuccess: "सूचना प्राथमिकताएं सफलतापूर्वक अपडेट की गईं।",
+      },
+      avatar: {
+        heading: "प्रोफ़ाइल फ़ोटो",
+        changePhoto: "फ़ोटो बदलें",
+        uploadPhoto: "फ़ोटो अपलोड करें",
+        uploading: "अपलोड हो रहा है…",
+        removePhoto: "फ़ोटो हटाएं",
+        removing: "हटाया जा रहा है…",
+        photoRemoved: "प्रोफ़ाइल फ़ोटो हटा दी गई।",
+        photoUploaded: "प्रोफ़ाइल फ़ोटो सफलतापूर्वक अपडेट की गई।",
+        hint: "PNG, JPEG, या WebP। अधिकतम 2 MB।",
+        tooLarge: "फ़ोटो का आकार 2 MB या उससे कम होना चाहिए।",
+        invalidFormat: "केवल PNG, JPEG और WebP छवियों की अनुमति है।",
+      },
+    },
+    devotees: {
+      title: "भक्त सूची (Devotees)",
+      description: "ट्रस्ट से जुड़े भक्तजन, सहमति के आधार पर दर्ज।",
+      addDevotee: "नया भक्त जोड़ें",
+      exportCsv: "CSV एक्सपोर्ट",
+      exporting: "एक्सपोर्ट हो रहा है…",
+      importCsv: "CSV इम्पोर्ट",
+      searchPlaceholderMember: "नाम से भक्त खोजें…",
+      searchPlaceholderLeader: "नाम, फ़ोन या ईमेल द्वारा खोजें…",
+      searchButton: "खोजें",
+      clearSearch: "साफ़ करें",
+      colName: "नाम",
+      colPhone: "फ़ोन",
+      colEmail: "ईमेल",
+      colCity: "शहर",
+      colState: "राज्य",
+      colPincode: "पिनकोड",
+      colDob: "जन्म तिथि",
+      colConsent: "सहमति",
+      colAdded: "जोड़ा गया",
+      contactHiddenNote: "आपकी भूमिका के लिए संपर्क विवरण छिपाए गए हैं।",
+      maskedLabel: "गोपनीय",
+      maskedNoteTitle: "आपकी भूमिका के लिए संपर्क विवरण सीमित हैं",
+      maskedNoteBody: "सदस्य के रूप में आपको नाम, शहर और राज्य पूर्ण रूप से दिखते हैं; फ़ोन नंबर केवल अंतिम 4 अंक और ईमेल केवल पहला अक्षर प्रदर्शित करता है। पता, पिनकोड और जन्म तिथि छिपे हुए हैं। खोज केवल नामों पर काम करती है।",
+      emptyState: "कोई भक्त रिकॉर्ड नहीं मिला।",
+      pageShowing: (start, end, total) => `कुल ${total} में से ${start}–${end} भक्त प्रदर्शित`,
+      prev: "पिछला",
+      next: "अगला",
+      form: {
+        newTitle: "नया भक्त रिकॉर्ड जोड़ें",
+        newDescription: "नए भक्त का विवरण दर्ज करें। व्यक्तिगत विवरण दर्ज करने से पूर्व सहमति अनिवार्य है।",
+        editTitle: "भक्त विवरण संशोधित करें",
+        fullNameLabel: "पूरा नाम",
+        fullNamePlaceholder: "उदा. रमेश शर्मा",
+        phoneLabel: "फ़ोन नंबर",
+        phonePlaceholder: "उदा. 98765 43210",
+        emailLabel: "ईमेल पता",
+        emailPlaceholder: "उदा. ramesh@example.org",
+        addressLabel: "पता",
+        addressPlaceholder: "उदा. 12 मंदिर मार्ग",
+        cityLabel: "शहर",
+        cityPlaceholder: "उदा. वाराणसी",
+        stateLabel: "राज्य",
+        statePlaceholder: "उदा. उत्तर प्रदेश",
+        pincodeLabel: "पिनकोड",
+        pincodePlaceholder: "उदा. 221001",
+        dobLabel: "जन्म तिथि",
+        consentLabel: "सहमति स्रोत",
+        consentHelp: "इस व्यक्ति ने अपना विवरण सुरक्षित रखने की सहमति कैसे दी?",
+        saveButton: "सुरक्षित करें",
+        savingButton: "सुरक्षित हो रहा है…",
+      },
+      detail: {
+        contactDetails: "संपर्क विवरण",
+        addressHeading: "पता",
+        consentHeading: "सहमति रिकॉर्ड",
+        consentRecordedAt: "सहमति दर्ज समय",
+        consentRecordedBy: "सहमति दर्जकर्ता",
+        auditHeading: "ऑडिट रिकॉर्ड",
+        createdAt: "बनाया गया",
+        updatedAt: "अंतिम संशोधन",
+        eraseButton: "भक्त रिकॉर्ड हटाएं",
+        eraseConfirmTitle: "क्या आप इस भक्त का रिकॉर्ड हटाना चाहते हैं?",
+        eraseConfirmMessage: "इससे इस भक्त का संपूर्ण व्यक्तिगत विवरण स्थायी रूप से मिटा दिया जाएगा। यह क्रिया वापस नहीं ली जा सकती।",
+        eraseConfirmAction: "स्थायी रूप से हटाएं",
+      },
+      importPage: {
+        title: "भक्तों की सूची आयात करें (CSV Import)",
+        description: "CSV फ़ाइल के माध्यम से एक साथ कई भक्तों का विवरण जोड़ें। प्रत्येक पंक्ति की फ़ॉर्म नियमों के तहत जाँच होती है। किसी भी पंक्ति में त्रुटि होने पर कोई भी रिकॉर्ड नहीं जोड़ा जाएगा।",
+        backLink: "← सभी भक्त",
+        formatTitle: "फ़ाइल प्रारूप (File Format)",
+        formatDescription: "हेडर पंक्ति और इन कॉलमों के साथ UTF-8 CSV फ़ाइल। प्रत्येक पंक्ति में केवल fullName और consentSource अनिवार्य हैं।",
+        downloadTemplate: "नमूना टेम्पलेट डाउनलोड करें",
+        fileLabel: "CSV फ़ाइल चुनें",
+        importButton: "आयात करें (Import)",
+        importing: "आयात हो रहा है…",
+        importCompleteSingle: "1 भक्त का रिकॉर्ड सफलतापूर्वक जोड़ा गया।",
+        importCompleteMultiple: (count) => `${count} भक्तों के रिकॉर्ड सफलतापूर्वक जोड़े गए।`,
+        viewDevotees: "भक्त सूची देखें",
+        rowsToFix: "सुधार हेतु पंक्तियाँ (Rows to fix)",
+        colLine: "पंक्ति (Line)",
+        colColumn: "कॉलम (Column)",
+        colProblem: "समस्या (Problem)",
+        chooseFileError: "पहले एक CSV फ़ाइल चुनें।",
+      },
+    },
+    errors: {
+      invalid_credentials: "ईमेल और पासवर्ड मेल नहीं खाते।",
+      too_many_attempts: "अत्यधिक प्रयास। कृपया कुछ मिनट बाद पुनः प्रयास करें।",
+      email_taken: "इस ईमेल के साथ पहले से ही एक कर्मचारी मौजूद है।",
+      last_admin: "ट्रस्ट में कम से कम एक सक्रिय ट्रस्ट प्रबंधक आवश्यक है।",
+      not_pending: "यह खाता पहले ही सक्रिय हो चुका है।",
+      invalid_or_expired_link: "यह सेटअप लिंक अमान्य या समाप्त हो चुका है। अपने व्यवस्थापक से नया लिंक मांगें।",
+      not_found: "रिकॉर्ड नहीं मिला (या हटा दिया गया है)।",
+      validation_failed: "कृपया त्रुटियों को सुधारें।",
+      concurrent_modification: "किसी अन्य उपयोगकर्ता ने इस रिकॉर्ड को बदल दिया है। कृपया पृष्ठ पुनः लोड करें।",
+      upload_too_large: "फ़ाइल बहुत बड़ी है (अधिकतम 2 MB)।",
+      malformed_upload: "फ़ाइल पढ़ने योग्य नहीं है। कृपया फ़ाइल पुनः चुनें।",
+      too_many_rows: "फ़ाइल में बहुत अधिक पंक्तियाँ हैं (अधिकतम 5,000)।",
+      malformed_csv: "यह मान्य CSV नहीं है। कृपया इसे CSV (UTF-8) में सहेजें।",
+      empty: "फ़ाइल में कोई डेटा पंक्ति नहीं है।",
+      invalid_rows: "कुछ पंक्तियों में त्रुटियाँ हैं, अतः कोई डेटा आयात नहीं किया गया। नीचे विवरण देखें।",
+      bad_header: "हेडर कॉलम अपेक्षित प्रारूप से मेल नहीं खाते हैं।",
+      backend_unavailable: "सेवा वर्तमान में अनुपलब्ध है। कृपया कुछ क्षणों बाद पुनः प्रयास करें।",
+      network_error: "सर्वर से संपर्क नहीं हो पा रहा है। इंटरनेट कनेक्शन की जाँच करें।",
+      csrf_unavailable: "सुरक्षा टोकन अनुपलब्ध है। कृपया पृष्ठ पुनः लोड करें।",
+    },
+  },
+};
+
+export const LANG_COOKIE = "sc_lang";
+
+export function getInitialLanguage(): Language {
+  if (typeof document !== "undefined") {
+    const match = document.cookie.match(new RegExp(`(?:^|; )${LANG_COOKIE}=([^;]*)`));
+    if (match && (match[1] === "hi" || match[1] === "en")) {
+      return match[1] as Language;
+    }
+  }
+  return "en";
+}
+
+export function persistLanguage(lang: Language): void {
+  if (typeof document !== "undefined") {
+    // 1-year persistence
+    document.cookie = `${LANG_COOKIE}=${lang}; path=/; max-age=31536000; SameSite=Lax`;
+    document.documentElement.lang = lang;
+  }
+}

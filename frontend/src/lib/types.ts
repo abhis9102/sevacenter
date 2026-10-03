@@ -25,6 +25,7 @@ export interface Me {
   displayName: string;
   role: string;
   tenant: string | null;
+  hasAvatar: boolean;
 }
 
 export type UserStatus = "PENDING" | "ACTIVE" | "DISABLED";
@@ -99,4 +100,34 @@ export interface ImportRowError {
   line: number;
   field: string;
   message: string;
+}
+
+export interface UserProfile {
+  userId: number;
+  email: string;
+  displayName: string;
+  role: Role;
+  tenant: string | null;
+  status: UserStatus;
+  createdAt: string;
+  notifyDevotees: boolean;
+  notifyDonations: boolean;
+  notifySecurity: boolean;
+  privacyActivityLog: boolean;
+  privacyShowInStaffDirectory: boolean;
+  hasAvatar: boolean;
+}
+
+export interface UpdateProfileInput {
+  displayName?: string;
+  notifyDevotees?: boolean;
+  notifyDonations?: boolean;
+  notifySecurity?: boolean;
+  privacyActivityLog?: boolean;
+  privacyShowInStaffDirectory?: boolean;
+}
+
+export interface ChangePasswordInput {
+  currentPassword: string;
+  newPassword: string;
 }

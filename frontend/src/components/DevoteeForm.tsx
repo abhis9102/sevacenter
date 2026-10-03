@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { api } from "@/components/apiClient";
+import { useLanguage } from "@/components/LanguageProvider";
 import { Alert, Button, SelectField, TextField } from "@/components/ui";
 import {
   clientFieldErrors,
@@ -14,8 +15,6 @@ import {
 import { ApiError, describeError } from "@/lib/errors";
 import { CONSENT_LABELS, CONSENT_SOURCES, type Devotee } from "@/lib/types";
 
-const CONSENT_OPTIONS = CONSENT_SOURCES.map((c) => ({ value: c, label: CONSENT_LABELS[c] }));
-
 /** Create (POST) or edit (PUT) a devotee. Server validation errors appear next to each field. */
 export function DevoteeForm({
   devotee,
@@ -26,11 +25,17 @@ export function DevoteeForm({
   onSaved: (d: Devotee) => void;
   onCancel: () => void;
 }) {
+  const { t } = useLanguage();
   const mode = devotee ? "edit" : "create";
   const [values, setValues] = useState<DevoteeFormValues>(devotee ? valuesFromDevotee(devotee) : EMPTY_DEVOTEE);
   const [fields, setFields] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const consentOptions = CONSENT_SOURCES.map((c) => ({
+    value: c,
+    label: t.consent[c] ?? CONSENT_LABELS[c],
+  }));
 
   function bind(name: keyof DevoteeFormValues) {
     return {
@@ -60,7 +65,7 @@ export function DevoteeForm({
       if (err instanceof ApiError && Object.keys(err.fields).length > 0) {
         setFields({ ...err.fields });
       }
-      setError(describeError(err));
+      setError(describeError(err, t.errors));
       setBusy(false);
     }
   }
@@ -69,20 +74,73 @@ export function DevoteeForm({
     <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
       {error ? <Alert tone="danger">{error}</Alert> : null}
       <div className="grid gap-4 sm:grid-cols-2">
-        <TextField label="Full name" required maxLength={120} autoComplete="off" className="sm:col-span-2" {...bind("fullName")} />
-        <TextField label="Phone" type="tel" maxLength={30} autoComplete="off" hint="Indian numbers can be typed as 98765 43210." {...bind("phone")} />
-        <TextField label="Email" type="email" maxLength={254} autoComplete="off" {...bind("email")} />
-        <TextField label="Address" maxLength={200} autoComplete="off" className="sm:col-span-2" {...bind("addressLine")} />
-        <TextField label="City" maxLength={80} autoComplete="off" {...bind("city")} />
-        <TextField label="State" maxLength={80} autoComplete="off" {...bind("state")} />
-        <TextField label="Pincode" inputMode="numeric" maxLength={6} autoComplete="off" {...bind("pincode")} />
-        <TextField label="Date of birth" type="date" {...bind("dateOfBirth")} />
+        <TextField
+          label={t.devotees.form.fullNameLabel}
+          placeholder={t.devotees.form.fullNamePlaceholder}
+          required
+          maxLength={120}
+          autoComplete="off"
+          className="sm:col-span-2"
+          {...bind("fullName")}
+        />
+        <TextField
+          label={t.devotees.form.phoneLabel}
+          placeholder={t.devotees.form.phonePlaceholder}
+          type="tel"
+          maxLength={30}
+          autoComplete="off"
+          hint="Indian numbers can be typed as 98765 43210."
+          {...bind("phone")}
+        />
+        <TextField
+          label={t.devotees.form.emailLabel}
+          placeholder={t.devotees.form.emailPlaceholder}
+          type="email"
+          maxLength={254}
+          autoComplete="off"
+          {...bind("email")}
+        />
+        <TextField
+          label={t.devotees.form.addressLabel}
+          placeholder={t.devotees.form.addressPlaceholder}
+          maxLength={200}
+          autoComplete="off"
+          className="sm:col-span-2"
+          {...bind("addressLine")}
+        />
+        <TextField
+          label={t.devotees.form.cityLabel}
+          placeholder={t.devotees.form.cityPlaceholder}
+          maxLength={80}
+          autoComplete="off"
+          {...bind("city")}
+        />
+        <TextField
+          label={t.devotees.form.stateLabel}
+          placeholder={t.devotees.form.statePlaceholder}
+          maxLength={80}
+          autoComplete="off"
+          {...bind("state")}
+        />
+        <TextField
+          label={t.devotees.form.pincodeLabel}
+          placeholder={t.devotees.form.pincodePlaceholder}
+          inputMode="numeric"
+          maxLength={6}
+          autoComplete="off"
+          {...bind("pincode")}
+        />
+        <TextField
+          label={t.devotees.form.dobLabel}
+          type="date"
+          {...bind("dateOfBirth")}
+        />
         {mode === "create" ? (
           <SelectField
-            label="Consent given"
+            label={t.devotees.form.consentLabel}
             required
-            placeholder="How did they agree to be recorded?"
-            options={CONSENT_OPTIONS}
+            placeholder={t.devotees.form.consentHelp}
+            options={consentOptions}
             className="sm:col-span-2"
             {...bind("consentSource")}
           />
@@ -90,15 +148,19 @@ export function DevoteeForm({
       </div>
       {mode === "create" ? (
         <p className="text-xs text-muted">
-          Record a devotee only with their consent. SevaCenter stores when consent was recorded and by whom.
+          {t.devotees.form.newDescription}
         </p>
       ) : null}
       <div className="flex justify-end gap-2">
         <Button variant="secondary" onClick={onCancel}>
-          Cancel
+          {t.common.cancel}
         </Button>
         <Button type="submit" busy={busy}>
-          {mode === "create" ? "Add devotee" : "Save changes"}
+          {busy
+            ? t.devotees.form.savingButton
+            : mode === "create"
+            ? t.devotees.addDevotee
+            : t.common.save}
         </Button>
       </div>
     </form>

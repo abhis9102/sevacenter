@@ -7,6 +7,7 @@ import { Suspense, useEffect, useState } from "react";
 import { api } from "@/components/apiClient";
 import { DevoteeForm } from "@/components/DevoteeForm";
 import { MaskedNote } from "@/components/MaskedNote";
+import { useLanguage } from "@/components/LanguageProvider";
 import { useMe } from "@/components/Session";
 import { Alert, Button, Card, Dialog, PageHeader, Spinner } from "@/components/ui";
 import { describeError } from "@/lib/errors";
@@ -23,6 +24,7 @@ export default function DevoteePageWrapper() {
 
 function DevoteeDetail() {
   const me = useMe();
+  const { t } = useLanguage();
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const search = useSearchParams();
@@ -31,7 +33,7 @@ function DevoteeDetail() {
   const [devotee, setDevotee] = useState<Devotee | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
-  const [notice, setNotice] = useState<string | null>(search.get("created") ? "Devotee added." : null);
+  const [notice, setNotice] = useState<string | null>(search.get("created") ? t.common.success : null);
   const [confirmErase, setConfirmErase] = useState(false);
   const [erasing, setErasing] = useState(false);
   const [eraseError, setEraseError] = useState<string | null>(null);
@@ -55,11 +57,11 @@ function DevoteeDetail() {
     api
       .get<Devotee>(`/devotees/${id}`)
       .then((d) => !cancelled && setDevotee(d))
-      .catch((err) => !cancelled && setError(describeError(err)));
+      .catch((err) => !cancelled && setError(describeError(err, t.errors)));
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, t.errors]);
 
   async function erase() {
     if (!devotee) {
@@ -71,33 +73,33 @@ function DevoteeDetail() {
       await api.request<void>(`/devotees/${devotee.id}`, { method: "DELETE" });
       router.replace("/devotees");
     } catch (err) {
-      setEraseError(describeError(err));
+      setEraseError(describeError(err, t.errors));
       setErasing(false);
     }
   }
 
   if (!id) {
-    return <Alert tone="danger">That isn&apos;t a valid devotee link.</Alert>;
+    return <Alert tone="danger">{t.errors.not_found ?? "That isn't a valid devotee link."}</Alert>;
   }
   if (error) {
     return (
       <div className="flex flex-col gap-4">
         <Alert tone="danger">{error}</Alert>
-        <BackLink />
+        <BackLink label={t.devotees.importPage.backLink} />
       </div>
     );
   }
   if (!devotee) {
     return (
       <p className="flex items-center gap-2 text-muted">
-        <Spinner /> Loading…
+        <Spinner /> {t.common.loading}
       </p>
     );
   }
 
   return (
     <div className="flex flex-col gap-6">
-      <BackLink />
+      <BackLink label={t.devotees.importPage.backLink} />
       <PageHeader
         title={devotee.fullName}
         actions={
@@ -105,12 +107,12 @@ function DevoteeDetail() {
             <>
               {canEdit && !devotee.masked ? (
                 <Button variant="secondary" onClick={() => setEditing(true)}>
-                  Edit
+                  {t.common.edit}
                 </Button>
               ) : null}
               {canErase ? (
                 <Button variant="danger" onClick={() => setConfirmErase(true)}>
-                  Erase
+                  {t.devotees.detail.eraseButton}
                 </Button>
               ) : null}
             </>
@@ -127,7 +129,7 @@ function DevoteeDetail() {
             onSaved={(d) => {
               setDevotee(d);
               setEditing(false);
-              setNotice("Changes saved.");
+              setNotice(t.common.success);
             }}
             onCancel={() => setEditing(false)}
           />
@@ -135,48 +137,46 @@ function DevoteeDetail() {
       ) : (
         <div className="grid gap-6 lg:grid-cols-3">
           <Card className="lg:col-span-2">
-            <h2 className="mb-4 text-lg">Contact</h2>
+            <h2 className="mb-4 text-lg">{t.devotees.detail.contactDetails}</h2>
             <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
-              <Field label="Phone" value={devotee.phone} mono />
-              <Field label="Email" value={devotee.email} />
-              <Field label="Address" value={devotee.addressLine} hidden={devotee.masked} wide />
-              <Field label="City" value={devotee.city} />
-              <Field label="State" value={devotee.state} />
-              <Field label="Pincode" value={devotee.pincode} hidden={devotee.masked} mono />
-              <Field label="Date of birth" value={formatDate(devotee.dateOfBirth)} hidden={devotee.masked} />
+              <Field label={t.devotees.colPhone} value={devotee.phone} mono />
+              <Field label={t.devotees.colEmail} value={devotee.email} />
+              <Field label={t.devotees.form.addressLabel} value={devotee.addressLine} hidden={devotee.masked} wide hiddenLabel={t.devotees.contactHiddenNote} />
+              <Field label={t.devotees.colCity} value={devotee.city} />
+              <Field label={t.devotees.colState} value={devotee.state} />
+              <Field label={t.devotees.colPincode} value={devotee.pincode} hidden={devotee.masked} mono hiddenLabel={t.devotees.contactHiddenNote} />
+              <Field label={t.devotees.colDob} value={formatDate(devotee.dateOfBirth)} hidden={devotee.masked} hiddenLabel={t.devotees.contactHiddenNote} />
             </dl>
           </Card>
           <Card>
-            <h2 className="mb-4 text-lg">Record</h2>
+            <h2 className="mb-4 text-lg">{t.devotees.detail.consentHeading}</h2>
             <dl className="grid gap-4">
               <Field
-                label="Consent"
-                value={devotee.consentSource ? CONSENT_LABELS[devotee.consentSource] ?? devotee.consentSource : null}
+                label={t.devotees.colConsent}
+                value={devotee.consentSource ? t.consent[devotee.consentSource] ?? CONSENT_LABELS[devotee.consentSource] ?? devotee.consentSource : null}
               />
-              <Field label="Consent recorded" value={formatDateTime(devotee.consentGivenAt)} />
-              <Field label="Added" value={formatDateTime(devotee.createdAt)} />
-              <Field label="Last changed" value={formatDateTime(devotee.updatedAt)} />
+              <Field label={t.devotees.detail.consentRecordedAt} value={formatDateTime(devotee.consentGivenAt)} />
+              <Field label={t.devotees.detail.createdAt} value={formatDateTime(devotee.createdAt)} />
+              <Field label={t.devotees.detail.updatedAt} value={formatDateTime(devotee.updatedAt)} />
             </dl>
           </Card>
         </div>
       )}
 
-      <Dialog open={confirmErase} onClose={() => setConfirmErase(false)} title="Erase this devotee permanently?">
+      <Dialog open={confirmErase} onClose={() => setConfirmErase(false)} title={t.devotees.detail.eraseConfirmTitle}>
         <p>
-          This permanently deletes <strong>{devotee.fullName}</strong> and all of their details from SevaCenter. It
-          can&apos;t be undone, and there is no copy to restore from.
+          {t.devotees.detail.eraseConfirmMessage}
         </p>
         <p className="text-sm text-muted">
-          Use this when a devotee asks for their data to be erased. To keep the person but fix details, edit the record
-          instead.
+          {t.common.permanentAction}
         </p>
         {eraseError ? <Alert tone="danger">{eraseError}</Alert> : null}
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={() => setConfirmErase(false)}>
-            Cancel
+            {t.common.cancel}
           </Button>
           <Button variant="danger" busy={erasing} onClick={erase}>
-            Erase permanently
+            {t.devotees.detail.eraseConfirmAction}
           </Button>
         </div>
       </Dialog>
@@ -184,10 +184,10 @@ function DevoteeDetail() {
   );
 }
 
-function BackLink() {
+function BackLink({ label }: { label: string }) {
   return (
     <Link href="/devotees" className="text-sm text-primary-strong hover:underline">
-      ← All devotees
+      {label}
     </Link>
   );
 }
@@ -198,19 +198,21 @@ function Field({
   hidden = false,
   mono = false,
   wide = false,
+  hiddenLabel = "Hidden for your role",
 }: {
   label: string;
   value: string | null | undefined;
   hidden?: boolean;
   mono?: boolean;
   wide?: boolean;
+  hiddenLabel?: string;
 }) {
   return (
     <div className={wide ? "sm:col-span-2" : ""}>
       <dt className="text-xs uppercase tracking-wide text-muted">{label}</dt>
       <dd className={`mt-0.5 ${mono && !hidden && value ? "font-mono text-sm" : ""}`}>
         {hidden ? (
-          <span className="text-muted italic">Hidden for your role</span>
+          <span className="text-muted italic">{hiddenLabel}</span>
         ) : value ? (
           value
         ) : (

@@ -51,6 +51,27 @@ public class AppUser {
     @Column(name = "created_at", insertable = false, updatable = false)
     private OffsetDateTime createdAt;
 
+    @Column(name = "notify_devotees", nullable = false)
+    private boolean notifyDevotees = true;
+
+    @Column(name = "notify_donations", nullable = false)
+    private boolean notifyDonations = true;
+
+    @Column(name = "notify_security", nullable = false)
+    private boolean notifySecurity = true;
+
+    @Column(name = "privacy_activity_log", nullable = false)
+    private boolean privacyActivityLog = true;
+
+    @Column(name = "privacy_show_in_staff_directory", nullable = false)
+    private boolean privacyShowInStaffDirectory = true;
+
+    @Column(name = "avatar_data")
+    private byte[] avatarData;
+
+    @Column(name = "avatar_content_type")
+    private String avatarContentType;
+
     protected AppUser() { }
 
     public AppUser(Long tenantId, String email, String passwordHash, String displayName, Role role) {
@@ -71,6 +92,37 @@ public class AppUser {
     public void activate(String newPasswordHash) {
         this.passwordHash = newPasswordHash;
         this.status = UserStatus.ACTIVE;
+    }
+
+    public void updatePassword(String newPasswordHash) {
+        this.passwordHash = newPasswordHash;
+    }
+
+    public void updateDisplayName(String newDisplayName) {
+        this.displayName = newDisplayName;
+    }
+
+    public void updatePreferences(boolean notifyDevotees, boolean notifyDonations, boolean notifySecurity,
+                                  boolean privacyActivityLog, boolean privacyShowInStaffDirectory) {
+        this.notifyDevotees = notifyDevotees;
+        this.notifyDonations = notifyDonations;
+        this.notifySecurity = notifySecurity;
+        this.privacyActivityLog = privacyActivityLog;
+        this.privacyShowInStaffDirectory = privacyShowInStaffDirectory;
+    }
+
+    public void updateAvatar(byte[] data, String contentType) {
+        this.avatarData = data;
+        this.avatarContentType = contentType;
+    }
+
+    public void removeAvatar() {
+        this.avatarData = null;
+        this.avatarContentType = null;
+    }
+
+    public boolean hasAvatar() {
+        return this.avatarData != null && this.avatarData.length > 0;
     }
 
     public void disable() {
@@ -100,4 +152,11 @@ public class AppUser {
     public Role getRole() { return role; }
     public UserStatus getStatus() { return status; }
     public OffsetDateTime getCreatedAt() { return createdAt; }
+    public boolean isNotifyDevotees() { return notifyDevotees; }
+    public boolean isNotifyDonations() { return notifyDonations; }
+    public boolean isNotifySecurity() { return notifySecurity; }
+    public boolean isPrivacyActivityLog() { return privacyActivityLog; }
+    public boolean isPrivacyShowInStaffDirectory() { return privacyShowInStaffDirectory; }
+    public byte[] getAvatarData() { return avatarData; }
+    public String getAvatarContentType() { return avatarContentType; }
 }

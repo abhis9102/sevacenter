@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { api } from "@/components/apiClient";
 import { MaskedNote } from "@/components/MaskedNote";
+import { useLanguage } from "@/components/LanguageProvider";
 import { useMe } from "@/components/Session";
 import { Alert, Button, Card, PageHeader, Spinner } from "@/components/ui";
 import { describeError } from "@/lib/errors";
@@ -19,6 +20,7 @@ const PAGE_SIZE = 25;
  */
 export default function DevoteesPage() {
   const me = useMe();
+  const { t } = useLanguage();
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
   const [draft, setDraft] = useState("");
@@ -63,7 +65,7 @@ export default function DevoteesPage() {
     setExporting(true);
     setExportError(null);
     try {
-      const res = await api.request<Response>("/devotees/export", { raw: true });
+      const res = await api.request<Response>("/devotees/export", { raw: true, accept: "text/csv, */*" });
       const blob = await res.blob();
       const name = filenameFrom(res.headers.get("content-disposition")) ?? "devotees.csv";
       const url = URL.createObjectURL(blob);
@@ -85,23 +87,23 @@ export default function DevoteesPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Devotees"
-        description="People connected to the trust, recorded with their consent."
+        title={t.devotees.title}
+        description={t.devotees.description}
         actions={
           <>
             {isAdmin ? (
               <>
                 <Button variant="secondary" onClick={exportCsv} busy={exporting}>
-                  Export CSV
+                  {exporting ? t.devotees.exporting : t.devotees.exportCsv}
                 </Button>
                 <Link href="/devotees/import" className="inline-flex items-center rounded-[10px] border border-line bg-surface px-3.5 py-2 text-sm font-medium hover:border-primary">
-                  Import CSV
+                  {t.devotees.importCsv}
                 </Link>
               </>
             ) : null}
             {canEdit ? (
               <Link href="/devotees/new" className="inline-flex items-center rounded-[10px] bg-primary px-3.5 py-2 text-sm font-medium text-on-primary hover:bg-primary-strong">
-                Add devotee
+                {t.devotees.addDevotee}
               </Link>
             ) : null}
           </>
@@ -126,7 +128,7 @@ export default function DevoteesPage() {
         }}
       >
         <label htmlFor="devotee-search" className="sr-only">
-          Search devotees
+          {t.common.search}
         </label>
         <input
           id="devotee-search"
@@ -134,10 +136,10 @@ export default function DevoteesPage() {
           value={draft}
           maxLength={100}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder={me.role === "MEMBER" ? "Search by name" : "Search by name, phone or email"}
+          placeholder={me.role === "MEMBER" ? t.devotees.searchPlaceholderMember : t.devotees.searchPlaceholderLeader}
           className="min-w-0 flex-1 rounded-[10px] border border-line bg-surface px-3 py-2 placeholder:text-muted focus:border-primary focus:outline-none"
         />
-        <Button type="submit">Search</Button>
+        <Button type="submit">{t.devotees.searchButton}</Button>
         {q ? (
           <Button
             variant="ghost"
@@ -146,7 +148,7 @@ export default function DevoteesPage() {
               go("", 0);
             }}
           >
-            Clear
+            {t.devotees.clearSearch}
           </Button>
         ) : null}
       </form>
@@ -154,7 +156,7 @@ export default function DevoteesPage() {
       {error ? <Alert tone="danger">{error}</Alert> : null}
       {!data && !error ? (
         <p className="flex items-center gap-2 text-muted">
-          <Spinner /> Loading devotees…
+          <Spinner /> {t.common.loading}
         </p>
       ) : null}
 
@@ -163,16 +165,16 @@ export default function DevoteesPage() {
           <Card className="overflow-x-auto p-0">
             {data.items.length === 0 ? (
               <p className="px-4 py-10 text-center text-muted">
-                {q ? "No devotees match that search." : "No devotees yet."}
+                {q ? t.devotees.emptyState : t.devotees.emptyState}
               </p>
             ) : (
               <table className="w-full min-w-[40rem] text-left text-sm">
                 <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
                   <tr>
-                    <th scope="col" className="px-4 py-3 font-medium">Name</th>
-                    <th scope="col" className="px-4 py-3 font-medium">Phone</th>
-                    <th scope="col" className="px-4 py-3 font-medium">Email</th>
-                    <th scope="col" className="px-4 py-3 font-medium">City</th>
+                    <th scope="col" className="px-4 py-3 font-medium">{t.devotees.colName}</th>
+                    <th scope="col" className="px-4 py-3 font-medium">{t.devotees.colPhone}</th>
+                    <th scope="col" className="px-4 py-3 font-medium">{t.devotees.colEmail}</th>
+                    <th scope="col" className="px-4 py-3 font-medium">{t.devotees.colCity}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -196,14 +198,14 @@ export default function DevoteesPage() {
           {range && data.total > 0 ? (
             <nav aria-label="Pages" className="flex items-center justify-between gap-4 text-sm">
               <p className="text-muted">
-                Showing {range.from}–{range.to} of {data.total}
+                {t.devotees.pageShowing(range.from, range.to, data.total)}
               </p>
               <div className="flex gap-2">
                 <Button variant="secondary" disabled={data.page <= 0} onClick={() => go(q, data.page - 1)}>
-                  Previous
+                  {t.devotees.prev}
                 </Button>
                 <Button variant="secondary" disabled={data.page + 1 >= range.pages} onClick={() => go(q, data.page + 1)}>
-                  Next
+                  {t.devotees.next}
                 </Button>
               </div>
             </nav>

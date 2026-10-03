@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { IBM_Plex_Mono, Mukta, Spectral } from "next/font/google";
 import { headers } from "next/headers";
 
+import { LanguageProvider } from "@/components/LanguageProvider";
 import { TenantProvider } from "@/components/TenantProvider";
 import { parseBaseDomains, slugFromHost } from "@/lib/tenant";
 
@@ -27,7 +28,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en" className={`${spectral.variable} ${mukta.variable} ${plexMono.variable}`}>
       <body className="min-h-dvh antialiased">
-        <TenantProvider tenant={tenant}>{children}</TenantProvider>
+        <TenantProvider tenant={tenant}>
+          <LanguageProvider>{children}</LanguageProvider>
+        </TenantProvider>
       </body>
     </html>
   );

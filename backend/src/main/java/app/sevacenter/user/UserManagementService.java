@@ -14,6 +14,9 @@ import java.util.Locale;
 
 import app.sevacenter.tenant.TenantContext;
 import app.sevacenter.tenant.TenantRepository;
+import app.sevacenter.web.InvalidFieldException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +36,8 @@ public class UserManagementService {
     static final Duration SETUP_LINK_TTL = Duration.ofHours(72);
     private static final SecureRandom RANDOM = new SecureRandom();
 
+    private static final Logger audit = LoggerFactory.getLogger("audit");
+
     private final AppUserRepository users;
     private final SetupTokenRepository setupTokens;
     private final TenantRepository tenants;
@@ -46,6 +51,65 @@ public class UserManagementService {
         this.tenants = tenants;
         this.passwordEncoder = passwordEncoder;
         this.clock = Clock.systemUTC();
+    }
+
+    @Transactional(readOnly = true)
+    public AppUser getProfile(long userId) {
+        return find(userId);
+    }
+
+    @Transactional
+    public AppUser updateProfile(long userId, String displayName, boolean notifyDevotees, boolean notifyDonations,
+                                 boolean notifySecurity, boolean privacyActivityLog, boolean privacyShowInStaffDirectory) {
+        AppUser user = find(userId);
+        if (displayName != null && !displayName.isBlank()) {
+            user.updateDisplayName(displayName.trim());
+        }
+        user.updatePreferences(notifyDevotees, notifyDonations, notifySecurity,
+                privacyActivityLog, privacyShowInStaffDirectory);
+        audit.info("event=profile_update tenant={} user={}", user.getTenantId(), user.getId());
+        return user;
+    }
+
+    @Transactional
+    public void changePassword(long userId, String currentPassword, String newPassword) {
+        AppUser user = find(userId);
+        if (currentPassword == null || !passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new InvalidFieldException("currentPassword", "Current password does not match");
+        }
+        if (newPassword == null || newPassword.length() < 12 || newPassword.length() > 200) {
+            throw new InvalidFieldException("newPassword", "Password must be at least 12 characters");
+        }
+        if (currentPassword.equals(newPassword)) {
+            throw new InvalidFieldException("newPassword", "New password must be different from current password");
+        }
+        user.updatePassword(passwordEncoder.encode(newPassword));
+        audit.info("event=password_change tenant={} user={}", user.getTenantId(), user.getId());
+    }
+
+    @Transactional
+    public void updateAvatar(long userId, byte[] bytes) {
+        String contentType = AvatarProtection.detectContentType(bytes);
+        AppUser user = find(userId);
+        user.updateAvatar(bytes, contentType);
+        audit.info("event=avatar_update tenant={} user={} bytes={} contentType={}",
+                user.getTenantId(), user.getId(), bytes.length, contentType);
+    }
+
+    @Transactional(readOnly = true)
+    public AvatarRecord getAvatar(long userId) {
+        AppUser user = find(userId);
+        if (!user.hasAvatar()) {
+            throw new AvatarNotFoundException();
+        }
+        return new AvatarRecord(user.getAvatarData(), user.getAvatarContentType());
+    }
+
+    @Transactional
+    public void removeAvatar(long userId) {
+        AppUser user = find(userId);
+        user.removeAvatar();
+        audit.info("event=avatar_remove tenant={} user={}", user.getTenantId(), user.getId());
     }
 
     @Transactional(readOnly = true)
@@ -190,4 +254,9 @@ public class UserManagementService {
 
     /** 400: one answer for unknown, used, expired and other-tenant tokens. */
     public static class InvalidSetupTokenException extends RuntimeException { }
+
+    public record AvatarRecord(byte[] data, String contentType) { }
+
+    /** 404: user has no avatar uploaded. */
+    public static class AvatarNotFoundException extends RuntimeException { }
 }

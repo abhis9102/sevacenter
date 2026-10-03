@@ -62,21 +62,22 @@ const BY_STATUS: Record<number, string> = {
   429: "Too many attempts. Wait a few minutes before trying again.",
 };
 
-export function describeError(err: unknown): string {
+export function describeError(err: unknown, dict?: Record<string, string>): string {
+  const messages = dict ? { ...MESSAGES, ...dict } : MESSAGES;
   if (err instanceof NetworkError) {
-    return "Can't reach SevaCenter. Check your connection and try again.";
+    return dict?.network_error ?? "Can't reach SevaCenter. Check your connection and try again.";
   }
   if (err instanceof ApiError) {
-    if (err.code && MESSAGES[err.code]) {
-      return MESSAGES[err.code]!;
+    if (err.code && messages[err.code]) {
+      return messages[err.code]!;
     }
     if (BY_STATUS[err.status]) {
       return BY_STATUS[err.status]!;
     }
     if (err.status >= 500) {
-      return "Something went wrong on our side. Try again; if it keeps happening, contact support.";
+      return dict?.server_error ?? "Something went wrong on our side. Try again; if it keeps happening, contact support.";
     }
-    return "The request couldn't be completed.";
+    return dict?.request_failed ?? "The request couldn't be completed.";
   }
   return "Something went wrong. Try again.";
 }

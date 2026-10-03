@@ -32,6 +32,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
     }
 
+    @ExceptionHandler(UserManagementService.AvatarNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> onAvatarNotFound() {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "avatar_not_found"));
+    }
+
     @ExceptionHandler(DevoteeService.DevoteeNotFoundException.class)
     public ResponseEntity<Map<String, Object>> onDevoteeNotFound() {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
@@ -39,6 +44,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DonationService.DonationNotFoundException.class)
     public ResponseEntity<Map<String, Object>> onDonationNotFound() {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
+    }
+
+    @ExceptionHandler(app.sevacenter.donation.ReceiptService.ReceiptNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> onReceiptNotFound() {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
     }
 

@@ -31,6 +31,8 @@ export interface RequestOptions {
   allowUnauthorized?: boolean;
   /** Return the raw Response (file download) instead of parsed JSON. */
   raw?: boolean;
+  /** Custom Accept header (defaults to application/json, or text/csv when raw is true). */
+  accept?: string;
   signal?: AbortSignal;
 }
 
@@ -109,7 +111,8 @@ export function createApi(deps: ApiDeps): Api {
   }
 
   function buildInit(method: Method, options: RequestOptions, token: string | null): RequestInit {
-    const headers: Record<string, string> = { Accept: "application/json" };
+    const accept = options.accept ?? (options.raw ? "text/csv, */*" : "application/json");
+    const headers: Record<string, string> = { Accept: accept };
     let body: BodyInit | undefined;
     if (options.json !== undefined) {
       headers["Content-Type"] = "application/json";
