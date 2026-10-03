@@ -12,5 +12,9 @@ public interface PujaBookingRepository extends JpaRepository<PujaBooking, Long> 
 
     List<PujaBooking> findAllByPujaDate(LocalDate pujaDate);
 
+    List<PujaBooking> findAllByPujaDateOrderByCreatedAtDesc(LocalDate pujaDate);
+
+    List<PujaBooking> findAllByOrderByPujaDateDesc();
+
     Optional<PujaBooking> findByBookingNumber(String bookingNumber);
 }

@@ -90,6 +90,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { href: "/devotees", label: t.nav.devotees, min: "MEMBER" as Role },
     { href: "/donations", label: t.nav.donations, min: "LEADER" as Role },
+    { href: "/pujas", label: t.nav.pujas, min: "LEADER" as Role },
+    { href: "/events", label: t.nav.events, min: "LEADER" as Role },
+    { href: "/volunteers", label: t.nav.volunteers, min: "LEADER" as Role },
+    { href: "/mandir-center", label: t.nav.mandirSettings, min: "LEADER" as Role },
     { href: "/staff", label: t.nav.staff, min: "LEADER" as Role },
   ];
 

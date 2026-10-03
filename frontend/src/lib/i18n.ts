@@ -24,6 +24,10 @@ export interface Translations {
     devotees: string;
     staff: string;
     donations: string;
+    pujas: string;
+    events: string;
+    volunteers: string;
+    mandirSettings: string;
     home: string;
     profile: string;
   };
@@ -388,6 +392,10 @@ export const DICTIONARIES: Record<Language, Translations> = {
       devotees: "Devotees",
       staff: "Staff",
       donations: "Donations",
+      pujas: "Pujas & Sankalp",
+      events: "Utsavs & Passes",
+      volunteers: "Sevak Hub",
+      mandirSettings: "Mandir Center",
       home: "Home",
       profile: "Profile",
     },
@@ -769,6 +777,10 @@ export const DICTIONARIES: Record<Language, Translations> = {
       devotees: "भक्त (Devotees)",
       staff: "कर्मचारी (Staff)",
       donations: "दान (Donations)",
+      pujas: "पूजा एवं संकल्प",
+      events: "उत्सव एवं पास",
+      volunteers: "सेवादार केंद्र",
+      mandirSettings: "मंदिर पोर्टल",
       home: "मुख्य पृष्ठ",
       profile: "प्रोफ़ाइल (Profile)",
     },

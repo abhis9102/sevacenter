@@ -44,6 +44,15 @@ public class SevakSignup {
     @Column(name = "notes")
     private String notes;
 
+    @Column(name = "status", nullable = false)
+    private String status = "PENDING";
+
+    @Column(name = "assigned_team")
+    private String assignedTeam;
+
+    @Column(name = "assigned_event")
+    private String assignedEvent;
+
     @Column(name = "created_at", insertable = false, updatable = false)
     private Instant createdAt;
 
@@ -59,6 +68,7 @@ public class SevakSignup {
         this.availableDays = availableDays;
         this.shiftPreference = shiftPreference;
         this.notes = notes;
+        this.status = "PENDING";
     }
 
     public Long getId() {
@@ -95,6 +105,24 @@ public class SevakSignup {
 
     public String getNotes() {
         return notes;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public String getAssignedTeam() {
+        return assignedTeam;
+    }
+
+    public String getAssignedEvent() {
+        return assignedEvent;
+    }
+
+    public void updateAssignment(String status, String assignedTeam, String assignedEvent) {
+        if (status != null && !status.isBlank()) this.status = status;
+        this.assignedTeam = assignedTeam;
+        this.assignedEvent = assignedEvent;
     }
 
     public Instant getCreatedAt() {

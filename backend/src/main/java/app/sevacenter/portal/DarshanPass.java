@@ -54,6 +54,9 @@ public class DarshanPass {
     @Column(name = "status", nullable = false)
     private String status;
 
+    @Column(name = "checked_in", nullable = false)
+    private Boolean checkedIn = false;
+
     @Column(name = "checked_in_at")
     private Instant checkedInAt;
 
@@ -130,7 +133,12 @@ public class DarshanPass {
         return checkedInAt;
     }
 
+    public Boolean isCheckedIn() {
+        return Boolean.TRUE.equals(checkedIn) || checkedInAt != null;
+    }
+
     public void markCheckedIn(Instant now) {
+        this.checkedIn = true;
         this.checkedInAt = now;
         this.status = "COMPLETED";
     }

@@ -12,5 +12,9 @@ public interface DarshanPassRepository extends JpaRepository<DarshanPass, Long> 
 
     List<DarshanPass> findAllByVisitDate(LocalDate visitDate);
 
+    List<DarshanPass> findAllByEventCodeOrderByCreatedAtDesc(String eventCode);
+
+    List<DarshanPass> findAllByOrderByCreatedAtDesc();
+
     Optional<DarshanPass> findByPassNumber(String passNumber);
 }

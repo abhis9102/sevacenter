@@ -9,4 +9,6 @@ public interface SevakSignupRepository extends JpaRepository<SevakSignup, Long> 
     List<SevakSignup> findAllByDevoteeIdOrderByCreatedAtDesc(Long devoteeId);
 
     List<SevakSignup> findAllBySevaArea(String sevaArea);
+
+    List<SevakSignup> findAllByOrderByCreatedAtDesc();
 }

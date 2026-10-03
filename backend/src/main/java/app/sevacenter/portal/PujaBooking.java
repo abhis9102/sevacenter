@@ -69,6 +69,12 @@ public class PujaBooking {
     @Column(name = "status", nullable = false)
     private String status;
 
+    @Column(name = "performed_by")
+    private String performedBy;
+
+    @Column(name = "performed_at")
+    private Instant performedAt;
+
     @Column(name = "created_at", insertable = false, updatable = false)
     private Instant createdAt;
 
@@ -161,6 +167,20 @@ public class PujaBooking {
 
     public String getStatus() {
         return status;
+    }
+
+    public String getPerformedBy() {
+        return performedBy;
+    }
+
+    public Instant getPerformedAt() {
+        return performedAt;
+    }
+
+    public void markPerformed(String priestName, Instant now) {
+        this.performedBy = priestName;
+        this.performedAt = now;
+        this.status = "COMPLETED";
     }
 
     public Instant getCreatedAt() {

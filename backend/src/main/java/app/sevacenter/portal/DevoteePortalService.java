@@ -48,6 +48,7 @@ public class DevoteePortalService {
     private final PujaBookingRepository pujaBookings;
     private final DarshanPassRepository darshanPasses;
     private final SevakSignupRepository sevakSignups;
+    private final MandirAdminService mandirAdmin;
     private final Clock clock = Clock.system(IST);
     private final boolean devMode;
 
@@ -59,6 +60,7 @@ public class DevoteePortalService {
                                 PujaBookingRepository pujaBookings,
                                 DarshanPassRepository darshanPasses,
                                 SevakSignupRepository sevakSignups,
+                                MandirAdminService mandirAdmin,
                                 @Value("${sevacenter.dev-tokens:false}") boolean devTokens) {
         this.authTokens = authTokens;
         this.sessions = sessions;
@@ -68,6 +70,7 @@ public class DevoteePortalService {
         this.pujaBookings = pujaBookings;
         this.darshanPasses = darshanPasses;
         this.sevakSignups = sevakSignups;
+        this.mandirAdmin = mandirAdmin;
         this.devMode = devTokens;
     }
 
@@ -249,54 +252,35 @@ public class DevoteePortalService {
             List<AartiTiming> aartis
     ) { }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public MandirSchedule getMandirSchedule() {
-        long tenantId = currentTenant();
-        Tenant tenant = tenants.findById(tenantId).orElse(null);
-        String name = (tenant != null) ? tenant.getName() : "Shri Mandir";
-
-        List<AartiTiming> aartis = List.of(
-                new AartiTiming("Mangala Aarti", "05:30 AM", "Morning awakening prayer and first sacred darshan"),
-                new AartiTiming("Shringar Darshan", "07:30 AM", "Adorning the deity with fresh flowers and sacred vastram"),
-                new AartiTiming("Rajbhog Aarti", "12:00 PM", "Noon sacred bhog offering followed by afternoon temple rest"),
-                new AartiTiming("Sandhya Aarti", "07:00 PM", "Evening deepam aarti with holy chantings and bhajans"),
-                new AartiTiming("Shayan Aarti", "09:00 PM", "Night closing prayer and bedtime lullaby for the deity")
-        );
-
+        MandirAdminService.MandirScheduleDto s = mandirAdmin.getScheduleDto();
+        List<AartiTiming> aartis = s.aartis().stream()
+                .map(a -> new AartiTiming(a.name(), a.time(), a.description()))
+                .toList();
         return new MandirSchedule(
-                name,
-                "Pradhan Devata",
-                "Temple Road, Central Sanctum",
-                "+91 98765 43210",
-                "05:00 AM – 01:00 PM",
-                "04:00 PM – 09:30 PM",
-                true,
-                "Shukla Paksha Ekadashi / Trayodashi",
-                "Rohini / Uttara Phalguni",
-                "Special Darshan arrangements for upcoming festival. Senior citizens can use Priority Queue Pass.",
+                s.mandirName(),
+                s.deity(),
+                s.address(),
+                s.helpline(),
+                s.morningHours(),
+                s.eveningHours(),
+                s.isOpenNow(),
+                s.panchangTithi(),
+                s.nakshatra(),
+                s.specialAnnouncement(),
                 aartis
         );
     }
 
     public record PujaItem(String code, String name, String deity, String duration, long dakshinaRupees, String description, boolean prasadIncluded) { }
 
-    public static final List<PujaItem> AVAILABLE_PUJAS = List.of(
-            new PujaItem("RUDRABHISHEK", "Shri Rudrabhishek Seva", "Lord Shiva", "45 mins", 1100,
-                    "Vedic panchamrit abhishek with Bilva leaves, chanting Sri Rudram for health and peace.", true),
-            new PujaItem("ARCHANA", "Special Ashtothara Archana", "Pradhan Devata", "20 mins", 251,
-                    "108 sacred names chanting with individualized family Sankalp and floral offering.", true),
-            new PujaItem("SATYANARAYAN", "Shri Satyanarayan Maha Katha", "Lord Vishnu", "90 mins", 2100,
-                    "Sacred story recitation, family sankalp, panchamrit and prasad preparation.", true),
-            new PujaItem("VAHAN_PUJA", "Vahan / Vehicle Blessing Puja", "Lord Ganesha & Hanuman", "30 mins", 501,
-                    "Auspicious blessings, coconut breaking and raksha sutra for new vehicles.", false),
-            new PujaItem("NAVGRAH", "Navgrah Shanti Havan", "Navgrah Devatas", "60 mins", 3100,
-                    "Sacred fire offering to pacify planetary afflictions and invoke cosmic harmony.", true),
-            new PujaItem("ANNADANAM", "Nitya Annadanam Sponsorship", "Annapurna Devi", "Noon Seva", 5001,
-                    "Sponsor sacred Mahaprasad lunch distribution to 100 pilgrims in the temple annakshetra.", true)
-    );
-
     public List<PujaItem> getAvailablePujas() {
-        return AVAILABLE_PUJAS;
+        return mandirAdmin.getAllPujas().stream()
+                .filter(p -> Boolean.TRUE.equals(p.getActive()))
+                .map(p -> new PujaItem(p.getCode(), p.getName(), p.getDeity(), p.getDuration(),
+                        p.getDakshinaRupees(), p.getDescription(), p.getPrasadIncluded()))
+                .toList();
     }
 
     public record BookPujaRequest(
@@ -340,10 +324,10 @@ public class DevoteePortalService {
             throw new InvalidFieldException("pujaDate", "Puja date must be today or in the future");
         }
 
-        PujaItem puja = AVAILABLE_PUJAS.stream()
+        PujaItem puja = getAvailablePujas().stream()
                 .filter(p -> p.code().equalsIgnoreCase(req.pujaCode()))
                 .findFirst()
-                .orElse(AVAILABLE_PUJAS.get(0));
+                .orElse(new PujaItem(req.pujaCode(), req.pujaCode(), "Pradhan Devata", "30 mins", 501L, "Special Vedic Puja", true));
 
         long amountPaise = puja.dakshinaRupees() * 100L;
         String bookingNumber = String.format("PJ-%d-%06d", tenantId, System.currentTimeMillis() % 1_000_000);
@@ -421,23 +405,12 @@ public class DevoteePortalService {
             boolean registrationOpen
     ) { }
 
-    public static final List<MandirEvent> UPCOMING_EVENTS = List.of(
-            new MandirEvent("MAHASHIVRATRI", "Maha Shivratri Mahotsav", LocalDate.of(2026, 2, 17),
-                    "All Day & Night Jagran", "Grand 4-Prahar Rudrabhishek, continuous bilva archana, and midnight aarti.",
-                    "Free Mahaprasad, Thandai distribution, special queue for seniors", true),
-            new MandirEvent("RAM_NAVAMI", "Shri Ram Navami Utsav", LocalDate.of(2026, 4, 18),
-                    "09:00 AM – 02:00 PM", "Birth celebration of Lord Rama, Sundarkand path, and grand Panakam distribution.",
-                    "Pushpa Abhishek at 12:00 Noon, Bhajan Sandhya", true),
-            new MandirEvent("JANMASHTAMI", "Shri Krishna Janmashtami", LocalDate.of(2026, 8, 25),
-                    "06:00 PM – Midnight 12:30 AM", "Midnight birth abhishek, Bhagavad Gita chanting, and Dahi Handi utsav.",
-                    "Makhan Mishri prasad, Bal Krishna fancy dress for children", true),
-            new MandirEvent("NAVRATRI", "Sharad Navratri & Chandi Havan", LocalDate.of(2026, 10, 11),
-                    "9 Days Sacred Utsav", "Nine sacred nights of Devi worship, daily kumkum archana and Durga Saptashati parayan.",
-                    "Garba & Dandiya in evening, Maha Havan on Ashtami", true)
-    );
-
     public List<MandirEvent> getUpcomingEvents() {
-        return UPCOMING_EVENTS;
+        return mandirAdmin.getAllEvents().stream()
+                .filter(e -> Boolean.TRUE.equals(e.getActive()))
+                .map(e -> new MandirEvent(e.getCode(), e.getName(), e.getEventDate(), e.getTimeRange(),
+                        e.getDescription(), e.getHighlights(), e.getRegistrationOpen()))
+                .toList();
     }
 
     public record BookPassRequest(
@@ -475,10 +448,10 @@ public class DevoteePortalService {
             throw new InvalidFieldException("contact", "Contact number is required");
         }
 
-        MandirEvent event = UPCOMING_EVENTS.stream()
+        MandirEvent event = getUpcomingEvents().stream()
                 .filter(e -> e.code().equalsIgnoreCase(req.eventCode()))
                 .findFirst()
-                .orElse(UPCOMING_EVENTS.get(0));
+                .orElse(new MandirEvent(req.eventCode(), req.eventCode(), req.visitDate() != null ? req.visitDate() : LocalDate.now(clock), "All Day", "Festival Darshan", "Special Darshan", true));
 
         String passNumber = String.format("PASS-%d-%06d", tenantId, System.currentTimeMillis() % 1_000_000);
         LocalDate visitDate = req.visitDate() != null ? req.visitDate() : event.date();

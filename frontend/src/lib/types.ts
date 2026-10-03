@@ -278,3 +278,96 @@ export interface SevakResponse {
   shiftPreference: string;
   message: string;
 }
+
+export interface PujaCatalogItem {
+  id: number;
+  code: string;
+  name: string;
+  deity: string;
+  duration: string;
+  dakshinaRupees: number;
+  description: string | null;
+  prasadIncluded: boolean;
+  active: boolean;
+  displayOrder: number;
+}
+
+export interface PujaBookingAdminItem {
+  id: number;
+  bookingNumber: string;
+  pujaCode: string;
+  pujaName: string;
+  pujaDate: string;
+  timeSlot: string;
+  devoteeName: string;
+  gotra: string | null;
+  nakshatra: string | null;
+  rashi: string | null;
+  familyMembers: string | null;
+  contact: string | null;
+  amountPaise: number;
+  paymentMode: string | null;
+  status: string;
+  performedBy: string | null;
+  performedAt: string | null;
+  createdAt: string;
+}
+
+export interface MandirEventAdminItem {
+  id: number;
+  code: string;
+  name: string;
+  eventDate: string;
+  timeRange: string;
+  description: string | null;
+  highlights: string | null;
+  registrationOpen: boolean;
+  maxCapacity: number | null;
+  active: boolean;
+}
+
+export interface DarshanPassAdminItem {
+  id: number;
+  passNumber: string;
+  eventCode: string;
+  eventName: string;
+  visitDate: string;
+  timeSlot: string;
+  primaryDevoteeName: string;
+  attendeeCount: number;
+  contact: string;
+  status: string;
+  checkedIn: boolean;
+  checkedInAt: string | null;
+  createdAt: string;
+}
+
+export interface SevakAdminItem {
+  id: number;
+  fullName: string;
+  contact: string;
+  sevaArea: string;
+  availableDays: string;
+  shiftPreference: string;
+  notes: string | null;
+  status: string;
+  assignedTeam: string | null;
+  assignedEvent: string | null;
+  createdAt: string;
+}
+
+export interface MandirScheduleDto {
+  id: number;
+  mandirName: string;
+  morningHours: string;
+  eveningHours: string;
+  isOpenOverride: boolean | null;
+  isOpenNow: boolean;
+  deity: string | null;
+  address: string | null;
+  helpline: string | null;
+  panchangTithi: string | null;
+  nakshatra: string | null;
+  specialAnnouncement: string | null;
+  aartis: AartiTiming[];
+}
