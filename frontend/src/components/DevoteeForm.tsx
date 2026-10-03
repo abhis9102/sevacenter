@@ -1,0 +1,106 @@
+"use client";
+
+import { useState } from "react";
+
+import { api } from "@/components/apiClient";
+import { Alert, Button, SelectField, TextField } from "@/components/ui";
+import {
+  clientFieldErrors,
+  EMPTY_DEVOTEE,
+  toDevoteeInput,
+  valuesFromDevotee,
+  type DevoteeFormValues,
+} from "@/lib/devoteeForm";
+import { ApiError, describeError } from "@/lib/errors";
+import { CONSENT_LABELS, CONSENT_SOURCES, type Devotee } from "@/lib/types";
+
+const CONSENT_OPTIONS = CONSENT_SOURCES.map((c) => ({ value: c, label: CONSENT_LABELS[c] }));
+
+/** Create (POST) or edit (PUT) a devotee. Server validation errors appear next to each field. */
+export function DevoteeForm({
+  devotee,
+  onSaved,
+  onCancel,
+}: {
+  devotee?: Devotee;
+  onSaved: (d: Devotee) => void;
+  onCancel: () => void;
+}) {
+  const mode = devotee ? "edit" : "create";
+  const [values, setValues] = useState<DevoteeFormValues>(devotee ? valuesFromDevotee(devotee) : EMPTY_DEVOTEE);
+  const [fields, setFields] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  function bind(name: keyof DevoteeFormValues) {
+    return {
+      value: values[name],
+      error: fields[name],
+      onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+        setValues((v) => ({ ...v, [name]: e.target.value })),
+    };
+  }
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    const local = clientFieldErrors(values, mode);
+    setFields(local);
+    if (Object.keys(local).length > 0) {
+      return;
+    }
+    setBusy(true);
+    try {
+      const body = toDevoteeInput(values, mode);
+      const saved = devotee
+        ? await api.request<Devotee>(`/devotees/${devotee.id}`, { method: "PUT", json: body })
+        : await api.request<Devotee>("/devotees", { method: "POST", json: body });
+      onSaved(saved);
+    } catch (err) {
+      if (err instanceof ApiError && Object.keys(err.fields).length > 0) {
+        setFields({ ...err.fields });
+      }
+      setError(describeError(err));
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
+      {error ? <Alert tone="danger">{error}</Alert> : null}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <TextField label="Full name" required maxLength={120} autoComplete="off" className="sm:col-span-2" {...bind("fullName")} />
+        <TextField label="Phone" type="tel" maxLength={30} autoComplete="off" hint="Indian numbers can be typed as 98765 43210." {...bind("phone")} />
+        <TextField label="Email" type="email" maxLength={254} autoComplete="off" {...bind("email")} />
+        <TextField label="Address" maxLength={200} autoComplete="off" className="sm:col-span-2" {...bind("addressLine")} />
+        <TextField label="City" maxLength={80} autoComplete="off" {...bind("city")} />
+        <TextField label="State" maxLength={80} autoComplete="off" {...bind("state")} />
+        <TextField label="Pincode" inputMode="numeric" maxLength={6} autoComplete="off" {...bind("pincode")} />
+        <TextField label="Date of birth" type="date" {...bind("dateOfBirth")} />
+        {mode === "create" ? (
+          <SelectField
+            label="Consent given"
+            required
+            placeholder="How did they agree to be recorded?"
+            options={CONSENT_OPTIONS}
+            className="sm:col-span-2"
+            {...bind("consentSource")}
+          />
+        ) : null}
+      </div>
+      {mode === "create" ? (
+        <p className="text-xs text-muted">
+          Record a devotee only with their consent. SevaCenter stores when consent was recorded and by whom.
+        </p>
+      ) : null}
+      <div className="flex justify-end gap-2">
+        <Button variant="secondary" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" busy={busy}>
+          {mode === "create" ? "Add devotee" : "Save changes"}
+        </Button>
+      </div>
+    </form>
+  );
+}
