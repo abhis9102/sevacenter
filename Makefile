@@ -1,4 +1,4 @@
-.PHONY: help db-up db-down db-logs run test build hooks dast
+.PHONY: help db-up db-down db-logs run test build hooks dast fe-dev fe-check
 help: ## show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  %-10s %s\n",$$1,$$2}'
 db-up: ## start local Postgres (needs .env)
@@ -22,3 +22,7 @@ dast: ## DAST: build the jar, ZAP-scan it against a throwaway DB, apply the poli
 	cd backend && ./mvnw -B -ntp -q package -DskipTests
 	tools/security/dast.sh backend/target/backend-0.0.1-SNAPSHOT.jar .dast
 	python3 tools/security/dast_policy.py gate .dast/zap-authed.json .dast/zap.json --out .dast/findings.json
+fe-dev: ## run the staff admin web app -> http://<slug>.localhost:3000 (backend on :8080)
+	cd frontend && npm ci && npm run dev
+fe-check: ## frontend lint + typecheck + unit tests + production build
+	cd frontend && npm ci && npm run lint && npm run typecheck && npm test && npm run build

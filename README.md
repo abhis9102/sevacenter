@@ -20,7 +20,7 @@ SAST, SCA, workflow linting. See `docs/roadmap.md` and `docs/STATUS.md`.
 |---|---|
 | Backend | Java 21 + Spring Boot 4.1 (Spring Security 7, Data JPA, Flyway) |
 | Database | PostgreSQL + Row-Level Security (multi-tenancy) |
-| Frontend | Next.js / TypeScript *(from a later milestone)* |
+| Frontend | Next.js 16 / TypeScript / Tailwind (staff admin app in `frontend/`) |
 | Security tooling | Python |
 | IaC / Cloud | Terraform → AWS ECS Fargate *(from M6)* |
 | CI/CD | GitHub Actions + OIDC to AWS |
@@ -45,6 +45,9 @@ Once running, the API documents itself:
 - **Swagger UI:** http://localhost:8080/swagger-ui.html
 - **OpenAPI JSON:** http://localhost:8080/v3/api-docs
 
+Staff admin web app (Node.js 20.9+): `make fe-dev`, then open
+`http://<trust-slug>.localhost:3000`. Details in `frontend/README.md`.
+
 `make help` lists all targets.
 
 ## Repository layout
@@ -53,7 +56,7 @@ Once running, the API documents itself:
 sevacenter/
 ├── backend/              Spring Boot app (Java)
 │   └── src/main/resources/db/migration/   Flyway migrations
-├── frontend/             Next.js app            (later milestone)
+├── frontend/             Next.js staff admin app (see frontend/README.md)
 ├── infra/                Terraform              (M6)
 ├── tools/security/       Python pipeline tooling (tickets, SCA policy)
 ├── docs/
