@@ -115,6 +115,16 @@ parameter parsing). Both failed before the fix.
 
 **Lesson:** read the app's ERROR log, not only the gate verdict. `dast.sh` prints the count.
 
+### M2 slice 2 (CSV export/import): one false positive, three 500s
+
+| Finding | Verdict | Action |
+|---|---|---|
+| Persistent XSS (High, **low confidence**) on `GET /devotees/export`: stored `<script>` names come back in the CSV | Reproduced by hand: `text/csv` + `attachment` + `nosniff`, even for `Accept: text/html`. Downloaded, never rendered. | Defence in depth: `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; sandbox` on every `/api/**` response. Then a scoped, expiring accepted risk. Headers pinned by tests. |
+| 500 on `POST /devotees/import`: malformed multipart part (`MultipartException`) | Real | → 400 `malformed_upload`; oversize → 413 |
+| 500 on `PUT /devotees/{id}`: row deleted by a concurrent request (`StaleStateException`) | Real (race between ZAP's own requests) | → 409 `concurrent_modification` |
+
+Final run: probe 49/49, both passes 0 failures, **0 app ERROR lines**.
+
 ## Known gaps
 
 - No beta/alpha ZAP rules: fetching add-ons at scan time would pull unpinned code into CI. If

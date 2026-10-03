@@ -16,3 +16,15 @@ pluginId = "100001" # Unexpected Content-Type
 uri = '^https?://[^/?]+\?' # request target with no path, e.g. "GET ?a=b": malformed HTTP
 ignoreUntil = 2026-12-31
 reason = "Abhi (AppSec): Tomcat's connector rejects a request line with no path with a minimal HTML 400 before Spring runs; no version or details disclosed (verified). In M6 the ALB rejects these first. Re-check then."
+
+[[accepted]]
+pluginId = "40014" # Cross Site Scripting (Persistent)
+uri = '/api/v1/devotees/export(\?|$)' # the CSV export only: stored names come back verbatim, as data
+ignoreUntil = 2026-12-31
+reason = "Abhi (AppSec): reproduced by hand: served as text/csv + Content-Disposition: attachment + nosniff, so browsers download it and never render it (ZAP itself: low confidence, not HTML). Defence in depth: API CSP default-src 'none'; sandbox. All pinned by DevoteeCsvTest + SecurityRegressionTest. Re-check when the frontend renders exports."
+
+[[accepted]]
+pluginId = "100001" # Unexpected Content-Type
+uri = '/api/v1/devotees/export(\?|$)' # by design: the export is a CSV file, not JSON
+ignoreUntil = 2026-12-31
+reason = "Abhi (AppSec): the export endpoint deliberately returns text/csv (ADR 0010). ZAP expects JSON from an API. Content type, attachment and nosniff are pinned by DevoteeCsvTest."

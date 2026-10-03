@@ -35,6 +35,12 @@ public class DevoteeService {
         return contactSearch ? devotees.searchAll(term, pageable) : devotees.searchByName(term, pageable);
     }
 
+    /** Every devotee of the tenant, for the admin-only CSV export. */
+    @Transactional(readOnly = true)
+    public java.util.List<Devotee> exportAll() {
+        return devotees.findAll(ORDER);
+    }
+
     @Transactional(readOnly = true)
     public Devotee get(long id) {
         return devotees.findById(id).orElseThrow(DevoteeNotFoundException::new);
@@ -59,6 +65,14 @@ public class DevoteeService {
     }
 
     static Devotee.Details normalise(Devotee.Details d) {
+        // Every write path (API and CSV import) passes here; Postgres can't store NUL in text.
+        noNul("fullName", d.fullName());
+        noNul("phone", d.phone());
+        noNul("email", d.email());
+        noNul("addressLine", d.addressLine());
+        noNul("city", d.city());
+        noNul("state", d.state());
+        noNul("pincode", d.pincode());
         String email = blankToNull(d.email());
         return new Devotee.Details(d.fullName().strip(), phone(d.phone()),
                 email == null ? null : email.toLowerCase(Locale.ROOT), blankToNull(d.addressLine()),
@@ -82,6 +96,12 @@ public class DevoteeService {
             throw new InvalidFieldException("phone", "phone must be a 10-digit Indian mobile or +<country code><number>");
         }
         return digits;
+    }
+
+    private static void noNul(String field, String value) {
+        if (value != null && value.indexOf('\0') >= 0) {
+            throw new InvalidFieldException(field, field + " contains a NUL character");
+        }
     }
 
     private static String blankToNull(String s) {

@@ -21,6 +21,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.header.writers.DelegatingRequestMatcherHeaderWriter;
+import org.springframework.security.web.header.writers.StaticHeadersWriter;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.header.writers.CrossOriginResourcePolicyHeaderWriter.CrossOriginResourcePolicy;
 
 /**
@@ -63,6 +66,8 @@ public class SecurityConfig {
             "/swagger-ui.html",
     };
 
+    static final String API_CSP = "default-src 'none'; frame-ancestors 'none'; sandbox";
+
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, LoginHandlers loginHandlers,
                                             LoginThrottle loginThrottle, AppUserRepository users) throws Exception {
@@ -82,7 +87,13 @@ public class SecurityConfig {
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
                 // DAST (G5): other origins may not embed our responses as resources (img/script).
                 .headers(headers -> headers
-                        .crossOriginResourcePolicy(corp -> corp.policy(CrossOriginResourcePolicy.SAME_ORIGIN)))
+                        .crossOriginResourcePolicy(corp -> corp.policy(CrossOriginResourcePolicy.SAME_ORIGIN))
+                        // API responses are data, never pages: even if a browser rendered one (e.g.
+                        // user content in the CSV export, flagged by DAST in M2), nothing in it may
+                        // run, load or be framed. Scoped to /api so Swagger UI keeps working.
+                        .addHeaderWriter(new DelegatingRequestMatcherHeaderWriter(
+                                PathPatternRequestMatcher.withDefaults().matcher("/api/**"),
+                                new StaticHeadersWriter("Content-Security-Policy", API_CSP))))
                 // Staff login via the framework's form login, so session-fixation protection,
                 // CSRF token rotation and saving the security context aren't hand-written.
                 // loginPage is set only to switch off Spring's generated HTML login page.

@@ -5,7 +5,7 @@ ZAP finds injection, headers and error handling. It can't find broken access con
 GET /users/7 looks fine unless you know user 7 belongs to another tenant. This probe knows. It
 seeds two tenants with admins, a leader and a member, then runs a matrix of
 identity x endpoint x host and fails on any status other than the expected one. Every new
-endpoint gets rows here (users: M1; devotees: M2).
+endpoint gets rows here (users: M1; devotees + CSV: M2).
 
 Tenants are resolved from the real Host header (<slug>.sevacenter.app), as in production, not
 from the dev-only X-Tenant-Slug override.
@@ -46,13 +46,18 @@ class Client:
         return c
 
     def request(self, method: str, path: str, body: dict | None = None, form: dict | None = None,
-                csrf: bool = True) -> tuple[int, object]:
-        headers = {"Host": self.host, "Accept": "application/json"}
+                csrf: bool = True, upload: tuple[str, str] | None = None) -> tuple[int, object]:
+        headers = {"Host": self.host, "Accept": "application/json, text/csv"}
         data = None
         if body is not None:
             data, headers["Content-Type"] = json.dumps(body), "application/json"
         if form is not None:
             data, headers["Content-Type"] = urlencode(form), "application/x-www-form-urlencoded"
+        if upload is not None:  # (field, csv text) as a multipart file
+            boundary = uuid.uuid4().hex
+            data = (f"--{boundary}\r\nContent-Disposition: form-data; name=\"{upload[0]}\"; filename=\"probe.csv\"\r\n"
+                    f"Content-Type: text/csv\r\n\r\n{upload[1]}\r\n--{boundary}--\r\n").encode()
+            headers["Content-Type"] = f"multipart/form-data; boundary={boundary}"
         if csrf and method != "GET":
             headers["X-XSRF-TOKEN"] = self.csrf_token()
         if self.cookies:
@@ -234,6 +239,21 @@ class Probe:
         self.expect("A erases B's devotee by id", 404, admin_a.request("DELETE", f"/api/v1/devotees/{dev_b}"))
         _, listed = admin_a.request("GET", "/api/v1/devotees?q=Tenant%20B")
         self.check("A's devotee search never returns B's devotees", isinstance(listed, dict) and listed.get("total") == 0)
+        print("\ndevotee CSV export/import (M2): bulk PII is TRUST_ADMIN only")
+        csv = ("fullName,phone,email,addressLine,city,state,pincode,dateOfBirth,consentSource\n"
+               "Imported Devotee,9876543210,,,Pune,,,,IN_PERSON\n")
+        self.expect("member cannot export devotees", 403, member.request("GET", "/api/v1/devotees/export"))
+        self.expect("leader cannot export devotees", 403, leader.request("GET", "/api/v1/devotees/export"))
+        self.expect("leader cannot import devotees", 403,
+                    leader.request("POST", "/api/v1/devotees/import", upload=("file", csv)))
+        self.expect("admin imports devotees", 200, admin_a.request("POST", "/api/v1/devotees/import", upload=("file", csv)))
+        status, exported = admin_a.request("GET", "/api/v1/devotees/export")
+        self.expect("admin exports devotees", 200, status)
+        exported = exported if isinstance(exported, str) else ""
+        self.check("A's export contains A's devotees and none of B's",
+                   "Imported Devotee" in exported and "Tenant B Devotee" not in exported, exported[:200])
+        self.check("exported phone cells can't run as formulas", "'+919876543210" in exported and "\n+91" not in exported
+                   and ",+91" not in exported, exported[:200])
         self.expect("A's admin erases A's devotee", 204, admin_a.request("DELETE", f"/api/v1/devotees/{dev_a}"))
 
         print("\nCSRF")

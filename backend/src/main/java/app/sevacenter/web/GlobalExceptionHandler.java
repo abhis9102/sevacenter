@@ -5,13 +5,17 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 
 import app.sevacenter.auth.SlugAlreadyTakenException;
+import app.sevacenter.devotee.DevoteeImportService;
 import app.sevacenter.devotee.DevoteeService;
 import app.sevacenter.user.UserManagementService;
 
@@ -32,6 +36,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
     }
 
+    @ExceptionHandler(DevoteeImportService.ImportRejectedException.class)
+    public ResponseEntity<Map<String, Object>> onImportRejected(DevoteeImportService.ImportRejectedException ex) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("error", ex.getMessage());
+        body.put("rows", ex.errors());
+        return ResponseEntity.badRequest().body(body);
+    }
+
     @ExceptionHandler(InvalidFieldException.class)
     public ResponseEntity<Map<String, Object>> onInvalidField(InvalidFieldException ex) {
         Map<String, Object> body = new LinkedHashMap<>();
@@ -48,6 +60,25 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UserManagementService.InvalidSetupTokenException.class)
     public ResponseEntity<Map<String, Object>> onInvalidSetupToken() {
         return ResponseEntity.badRequest().body(Map.of("error", "invalid_or_expired_link"));
+    }
+
+    // Found by DAST (M2 slice 2): these surfaced as 500s.
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, Object>> onUploadTooLarge() {
+        return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE).body(Map.of("error", "upload_too_large"));
+    }
+
+    /** A malformed multipart body (e.g. a bad Content-Disposition on a part). */
+    @ExceptionHandler(MultipartException.class)
+    public ResponseEntity<Map<String, Object>> onBadUpload() {
+        return ResponseEntity.badRequest().body(Map.of("error", "malformed_upload"));
+    }
+
+    /** The row changed or was deleted by a concurrent request between our read and write. */
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<Map<String, Object>> onConcurrentChange() {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "concurrent_modification"));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
