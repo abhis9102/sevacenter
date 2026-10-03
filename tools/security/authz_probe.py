@@ -173,6 +173,7 @@ class Probe:
                     leader.request("POST", f"/api/v1/users/{pending_a}/deactivate"))
         self.expect("leader cannot issue setup links", 403,
                     leader.request("POST", f"/api/v1/users/{pending_a}/setup-link"))
+        self.expect("leader cannot delete staff", 403, leader.request("DELETE", f"/api/v1/users/{pending_a}"))
         self.expect("member cannot promote themselves", 403,
                     member.request("PATCH", f"/api/v1/users/{pending_a}/role", body={"role": "TRUST_ADMIN"}))
 
@@ -181,6 +182,7 @@ class Probe:
                     admin_a.request("PATCH", f"/api/v1/users/{victim_b}/role", body={"role": "TRUST_ADMIN"}))
         self.expect("deactivate B's user by id", 404, admin_a.request("POST", f"/api/v1/users/{victim_b}/deactivate"))
         self.expect("issue a setup link for B's user", 404, admin_a.request("POST", f"/api/v1/users/{victim_b}/setup-link"))
+        self.expect("delete B's user by id", 404, admin_a.request("DELETE", f"/api/v1/users/{victim_b}"))
         _, users_a = admin_a.request("GET", "/api/v1/users")
         _, users_b = admin_b.request("GET", "/api/v1/users")
         emails_a = {u["email"] for u in users_a}

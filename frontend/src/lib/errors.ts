@@ -36,6 +36,7 @@ const MESSAGES: Record<string, string> = {
   too_many_attempts: "Too many attempts. Wait a few minutes before trying again.",
   email_taken: "A staff member with this email already exists.",
   last_admin: "The trust must keep at least one active trust admin. Make someone else an admin first.",
+  cannot_delete_self: "You can't delete your own account. Ask another trust admin.",
   not_pending: "This person has already set up their account, so they don't need a new setup link.",
   invalid_or_expired_link:
     "This setup link is invalid, expired or already used. Ask your trust admin for a new one.",

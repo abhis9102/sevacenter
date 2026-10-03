@@ -45,6 +45,9 @@ public class AppUser {
     @Column(nullable = false)
     private UserStatus status = UserStatus.ACTIVE;
 
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
+
     @Column(name = "created_at", insertable = false, updatable = false)
     private OffsetDateTime createdAt;
 
@@ -72,6 +75,17 @@ public class AppUser {
 
     public void disable() {
         this.status = UserStatus.DISABLED;
+    }
+
+    /**
+     * Deletes someone who may have acted: their login identity goes for good (the email is freed
+     * for a new invitation, no password, DISABLED), the display name stays for the audit trail.
+     */
+    public void tombstone(OffsetDateTime now) {
+        this.email = "deleted-" + id + "@users.invalid";
+        this.passwordHash = null;
+        this.status = UserStatus.DISABLED;
+        this.deletedAt = now;
     }
 
     public void changeRole(Role newRole) {

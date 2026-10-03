@@ -3,6 +3,7 @@ package app.sevacenter.user;
 import java.time.OffsetDateTime;
 import java.util.List;
 
+import app.sevacenter.auth.StaffUser;
 import app.sevacenter.user.UserManagementService.CreatedUser;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
@@ -12,6 +13,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -60,6 +63,14 @@ public class UserController {
     @PreAuthorize("hasRole('TRUST_ADMIN')")
     public UserResponse deactivate(@PathVariable long id) {
         return UserResponse.of(service.deactivate(id));
+    }
+
+    /** Removes a staff member for good (see UserManagementService#delete for what is kept). */
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('TRUST_ADMIN')")
+    public void delete(@PathVariable long id, @AuthenticationPrincipal StaffUser caller) {
+        service.delete(id, caller.userId());
     }
 
     @PostMapping("/{id}/setup-link")

@@ -50,7 +50,7 @@ public class UserManagementService {
 
     @Transactional(readOnly = true)
     public List<AppUser> list() {
-        return users.findAllByOrderByCreatedAtAsc();
+        return users.findAllByDeletedAtIsNullOrderByCreatedAtAsc();
     }
 
     /** Creates a PENDING user and returns their one-time setup link (shown to the admin once). */
@@ -97,6 +97,28 @@ public class UserManagementService {
     }
 
     /**
+     * Deletes a staff member. An invitation never set up (PENDING) is removed outright: they
+     * can't have acted. Anyone else is tombstoned ({@link AppUser#tombstone}): their session ends
+     * on its next request (StaffSessionFilter re-reads the user) and they can never log in again.
+     */
+    @Transactional
+    public void delete(long userId, long callerId) {
+        if (userId == callerId) {
+            throw new UserConflictException("cannot_delete_self");
+        }
+        AppUser user = find(userId);
+        if (user.getRole() == Role.TRUST_ADMIN && user.getStatus() == UserStatus.ACTIVE) {
+            requireAnotherActiveAdmin(user);
+        }
+        setupTokens.deleteAllForUser(user.getId());
+        if (user.getStatus() == UserStatus.PENDING) {
+            users.delete(user);
+        } else {
+            user.tombstone(OffsetDateTime.now(clock));
+        }
+    }
+
+    /**
      * Redeems a setup link on the tenant's host: sets the password and activates the user.
      * Unknown, used, expired or other-tenant tokens all fail the same way.
      */
@@ -134,7 +156,7 @@ public class UserManagementService {
     }
 
     private AppUser find(long userId) {
-        return users.findById(userId).orElseThrow(UserNotFoundException::new);
+        return users.findByIdAndDeletedAtIsNull(userId).orElseThrow(UserNotFoundException::new);
     }
 
     private static long currentTenant() {
