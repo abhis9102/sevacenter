@@ -6,12 +6,17 @@ import { api } from "@/components/apiClient";
 import { Diya } from "@/components/Diya";
 import { Alert, Badge, Button, Card, TextField } from "@/components/ui";
 import { ApiError, describeError } from "@/lib/errors";
+import type { ReceiptDetail } from "@/lib/types";
 
 type Channel = "EMAIL" | "SMS";
 
 interface MySeva {
   channel: Channel;
   contact: string;
+  donations: {
+    id: number; receivedOn: string; amount: string; mode: string; purpose: string | null; reversed: boolean;
+    receiptNumber: string | null; receiptValid: boolean;
+  }[];
   pujaBookings: { bookingCode: string; pujaName: string; pujaDate: string; amount: string; status: string }[];
   eventPasses: { passCode: string; eventTitle: string | null; startsAt: string | null; attendeeCount: number; status: string }[];
   sevakSignups: { sevaAreas: string; status: string; createdAt: string }[];
@@ -150,12 +155,47 @@ function SignIn({ onSignedIn }: { onSignedIn: () => Promise<void> }) {
 }
 
 function SevaView({ seva }: { seva: MySeva }) {
-  const empty = seva.pujaBookings.length + seva.eventPasses.length + seva.sevakSignups.length === 0;
+  const [receipt, setReceipt] = useState<ReceiptDetail | null>(null);
+  const [receiptError, setReceiptError] = useState<string | null>(null);
+  const empty = seva.donations.length + seva.pujaBookings.length + seva.eventPasses.length + seva.sevakSignups.length === 0;
+
+  async function openReceipt(donationId: number) {
+    setReceiptError(null);
+    try {
+      setReceipt(await api.get<ReceiptDetail>(`/portal/donations/${donationId}/receipt`, { allowUnauthorized: true }));
+    } catch (err) {
+      setReceiptError(describeError(err));
+    }
+  }
+
+  if (receipt) {
+    return <ReceiptCopy receipt={receipt} onClose={() => setReceipt(null)} />;
+  }
+
   return (
     <>
       <p className="text-sm text-muted">Signed in as {seva.contact}</p>
       {empty ? (
         <Card><p>Nothing here yet for {seva.contact}. Bookings made with this {seva.channel === "SMS" ? "mobile number" : "email"} will show up here.</p></Card>
+      ) : null}
+      {seva.donations.length > 0 ? (
+        <Card>
+          <h2 className="mb-3 font-semibold">Donations &amp; receipts</h2>
+          {receiptError ? <Alert tone="danger">{receiptError}</Alert> : null}
+          <ul className="flex flex-col gap-2">
+            {seva.donations.map((d) => (
+              <li key={d.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                <span>{d.receivedOn} · ₹{d.amount}{d.purpose ? ` · ${d.purpose}` : ""}</span>
+                <span className="flex items-center gap-2">
+                  {d.reversed ? <Badge tone="warning">Reversed</Badge> : null}
+                  {d.receiptNumber && d.receiptValid ? (
+                    <Button variant="secondary" onClick={() => void openReceipt(d.id)}>Receipt {d.receiptNumber}</Button>
+                  ) : d.receiptNumber ? <Badge tone="danger">Receipt cancelled</Badge> : <Badge>No 80G receipt yet</Badge>}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Card>
       ) : null}
       {seva.pujaBookings.length > 0 ? (
         <Card>
@@ -196,5 +236,37 @@ function SevaView({ seva }: { seva: MySeva }) {
         </Card>
       ) : null}
     </>
+  );
+}
+
+/** A copy of the 80G receipt for the devotee's records. The PAN is masked; the trust holds the original. */
+function ReceiptCopy({ receipt, onClose }: { receipt: ReceiptDetail; onClose: () => void }) {
+  return (
+    <Card className="print:border-none">
+      <div className="flex flex-col gap-3 text-sm">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold">{receipt.trustLegalName}</h2>
+            <p className="text-muted">{receipt.trustAddress}</p>
+            <p className="text-muted">PAN {receipt.trustPan} · 80G {receipt.trustRegistration80g}</p>
+          </div>
+          <Button variant="secondary" onClick={onClose} className="print:hidden">Back</Button>
+        </div>
+        <p className="font-semibold">Receipt {receipt.number} · issued {receipt.issuedOn}</p>
+        {receipt.cancelled ? <Alert tone="danger">This receipt was cancelled.</Alert> : null}
+        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
+          <dt className="text-muted">Received from</dt><dd>{receipt.donorName}</dd>
+          <dt className="text-muted">Address</dt><dd>{receipt.donorAddress}</dd>
+          <dt className="text-muted">Donor PAN</dt><dd>{receipt.donorPan}</dd>
+          <dt className="text-muted">Amount</dt><dd>₹{receipt.amount}</dd>
+          <dt className="text-muted">Mode</dt><dd>{receipt.mode}</dd>
+          <dt className="text-muted">Received on</dt><dd>{receipt.receivedOn}</dd>
+        </dl>
+        <p className="text-xs text-muted">
+          Copy for your records, with your PAN masked. For the original receipt, please contact the temple office.
+        </p>
+        <div className="print:hidden"><Button onClick={() => window.print()}>Print</Button></div>
+      </div>
+    </Card>
   );
 }

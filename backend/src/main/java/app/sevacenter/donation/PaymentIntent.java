@@ -36,6 +36,13 @@ public class PaymentIntent {
     @Column(updatable = false)
     private String purpose;
 
+    /** Optional contact a donor left so "my seva" can find this donation (ADR 0019). */
+    @Column(name = "donor_phone", updatable = false)
+    private String donorPhone;
+
+    @Column(name = "donor_email", updatable = false)
+    private String donorEmail;
+
     @Column(nullable = false)
     private String status = "CREATED";
 
@@ -66,6 +73,12 @@ public class PaymentIntent {
         this.amountPaise = amountPaise;
         this.donorName = donorName;
         this.purpose = purpose;
+    }
+
+    PaymentIntent withContact(String phone, String email) {
+        this.donorPhone = phone;
+        this.donorEmail = email;
+        return this;
     }
 
     static PaymentIntent forPuja(long tenantId, String orderId, long amountPaise, String name, String purpose,

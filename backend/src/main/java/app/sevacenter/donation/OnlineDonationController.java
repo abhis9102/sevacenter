@@ -58,7 +58,8 @@ public class OnlineDonationController {
         if (!rateLimiter.tryAcquire("order:" + request.getRemoteAddr())) {
             throw new app.sevacenter.auth.LoginThrottle.TooManyAttemptsException();
         }
-        return service.createOrder(Money.toPaise("amount", r.amount()), r.donorName(), r.purpose());
+        return service.createOrder(Money.toPaise("amount", r.amount()), r.donorName(), r.purpose(), r.phone(),
+                r.email());
     }
 
     @PostMapping("/api/v1/public/donations/confirm")
@@ -102,7 +103,10 @@ public class OnlineDonationController {
     public record OrderRequest(
             @Schema(example = "501") @NotBlank @Size(max = 20) String amount,
             @Schema(example = "Lakshmi Iyer") @NotBlank @Size(max = 120) String donorName,
-            @Schema(example = "Annadanam") @Size(max = 120) String purpose) { }
+            @Schema(example = "Annadanam") @Size(max = 120) String purpose,
+            // Optional: lets the donor find this donation later in "my seva" (ADR 0019).
+            @Schema(example = "98765 43210") @Size(max = 30) String phone,
+            @Schema(example = "lakshmi@example.org") @Size(max = 254) String email) { }
 
     public record ConfirmRequest(
             @Schema(example = "order_PZ1example00001") @NotBlank @Size(max = 64) String orderId,

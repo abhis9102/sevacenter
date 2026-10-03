@@ -323,6 +323,13 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
 - `DevoteeLoginTest` (15), **mutation-checked 18/18** (found first: dead "supersede" code, removed; expiry untested, added).
 - **Local DAST found:** the mail health indicator made `/actuator/health` DOWN whenever SMTP was unreachable (an SES outage would have taken every task out of the load balancer), and JavaMail had no timeouts. Mail health is off, SMTP timeouts are 5/10 s; regression test added. Probe +5 rows.
 
+## Donation history + receipts in "my seva" ✅ (this PR, ADR 0019)
+- `V18`: optional donor phone/email on `payment_intent` (the donate page asks, never requires).
+- "My seva" lists the verified contact's donations: online by the checkout contact, staff-recorded via
+  the linked devotee; reversed ones marked. Receipt copies with the donor PAN masked, own donations only
+  (others' 404, no session 401, `no-store`). Public **/donate** gains optional mobile/email.
+- `DonationHistoryTest` (6), **mutation-checked 11/11** (found first: cancelled receipts untested, added); probe +1 row.
+
 **MVP features are now complete.** Then: M5 containers → M6 AWS → M7 gates.
 
 ## Next up — M1 slice 2

@@ -25,6 +25,24 @@ public interface DonationRepository extends JpaRepository<Donation, Long> {
             + "from Donation d where d.receivedOn between ?1 and ?2 group by d.mode order by d.mode")
     List<ModeTotal> totalsByMode(LocalDate from, LocalDate to);
 
+    /**
+     * A verified contact's own donations (ADR 0019): online ones by the contact the donor left,
+     * staff-recorded ones through the linked devotee's phone/email. Exact matches only.
+     */
+    @Query(MINE + " order by d.receivedOn desc, d.id desc")
+    List<Donation> forContact(String contact, Pageable page);
+
+    @Query("select count(d) > 0 " + MINE_FROM + " and d.id = ?2")
+    boolean isFor(String contact, Long donationId);
+
+    @Query("select r.reversesId from Donation r where r.reversesId in ?1")
+    List<Long> reversedAmong(List<Long> donationIds);
+
+    String MINE_FROM = "from Donation d where d.reversesId is null and ("
+            + "d.devoteeId in (select v.id from Devotee v where v.phone = ?1 or v.email = ?1) or "
+            + "d.id in (select i.donationId from PaymentIntent i where i.donorPhone = ?1 or i.donorEmail = ?1))";
+    String MINE = "select d " + MINE_FROM;
+
     interface ModeTotal {
         DonationMode getMode();
         Long getNetPaise();

@@ -8,7 +8,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import app.sevacenter.auth.LoginThrottle;
+import app.sevacenter.donation.DonationHistory;
 import app.sevacenter.donation.Money;
+import app.sevacenter.donation.ReceiptController;
 import app.sevacenter.donation.RateLimiter;
 import app.sevacenter.event.Event;
 import app.sevacenter.event.EventPass;
@@ -24,6 +26,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -31,6 +34,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -54,17 +58,19 @@ public class PortalController {
     private final EventPassRepository passes;
     private final EventRepository events;
     private final SevakSignupRepository signups;
+    private final DonationHistory donations;
     private final boolean secureCookie;
 
     public PortalController(DevoteeLoginService login, RateLimiter rateLimiter, PujaBookingRepository bookings,
                             EventPassRepository passes, EventRepository events, SevakSignupRepository signups,
-                            @Value("${server.servlet.session.cookie.secure:true}") boolean secureCookie) {
+                            DonationHistory donations, @Value("${server.servlet.session.cookie.secure:true}") boolean secureCookie) {
         this.login = login;
         this.rateLimiter = rateLimiter;
         this.bookings = bookings;
         this.passes = passes;
         this.events = events;
         this.signups = signups;
+        this.donations = donations;
         this.secureCookie = secureCookie;
     }
 
@@ -106,14 +112,15 @@ public class PortalController {
     /** Only records carrying the exact contact the devotee proved they own. */
     @GetMapping("/api/v1/portal/me")
     @Transactional(readOnly = true)
-    public MySeva me(@CookieValue(name = COOKIE, required = false) String token) {
+    public ResponseEntity<MySeva> me(@CookieValue(name = COOKIE, required = false) String token) {
         DevoteeAccount account = login.resolve(token).orElseThrow(NotLoggedInException::new);
         String contact = account.getContact();
         PageRequest top = PageRequest.of(0, 200);
         List<EventPass> myPasses = passes.forContact(contact, top);
         Map<Long, Event> eventsById = events.findAllById(myPasses.stream().map(EventPass::getEventId).toList())
                 .stream().collect(Collectors.toMap(Event::getId, Function.identity()));
-        return new MySeva(account.getChannel(), contact,
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(new MySeva(account.getChannel(), contact,
+                donations.forContact(contact),
                 bookings.forContact(contact, top).stream().map(b -> new MyBooking(b.getBookingCode(), b.getPujaName(),
                         b.getPujaDate(), Money.toRupees(b.getAmountPaise()), b.getStatus())).toList(),
                 myPasses.stream().map(p -> {
@@ -122,7 +129,17 @@ public class PortalController {
                             p.getAttendeeCount(), p.getStatus());
                 }).toList(),
                 signups.forContact(contact, top).stream().map(s -> new MySignup(s.getSevaAreas(), s.getStatus(),
-                        s.getCreatedAt())).toList());
+                        s.getCreatedAt())).toList()));
+    }
+
+    /** The receipt for one of the devotee's own donations, donor PAN masked (ADR 0019). */
+    @GetMapping("/api/v1/portal/donations/{id:\\d+}/receipt")
+    public ResponseEntity<ReceiptController.ReceiptResponse> receipt(@PathVariable long id,
+            @CookieValue(name = COOKIE, required = false) String token) {
+        DevoteeAccount account = login.resolve(token).orElseThrow(NotLoggedInException::new);
+        return donations.receipt(account.getContact(), id)
+                .map(r -> ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(r))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     private String cookie(String value, long maxAgeSeconds) {
@@ -144,7 +161,8 @@ public class PortalController {
             @Schema(example = "lakshmi@example.org") @Size(max = 254) String contact,
             @Schema(example = "123456") @Size(max = 10) String code) { }
 
-    public record MySeva(OtpChannel channel, String contact, List<MyBooking> pujaBookings, List<MyPass> eventPasses,
+    public record MySeva(OtpChannel channel, String contact, List<DonationHistory.Entry> donations,
+                         List<MyBooking> pujaBookings, List<MyPass> eventPasses,
                          List<MySignup> sevakSignups) { }
 
     public record MyBooking(String bookingCode, String pujaName, LocalDate pujaDate, String amount, String status) { }

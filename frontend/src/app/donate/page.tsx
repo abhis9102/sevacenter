@@ -38,6 +38,8 @@ export default function DonatePage() {
   const [amount, setAmount] = useState("501");
   const [name, setName] = useState("");
   const [purpose, setPurpose] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<Confirmed | null>(null);
@@ -78,7 +80,10 @@ export default function DonatePage() {
     try {
       const order = await api.request<CreatedOrder>("/public/donations/orders", {
         method: "POST",
-        json: { amount: amount.trim(), donorName: name.trim(), purpose: purpose.trim() || undefined },
+        json: {
+          amount: amount.trim(), donorName: name.trim(), purpose: purpose.trim() || undefined,
+          phone: phone.trim() || undefined, email: email.trim() || undefined,
+        },
       });
       const Razorpay = await loadCheckout();
       new Razorpay({
@@ -143,6 +148,11 @@ export default function DonatePage() {
             <TextField label="Your name" autoComplete="name" required value={name} onChange={(e) => setName(e.target.value)} />
             <TextField label="Purpose (optional)" placeholder="e.g. Annadanam" value={purpose}
                        onChange={(e) => setPurpose(e.target.value)} />
+            <TextField label="Mobile number (optional)" inputMode="tel" autoComplete="tel" value={phone}
+                       onChange={(e) => setPhone(e.target.value)} />
+            <TextField label="Email (optional)" type="email" autoComplete="email" value={email}
+                       onChange={(e) => setEmail(e.target.value)}
+                       hint="Leave a mobile or email to see this donation and its receipt later in My seva." />
             {error ? <Alert tone="danger">{error}</Alert> : null}
             <Button type="submit" busy={busy}>
               Donate ₹{validAmount(amount) ? amount.trim() : "…"}
