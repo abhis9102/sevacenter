@@ -58,7 +58,8 @@ superuser would bypass RLS. Every test was mutation-checked: each fails when its
 | Session fixation | Framework form login: session ID changes at login | `sessionIdChangesAtLogin` |
 | Login CSRF | CSRF required on login; token rotates after login | `loginRequiresCsrf`, `SessionCookieTest` |
 | User enumeration | One generic 401; dummy hash check for unknown users | `wrongPasswordAndUnknownEmailAreIndistinguishable` |
-| Brute force / password spraying | Per-account + per-IP lockout (5 / 15 min), 429 even for the right password | 3 throttle tests in `StaffAuthTest` |
+| Brute force / password spraying | Per-account lockout (5 / 15 min) + per-IP (50 / 15 min), 429 even for the right password | throttle tests in `StaffAuthTest` |
+| Lockout as DoS behind the load balancer (every login "from" the LB) / shared carrier NAT | Real client IP via `X-Forwarded-For` **from trusted proxies only** (rightmost hop; `TRUSTED_PROXIES`); per-IP limit far above per-account | `ClientIpTest` (real server), `aFewFailuresFromASharedIpDontLockItsOtherUsers` |
 | Session theft via script / cross-site | `SC_SESSION`: HttpOnly, Secure, SameSite=Lax | `SessionCookieTest` (real server) |
 
 All mutation-checked (removing the binding filter, the throttle, fixation protection or the

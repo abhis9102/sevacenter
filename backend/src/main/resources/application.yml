@@ -50,6 +50,14 @@ springdoc:
 # link from WhatsApp/email to the admin still arrives logged in. Secure by default; only the
 # local http profile turns it off.
 server:
+  # Behind the load balancer every request arrives from the LB's address. The real client IP
+  # (login throttle, audit) comes from X-Forwarded-For, but only when the immediate peer is a
+  # trusted proxy; Tomcat then takes the rightmost address that proxy appended, so a client
+  # can't spoof it. TRUSTED_PROXIES is a regex: loopback here, the LB subnets in production (M6).
+  forward-headers-strategy: native
+  tomcat:
+    remoteip:
+      internal-proxies: ${TRUSTED_PROXIES:127\.0\.0\.1|0:0:0:0:0:0:0:1}
   servlet:
     session:
       timeout: 30m

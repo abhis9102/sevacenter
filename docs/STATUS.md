@@ -214,6 +214,13 @@ curl -s -b /tmp/jar -X POST localhost:8080/api/v1/register -H 'Content-Type: app
   `CSP: default-src 'none'; sandbox` anyway, then a scoped accepted risk. Three 500s fixed (bad
   multipart → 400, oversize → 413, concurrent delete → 409). 96 tests.
 
+## Fix: login throttle behind a proxy (this PR)
+- Found while connecting the frontend: behind any proxy (Next dev proxy, the M6 load balancer)
+  every login came from the proxy's IP, so 5 wrong passwords from anyone locked out everyone.
+- Now: `server.forward-headers-strategy: native` + `TRUSTED_PROXIES` (loopback by default; LB
+  subnets in M6). Only a trusted peer's `X-Forwarded-For` counts, rightmost hop first (unspoofable).
+  Per-IP limit raised to 50 (shared carrier NAT); per-account stays 5. Mutation-checked.
+
 ## Frontend track (started 2026-10-03)
 - Next.js + TS admin app (`frontend/`), being built in parallel: login, account setup, staff,
   devotees + CSV, design-system theme, strict CSP. Same-origin `/api` proxy; `<slug>.localhost`
