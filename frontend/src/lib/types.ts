@@ -169,6 +169,7 @@ export interface DonationItem {
   channel: "STAFF" | "ONLINE";
   paymentRef: string | null;
   createdAt: string;
+  fundId: number | null;
 }
 
 export interface DonationPage {
@@ -191,6 +192,21 @@ export interface DonationSummary {
   to: string;
   net: string;
   byMode: ModeSummary[];
+  byFund: FundSummary[];
+}
+
+/** Earmarked fund (ADR 0022); fundId null = the general fund. */
+export interface FundSummary {
+  fundId: number | null;
+  fund: string;
+  net: string;
+  donations: number;
+}
+
+export interface DonationFund {
+  id: number;
+  name: string;
+  active: boolean;
 }
 
 export interface ReceiptDetail {

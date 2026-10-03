@@ -25,6 +25,7 @@ public class ModuleAccessInterceptor implements HandlerInterceptor {
             Map.entry("/api/v1/devotees", StaffModule.DEVOTEES),
             Map.entry("/api/v1/donations", StaffModule.DONATIONS),
             Map.entry("/api/v1/receipts", StaffModule.DONATIONS),
+            Map.entry("/api/v1/donation-funds", StaffModule.DONATIONS),
             Map.entry("/api/v1/trust-profile", StaffModule.DONATIONS),
             Map.entry("/api/v1/events", StaffModule.EVENTS),
             Map.entry("/api/v1/pujas", StaffModule.PUJAS),

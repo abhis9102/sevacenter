@@ -40,12 +40,15 @@ export default function DonatePage() {
   const [purpose, setPurpose] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [funds, setFunds] = useState<{ id: number; name: string }[]>([]);
+  const [fundId, setFundId] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<Confirmed | null>(null);
 
   useEffect(() => {
     api.get<Info>("/public/donations/info").then(setInfo).catch((err) => setLoadError(describeError(err)));
+    api.get<{ id: number; name: string }[]>("/public/donation-funds").then(setFunds).catch(() => setFunds([]));
   }, []);
 
   async function onConfirm(paid: CheckoutSuccess) {
@@ -83,6 +86,7 @@ export default function DonatePage() {
         json: {
           amount: amount.trim(), donorName: name.trim(), purpose: purpose.trim() || undefined,
           phone: phone.trim() || undefined, email: email.trim() || undefined,
+          fundId: fundId ? Number(fundId) : undefined,
         },
       });
       const Razorpay = await loadCheckout();
@@ -146,6 +150,16 @@ export default function DonatePage() {
               <TextField label="Other amount" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
             </fieldset>
             <TextField label="Your name" autoComplete="name" required value={name} onChange={(e) => setName(e.target.value)} />
+            {funds.length > 0 ? (
+              <label className="flex flex-col gap-1 text-sm">
+                <span className="font-medium">Give to</span>
+                <select value={fundId} onChange={(e) => setFundId(e.target.value)}
+                        className="rounded-[10px] border border-line bg-surface px-3 py-2">
+                  <option value="">Where it&apos;s needed most</option>
+                  {funds.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+                </select>
+              </label>
+            ) : null}
             <TextField label="Purpose (optional)" placeholder="e.g. Annadanam" value={purpose}
                        onChange={(e) => setPurpose(e.target.value)} />
             <TextField label="Mobile number (optional)" inputMode="tel" autoComplete="tel" value={phone}
