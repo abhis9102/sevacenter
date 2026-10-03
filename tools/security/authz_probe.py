@@ -380,6 +380,14 @@ class Probe:
                     self.client(b).request("POST", f"/api/v1/public/pujas/{puja_id}/book",
                                            body={"devoteeName": "X", "pujaDate": puja_day, "phone": "9876543210"}))
 
+        print("\npublic temple page (ADR 0017)")
+        page = {"timings": "5 am - 9 pm", "announcement": "Probe announcement for A"}
+        self.expect("member cannot edit the temple page", 403, member.request("PUT", "/api/v1/temple", body=page))
+        self.expect("leader edits the temple page", 200, leader.request("PUT", "/api/v1/temple", body=page))
+        _, theirs = self.client(b).request("GET", "/api/v1/public/temple")
+        self.check("B's public page never shows A's content", "Probe announcement for A" not in json.dumps(theirs),
+                   str(theirs)[:120])
+
         print("\nCSRF")
         self.expect("state change without the CSRF header", 403,
                     admin_a.request("POST", "/api/v1/users", body=new_user, csrf=False))

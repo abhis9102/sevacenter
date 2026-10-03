@@ -28,6 +28,7 @@ export interface Translations {
     events: string;
     volunteers: string;
     pujas: string;
+    temple: string;
     home: string;
     profile: string;
   };
@@ -309,6 +310,7 @@ export const DICTIONARIES: Record<Language, Translations> = {
       events: "Events",
       volunteers: "Volunteers",
       pujas: "Pujas",
+      temple: "Temple page",
       home: "Home",
       profile: "Profile",
     },
@@ -607,6 +609,7 @@ export const DICTIONARIES: Record<Language, Translations> = {
       events: "उत्सव (Events)",
       volunteers: "सेवक (Volunteers)",
       pujas: "पूजा (Pujas)",
+      temple: "मंदिर पृष्ठ (Temple page)",
       home: "मुख्य पृष्ठ",
       profile: "प्रोफ़ाइल (Profile)",
     },

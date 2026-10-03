@@ -305,8 +305,14 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
   screen: day's schedule (priest sees no contacts, marks performed), catalog, cancel (LEADER+).
 - `PujaTest` (11), mutation-checked 12/12 (incl. "puja payment into the ledger").
 
-**Next:** the public temple page (timings, announcements, links to donate/events/pujas/sevak), then
-devotee OTP login (needs an SMS/email provider).
+## Public temple page ✅ (this PR, ADR 0017)
+- `V16`: `temple_profile` (forced RLS). **`/` on a trust host is now the public temple page**: the
+  temple's own timings/announcement/contact (no placeholder data) and links only to services that
+  exist (donate, events, pujas, seva). Staff **Temple page** editor (LEADER+). `TempleTest` (4),
+  mutation-checked 4/4.
+
+**MVP features are now complete except devotee OTP login** (needs an SMS/email provider decision).
+Then: M5 containers → M6 AWS → M7 gates.
 
 ## Next up — M1 slice 2
 - Login + sessions (cookie session per ADR 0007; set cookie flags HttpOnly/Secure/SameSite); tenant-aware `UserDetailsService` (scope lookup by `TenantContext`).
