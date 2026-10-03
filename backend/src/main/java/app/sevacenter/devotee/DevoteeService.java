@@ -38,12 +38,12 @@ public class DevoteeService {
     /** Every devotee of the tenant, for the admin-only CSV export. */
     @Transactional(readOnly = true)
     public java.util.List<Devotee> exportAll() {
-        return devotees.findAll(ORDER);
+        return devotees.findAllByErasedAtIsNull(ORDER);
     }
 
     @Transactional(readOnly = true)
     public Devotee get(long id) {
-        return devotees.findById(id).orElseThrow(DevoteeNotFoundException::new);
+        return devotees.findByIdAndErasedAtIsNull(id).orElseThrow(DevoteeNotFoundException::new);
     }
 
     @Transactional
@@ -58,10 +58,18 @@ public class DevoteeService {
         return devotee;
     }
 
-    /** Right to erasure (DPDP): a hard delete. M3 turns this into anonymisation for donors. */
+    /**
+     * Right to erasure (DPDP). A hard delete, unless donations reference the devotee: then every
+     * personal field is removed and the row is kept for the ledger (ADR 0011).
+     */
     @Transactional
-    public void erase(long id) {
-        devotees.delete(get(id));
+    public void erase(long id, long staffId) {
+        Devotee devotee = get(id);
+        if (devotees.hasDonations(id)) {
+            devotee.anonymise(staffId, now());
+        } else {
+            devotees.delete(devotee);
+        }
     }
 
     static Devotee.Details normalise(Devotee.Details d) {
