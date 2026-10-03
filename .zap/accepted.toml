@@ -28,3 +28,16 @@ pluginId = "100001" # Unexpected Content-Type
 uri = '/api/v1/devotees/export(\?|$)' # by design: the export is a CSV file, not JSON
 ignoreUntil = 2026-12-31
 reason = "Abhi (AppSec): the export endpoint deliberately returns text/csv (ADR 0010). ZAP expects JSON from an API. Content type, attachment and nosniff are pinned by DevoteeCsvTest."
+
+[[accepted]]
+pluginId = "6" # Path Traversal (heuristic, low confidence)
+param = "capacity"
+uri = '/api/v1/events/[0-9]+$'
+ignoreUntil = 2026-12-31
+reason = "Abhi (AppSec): reproduced from the report: the attack value is the URL's own last segment ('10'), a valid capacity, so the update succeeds while ZAP's random comparison value gets 400. No file access exists on this path. The same scan found startsAt='10' accepted as 1970: fixed (plausible dates only)."
+
+[[accepted]]
+pluginId = "40014" # Cross Site Scripting Weakness (Persistent in JSON Response)
+uri = '/api/v1/(public/)?(events|pujas|sevaks|donations)(\?|$)'
+ignoreUntil = 2026-12-31
+reason = "Abhi (AppSec): stored titles/names come back verbatim as JSON data (application/json, nosniff, API CSP default-src 'none'; sandbox); the frontend renders them as text (React escapes; no dangerouslySetInnerHTML). Pinned by SecurityRegressionTest + frontend review."

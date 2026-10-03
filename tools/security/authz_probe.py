@@ -5,7 +5,7 @@ ZAP finds injection, headers and error handling. It can't find broken access con
 GET /users/7 looks fine unless you know user 7 belongs to another tenant. This probe knows. It
 seeds two tenants with admins, a leader and a member, then runs a matrix of
 identity x endpoint x host and fails on any status other than the expected one. Every new
-endpoint gets rows here (users: M1; devotees + CSV: M2; donations, receipts, online payments: M3).
+endpoint gets rows here (users: M1; devotees + CSV: M2; donations, receipts, online payments: M3; events: M4).
 
 Tenants are resolved from the real Host header (<slug>.sevacenter.app), as in production, not
 from the dev-only X-Tenant-Slug override.
@@ -330,6 +330,28 @@ class Probe:
                     anon.request("POST", "/api/v1/public/donations/confirm", body=forged))
         self.expect("a confirm on another trust's host resolves no order", 400,
                     self.client(b).request("POST", "/api/v1/public/donations/confirm", body=forged))
+
+        print("\nevents (M4, ADR 0014): roles, public registration, gate check-in, cross-tenant codes")
+        ev = {"title": "Probe Utsav", "startsAt": "2030-08-15T22:00:00+05:30", "endsAt": "2030-08-16T01:00:00+05:30",
+              "capacity": 50, "registrationOpen": True}
+        self.expect("member cannot create events", 403, member.request("POST", "/api/v1/events", body=ev))
+        body = self.expect("leader creates an event", 201, leader.request("POST", "/api/v1/events", body=ev))
+        event_id = (body or {}).get("id")
+        self.expect("a draft takes no registrations", 404, anon.request("POST", f"/api/v1/public/events/{event_id}/register",
+                    body={"name": "Probe", "count": 1, "phone": "9876543210"}))
+        self.expect("leader publishes it", 200, leader.request("POST", f"/api/v1/events/{event_id}/publish"))
+        body = self.expect("anyone registers for a published event", 201,
+                           anon.request("POST", f"/api/v1/public/events/{event_id}/register",
+                                        body={"name": "Probe Visitor", "count": 2, "phone": "9876543210"}))
+        code = (body or {}).get("passCode", "")
+        self.expect("member cannot list registrations", 403, member.request("GET", f"/api/v1/events/{event_id}/passes"))
+        status, gate = member.request("POST", f"/api/v1/events/{event_id}/check-in", body={"passCode": code})
+        self.expect("member checks the pass in at the gate", 200, status)
+        self.check("the gate sees no contact details", "9876543210" not in json.dumps(gate), str(gate)[:120])
+        self.expect("a pass checks in only once", 409,
+                    member.request("POST", f"/api/v1/events/{event_id}/check-in", body={"passCode": code}))
+        self.expect("A's pass and event on B's host", 404,
+                    admin_b.request("POST", f"/api/v1/events/{event_id}/check-in", body={"passCode": code}))
 
         print("\nCSRF")
         self.expect("state change without the CSRF header", 403,

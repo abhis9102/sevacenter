@@ -125,6 +125,17 @@ parameter parsing). Both failed before the fix.
 
 Final run: probe 49/49, both passes 0 failures, **0 app ERROR lines**.
 
+### Events (M4) in CI: one real bug, three heuristic false positives
+
+| Finding | Verdict | Action |
+|---|---|---|
+| "Path Traversal" (High) on `PUT /events/{id}`, `startsAt=10` | **Real bug.** The numeric string parsed as epoch seconds, so the event started in 1970 | Event times must fall between 2000 and five years ahead (test) |
+| Same, `capacity=10` | FP: `10` is the URL's own id and a valid capacity | Scoped, expiring acceptance |
+| "SQL Injection" (High) on `GET /receipts` paging and `POST /donations` `amount` | **Root cause ours:** every error body carried a `timestamp`, so identical failing requests never matched and ZAP's boolean test read the noise as injection (reproduced: the inputs are rejected with 400/401 before any query) | Error bodies are now deterministic (no timestamp; real-server test, mutation-checked). No acceptance needed |
+| XSS in JSON (Low) on the list endpoints | Stored text returned as JSON (nosniff, sandbox CSP), rendered as text | Scoped acceptance |
+
+**Lesson:** a richer scan (more data reached) finds more, real and false. Reproduce each one.
+
 ## Known gaps
 
 - No beta/alpha ZAP rules: fetching add-ons at scan time would pull unpinned code into CI. If

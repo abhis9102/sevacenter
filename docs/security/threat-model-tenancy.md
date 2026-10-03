@@ -195,6 +195,23 @@ Tests in `OnlineDonationTest` (fake gateway), `RazorpayGatewayLiveTest` (opt-in,
 | Unattributed ledger entries | DB CHECK: STAFF needs `recorded_by`, ONLINE needs `payment_ref` | `everyLedgerEntryNamesItsStaffMemberOrItsPayment` |
 | Third-party script on our pages | Checkout allowed (script + frames) on `/donate` only; injected by nonce'd code under `strict-dynamic` | `payments.test.ts` (CSP) |
 
+### Events and passes (M4, ADR 0014): threat → control → test
+
+Tests in `EventTest`; rows in `authz_probe.py`.
+
+| Threat | Control | Test |
+|---|---|---|
+| Members managing events / reading registrant contacts | `@PreAuthorize`: MEMBER view + gate, LEADER manage + registrations | `membersSeeEventsLeadersManageThem` |
+| Drafts or cancelled events taking registrations | Only PUBLISHED is public; closes at start or when staff close it | `onlyPublishedEventsArePublicAndTakeRegistrations`, `registrationClosesWhen…` |
+| Overselling limited places (simultaneous registrations) | Seats counted under the event row lock in the inserting transaction | `capacityIsNeverExceeded`, `seatsAreCountedUnderARowLock` |
+| Guessing a pass code | 10 chars, 32-symbol alphabet (50 bits), `SecureRandom`, unique per trust | regex check in tests |
+| Reusing a pass / using it for another event / using a cancelled pass | Row-locked check-in once; bound to its event; status checked | `aPassChecksInOnce…`, `wrongEventCancelledPassesAndGarbageAreRefused` |
+| PII at the gate (volunteers) | Check-in response = name + head count only | `aPassChecksInOnceAndTheGateSeesNoContactDetails` |
+| A registration arriving pre-checked-in (mass assignment) | Explicit request record; server sets code/status/check-in | `aRegistrationCantCheckItselfIn` |
+| Cross-trust codes and event ids | Forced RLS → 404 | `passCodesAndEventIdsOnlyWorkOnTheirOwnTrustsHost` |
+| Spam registrations | 20 per IP per 15 min | `registrationsAreRateLimitedPerClient` |
+| Deleting history | No DELETE grant; cancel instead | `eventsAndPassesAreNeverDeletedOnlyCancelled` |
+
 ## Open questions
 
 - Public donor access: own login vs. link/OTP (affects the auth surface).

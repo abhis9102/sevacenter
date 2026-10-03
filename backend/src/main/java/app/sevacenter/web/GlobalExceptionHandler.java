@@ -127,6 +127,26 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of("error", "gateway_unavailable"));
     }
 
+    @ExceptionHandler({app.sevacenter.event.EventService.EventNotFoundException.class,
+            app.sevacenter.event.EventService.PassNotFoundException.class})
+    public ResponseEntity<Map<String, Object>> onEventOrPassNotFound() {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
+    }
+
+    @ExceptionHandler(app.sevacenter.event.EventService.EventConflictException.class)
+    public ResponseEntity<Map<String, Object>> onEventConflict(app.sevacenter.event.EventService.EventConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(app.sevacenter.event.EventService.AlreadyCheckedInException.class)
+    public ResponseEntity<Map<String, Object>> onAlreadyCheckedIn(app.sevacenter.event.EventService.AlreadyCheckedInException ex) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("error", "already_checked_in");
+        body.put("checkedInAt", String.valueOf(ex.pass().getCheckedInAt()));
+        body.put("attendeeName", ex.pass().getAttendeeName());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> onValidation(MethodArgumentNotValidException ex) {
         // Sorted, so identical requests get byte-identical responses. With a HashMap the field

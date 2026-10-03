@@ -285,7 +285,16 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
 - Tests: `OnlineDonationTest` (13, fake gateway), `RazorpayGatewayLiveTest` (opt-in, real test mode, passes);
   mutation-checked 12/12 (one survivor found first: order match, masked by amount match).
 
-**Next: admin screens for donations and receipts**, then M4 Events (incl. a safe devotee portal).
+## M4 slice 1 — events with registration passes ✅ (this PR, ADR 0014)
+- **MVP scope extended (user decision, 2026-10-03):** the MandirCenter operations set from the parallel
+  session (public temple page, events/darshan passes, pujas, sevak signups) is MVP; rebuilt slice by
+  slice with reviews. See `docs/roadmap.md`.
+- `V13`: `event`, `event_pass` (forced RLS, no DELETE). Staff **Events** screen (create/publish/cancel,
+  registrations, gate check-in); public **/upcoming** page on the trust host returns a pass code.
+- Capacity under row lock; 50-bit pass codes; check-in once; gate sees no contacts; rate-limited.
+- `EventTest` (12), **mutation-checked 13/13**; probe +9 rows.
+
+**Next:** pujas (paid via M3.3) + sevak signups, then the public temple page, then devotee OTP login.
 
 ## Next up — M1 slice 2
 - Login + sessions (cookie session per ADR 0007; set cookie flags HttpOnly/Secure/SameSite); tenant-aware `UserDetailsService` (scope lookup by `TenantContext`).
