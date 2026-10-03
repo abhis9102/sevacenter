@@ -94,6 +94,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { href: "/events", label: t.nav.events, min: "MEMBER" as Role },
     { href: "/pujas", label: t.nav.pujas, min: "MEMBER" as Role },
     { href: "/volunteers", label: t.nav.volunteers, min: "LEADER" as Role },
+    { href: "/temple", label: t.nav.temple, min: "MEMBER" as Role },
     { href: "/payments", label: t.nav.payments, min: "TRUST_ADMIN" as Role },
   ];
 
