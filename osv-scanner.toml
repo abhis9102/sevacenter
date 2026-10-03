@@ -9,3 +9,8 @@
 # id = "GHSA-xxxx-xxxx-xxxx"
 # ignoreUntil = 2026-12-31
 # reason = "Abhi: vulnerable code path is XML parsing; we never parse XML. Upgrade blocked on Boot 4.2."
+
+[[IgnoredVulns]]
+id = "GHSA-vfj7-8cjw-p6xm" # braces <= 3.0.3: stack-exhaustion DoS via deeply nested glob patterns
+ignoreUntil = 2026-12-31
+reason = "Abhi (AppSec): dev-only (eslint-config-next -> @next/eslint-plugin-next -> fast-glob -> micromatch -> braces); never shipped in the app bundle. Exploiting it needs attacker-controlled glob patterns; ours come from our own lint config. No fixed version upstream (fix: none). Re-check at expiry."

@@ -1,0 +1,21 @@
+{
+  // Unit tests run on Node's built-in test runner (node:test): no test framework dependency.
+  // tsc compiles the framework-free modules in src/lib plus tests/ to CommonJS, then
+  // `node --test` runs them. Modules under test must not import from next/react.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["dom", "dom.iterable", "es2023"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "types": ["node"],
+    "outDir": ".test-build",
+    "rootDir": ".",
+    "noEmit": false,
+    "incremental": false
+  },
+  "include": ["src/lib/**/*.ts", "tests/**/*.ts"]
+}

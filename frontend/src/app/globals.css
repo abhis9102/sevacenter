@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+/*
+ * SevaCenter admin theme: the restrained palette from docs/design/design-system.md.
+ * (MandirCenter's vibrant devotional palette is for the public sites, not this app.)
+ * Every token has a light and a dark value; nothing is theme-locked.
+ */
+:root {
+  --sc-primary: #c96a1e;
+  --sc-primary-strong: #9a4e10;
+  --sc-on-primary: #ffffff;
+  --sc-maroon: #7e2232;
+  --sc-gold: #b98c2e;
+
+  --bg: #faf5ee;
+  --surface: #ffffff;
+  --surface-2: #f2e9db;
+  --fg: #241b14;
+  --muted: #7c6f62;
+  --border: #e7dbc8;
+
+  --success: #2f7a52;
+  --warning: #c2861a;
+  --danger: #bc3b30;
+  --info: #2b6e86;
+
+  /* Brand mark (diya), as in the styleguide. */
+  --mark-flame: #e85d04;
+  --mark-core: #efa00b;
+  --mark-bowl: #6a0f1a;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sc-primary: #e6903f;
+    --sc-primary-strong: #f3ac68;
+    --sc-on-primary: #191410;
+    --sc-maroon: #d6788a;
+    --sc-gold: #e0bc6a;
+
+    --bg: #191410;
+    --surface: #221b14;
+    --surface-2: #2c241b;
+    --fg: #f4eadd;
+    --muted: #b2a595;
+    --border: #3a2f24;
+
+    --success: #5cb487;
+    --warning: #e4b04a;
+    --danger: #e8766b;
+    --info: #6fb6ce;
+
+    --mark-flame: #fb8521;
+    --mark-core: #f3bc4e;
+    --mark-bowl: #e0808c;
+
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-primary: var(--sc-primary);
+  --color-primary-strong: var(--sc-primary-strong);
+  --color-on-primary: var(--sc-on-primary);
+  --color-maroon: var(--sc-maroon);
+  --color-gold: var(--sc-gold);
+
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-line: var(--border);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+
+  --color-mark-flame: var(--mark-flame);
+  --color-mark-core: var(--mark-core);
+  --color-mark-bowl: var(--mark-bowl);
+
+  --font-display: var(--font-spectral), Georgia, serif;
+  --font-sans: var(--font-mukta), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  --radius-card: 12px;
+  --radius-control: 10px;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--fg);
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--sc-primary);
+  outline-offset: 2px;
+}
+
+dialog::backdrop {
+  background: rgb(25 20 16 / 0.55);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

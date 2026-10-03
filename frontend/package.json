@@ -1,0 +1,32 @@
+{
+  "name": "sevacenter-admin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SevaCenter staff admin web app",
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "dev": "NEXT_TELEMETRY_DISABLED=1 next dev --port ${PORT:-3000}",
+    "build": "NEXT_TELEMETRY_DISABLED=1 next build",
+    "start": "NEXT_TELEMETRY_DISABLED=1 next start --port ${PORT:-3000}",
+    "lint": "eslint --max-warnings=0 .",
+    "typecheck": "NEXT_TELEMETRY_DISABLED=1 next typegen && tsc --noEmit",
+    "test": "rm -rf .test-build && tsc -p tsconfig.test.json && node --test .test-build/tests/*.test.js"
+  },
+  "dependencies": {
+    "next": "16.3.8",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "20.19.43",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.3.8",
+    "tailwindcss": "4.3.3",
+    "typescript": "6.0.3"
+  }
+}
