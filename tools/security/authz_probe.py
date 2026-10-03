@@ -353,6 +353,15 @@ class Probe:
         self.expect("A's pass and event on B's host", 404,
                     admin_b.request("POST", f"/api/v1/events/{event_id}/check-in", body={"passCode": code}))
 
+        print("\nsevak signups (ADR 0015): public, contacts LEADER+ only")
+        status, thanks = anon.request("POST", "/api/v1/public/sevak",
+                                      body={"fullName": "Probe Sevak", "phone": "9876543210", "sevaAreas": "Kitchen"})
+        self.expect("anyone can offer seva", 201, status)
+        self.check("the public learns nothing back", "9876543210" not in json.dumps(thanks), str(thanks)[:120])
+        self.expect("member cannot see volunteer signups", 403, member.request("GET", "/api/v1/sevaks"))
+        _, theirs = admin_b.request("GET", "/api/v1/sevaks")
+        self.check("A's signup is invisible to B", isinstance(theirs, list) and all(s.get("fullName") != "Probe Sevak" for s in theirs))
+
         print("\nCSRF")
         self.expect("state change without the CSRF header", 403,
                     admin_a.request("POST", "/api/v1/users", body=new_user, csrf=False))
