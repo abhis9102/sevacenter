@@ -69,3 +69,17 @@ pluginId = "40014" # Cross Site Scripting Weakness (Persistent in JSON Response)
 uri = '/api/v1/(public/)?(events|pujas|sevaks|donations)(\?|$)'
 ignoreUntil = 2026-12-31
 reason = "Abhi (AppSec): stored titles/names come back verbatim as JSON data (application/json, nosniff, API CSP default-src 'none'; sandbox); the frontend renders them as text (React escapes; no dangerouslySetInnerHTML). Pinned by SecurityRegressionTest + frontend review."
+
+[[accepted]]
+pluginId = "40018" # SQL Injection (boolean-based heuristic)
+param = "name"
+uri = '/api/v1/donation-funds/[0-9]+$'
+ignoreUntil = 2026-12-31
+reason = "Abhi (AppSec): not injection. Fund names are unique per trust (uq_donation_fund_name); ZAP's earlier requests had already created funds named with its payloads, so renaming to one of those gives 400 (duplicate) and to a fresh one 200, which ZAP reads as boolean manipulation. app.log shows the uniqueness collisions in the same window. All fund queries are bound JPQL parameters (DonationFundRepository); no SQL is built from input."
+
+[[accepted]]
+pluginId = "6" # Path Traversal (heuristic, low confidence)
+param = "name"
+uri = '/api/v1/donation-funds/[0-9]+$'
+ignoreUntil = 2026-12-31
+reason = "Abhi (AppSec): same heuristic as pujas/name: '10' (the URL's last segment) is a valid fund name, stored as text and never used as a path; its response differs from ZAP's random value only by the uniqueness rule."
