@@ -197,6 +197,64 @@ export interface Translations {
     };
   };
   errors: Record<string, string>;
+  auth: {
+    signIn: string;
+    forgotPassword: string;
+    registerTrust: string;
+    loginTitle: string;
+    email: string;
+    password: string;
+    signInButton: string;
+    noTenantTitle: string;
+    noTenantDesc: string;
+    noTenantLocalNote: string;
+    noTenantRegisterButton: string;
+    newStaffHelp: string;
+    invalidCredentials: string;
+    rateLimited: string;
+    setupDone: string;
+    resetDone: string;
+    register: {
+      title: string;
+      subtitle: string;
+      trustName: string;
+      trustNamePlaceholder: string;
+      subdomain: string;
+      subdomainHelp: string;
+      adminName: string;
+      adminEmail: string;
+      adminPassword: string;
+      passwordHelp: string;
+      submit: string;
+      submitting: string;
+      successTitle: string;
+      successMessage: string;
+      openPortal: string;
+      alreadyHaveAccount: string;
+      invalidSlug: string;
+    };
+    forgot: {
+      title: string;
+      subtitle: string;
+      instructions: string;
+      emailLabel: string;
+      submit: string;
+      submitting: string;
+      backToLogin: string;
+      devTokenNotice: string;
+      proceedToReset: string;
+    };
+    reset: {
+      title: string;
+      subtitle: string;
+      newPassword: string;
+      confirmPassword: string;
+      submit: string;
+      submitting: string;
+      mismatch: string;
+      tokenMissing: string;
+    };
+  };
 }
 
 export const DICTIONARIES: Record<Language, Translations> = {
@@ -414,8 +472,65 @@ export const DICTIONARIES: Record<Language, Translations> = {
       invalid_rows: "Some rows have errors, so nothing was imported. Fix the rows below and upload again.",
       bad_header: "The header row doesn't match the expected columns. Start from an exported file or the template.",
       backend_unavailable: "The SevaCenter service isn't reachable right now. Try again in a moment.",
-      network_error: "Can't reach SevaCenter. Check your connection and try again.",
       csrf_unavailable: "Security token unavailable. Please refresh the page.",
+    },
+    auth: {
+      signIn: "Sign in",
+      forgotPassword: "Forgot password?",
+      registerTrust: "Register a new Trust / Temple",
+      loginTitle: "Sign in",
+      email: "Email",
+      password: "Password",
+      signInButton: "Sign in",
+      noTenantTitle: "Open your trust's own address",
+      noTenantDesc: "Each temple or trust signs in at its own dedicated address, such as yourtrust.sevacenter.app.",
+      noTenantLocalNote: "For local development use yourtrust.localhost:3000.",
+      noTenantRegisterButton: "Register a new temple or trust",
+      newStaffHelp: "New staff members get a one-time setup link from their trust admin.",
+      invalidCredentials: "Email or password is incorrect.",
+      rateLimited: "Too many sign-in attempts. Wait a few minutes, then try again.",
+      setupDone: "Your password is set. Sign in to continue.",
+      resetDone: "Your password has been reset. Sign in to continue.",
+      register: {
+        title: "Register your Temple or Trust",
+        subtitle: "Create a dedicated portal for your temple administration, devotee records, and 80G tax receipts.",
+        trustName: "Temple / Trust Name",
+        trustNamePlaceholder: "e.g. Shri Siddheshwar Seva Trust",
+        subdomain: "Choose your Subdomain",
+        subdomainHelp: "3–40 lowercase letters, numbers, or hyphens. This will be your permanent temple address.",
+        adminName: "Administrator Full Name",
+        adminEmail: "Administrator Email",
+        adminPassword: "Password",
+        passwordHelp: "Must be at least 12 characters.",
+        submit: "Create Temple Portal",
+        submitting: "Creating portal…",
+        successTitle: "Temple Portal Created!",
+        successMessage: "Your temple has been registered successfully. You can now access your dedicated administrative portal.",
+        openPortal: "Go to your Temple Portal",
+        alreadyHaveAccount: "Already have a trust registered? Sign in here",
+        invalidSlug: "Subdomain must be 3–40 lowercase letters, digits, or hyphens.",
+      },
+      forgot: {
+        title: "Forgot your password?",
+        subtitle: "Enter your registered email address and we'll send you instructions to reset your password.",
+        instructions: "Enter the email address associated with your staff account.",
+        emailLabel: "Registered Email",
+        submit: "Send Reset Link",
+        submitting: "Sending…",
+        backToLogin: "Back to Sign in",
+        devTokenNotice: "Local development mode: A reset token was generated for you.",
+        proceedToReset: "Proceed to Reset Password",
+      },
+      reset: {
+        title: "Reset your password",
+        subtitle: "Choose a new strong password for your account (minimum 12 characters).",
+        newPassword: "New Password",
+        confirmPassword: "Confirm New Password",
+        submit: "Reset Password",
+        submitting: "Resetting…",
+        mismatch: "Passwords do not match.",
+        tokenMissing: "Password reset link is missing or invalid. Please request a new link.",
+      },
     },
   },
   hi: {
@@ -634,6 +749,64 @@ export const DICTIONARIES: Record<Language, Translations> = {
       backend_unavailable: "सेवा वर्तमान में अनुपलब्ध है। कृपया कुछ क्षणों बाद पुनः प्रयास करें।",
       network_error: "सर्वर से संपर्क नहीं हो पा रहा है। इंटरनेट कनेक्शन की जाँच करें।",
       csrf_unavailable: "सुरक्षा टोकन अनुपलब्ध है। कृपया पृष्ठ पुनः लोड करें।",
+    },
+    auth: {
+      signIn: "लॉग इन करें",
+      forgotPassword: "पासवर्ड भूल गए?",
+      registerTrust: "नया ट्रस्ट / मंदिर पंजीकृत करें",
+      loginTitle: "लॉग इन",
+      email: "ईमेल",
+      password: "पासवर्ड",
+      signInButton: "लॉग इन करें",
+      noTenantTitle: "अपने ट्रस्ट के पते पर जाएं",
+      noTenantDesc: "प्रत्येक मंदिर या ट्रस्ट अपने समर्पित पते पर लॉग इन करता है, जैसे yourtrust.sevacenter.app।",
+      noTenantLocalNote: "स्थानीय विकास के लिए yourtrust.localhost:3000 का उपयोग करें।",
+      noTenantRegisterButton: "नया मंदिर या ट्रस्ट पंजीकृत करें",
+      newStaffHelp: "नए कर्मचारियों को उनके ट्रस्ट व्यवस्थापक से एकमुश्त सेटअप लिंक प्राप्त होता है।",
+      invalidCredentials: "ईमेल या पासवर्ड गलत है।",
+      rateLimited: "लॉग इन के बहुत अधिक प्रयास किए गए। कृपया कुछ मिनट प्रतीक्षा करें और पुनः प्रयास करें।",
+      setupDone: "आपका पासवर्ड सेट हो गया है। जारी रखने के लिए लॉग इन करें।",
+      resetDone: "आपका पासवर्ड रीसेट कर दिया गया है। जारी रखने के लिए लॉग इन करें।",
+      register: {
+        title: "अपने मंदिर या ट्रस्ट को पंजीकृत करें",
+        subtitle: "अपने मंदिर प्रशासन, भक्त रिकॉर्ड और 80G कर रसीदों के लिए एक समर्पित पोर्टल बनाएं।",
+        trustName: "मंदिर / ट्रस्ट का नाम",
+        trustNamePlaceholder: "उदा. श्री सिद्धेश्वर सेवा ट्रस्ट",
+        subdomain: "अपना सबडोमेन चुनें",
+        subdomainHelp: "3–40 छोटे अक्षर, अंक या हाइफ़न। यह आपके मंदिर का स्थायी पता होगा।",
+        adminName: "प्रशासक का पूरा नाम",
+        adminEmail: "प्रशासक का ईमेल",
+        adminPassword: "पासवर्ड",
+        passwordHelp: "कम से कम 12 अक्षर का होना चाहिए।",
+        submit: "मंदिर पोर्टल बनाएं",
+        submitting: "पोर्टल बनाया जा रहा है…",
+        successTitle: "मंदिर पोर्टल सफलतापूर्वक तैयार!",
+        successMessage: "आपका मंदिर सफलतापूर्वक पंजीकृत हो गया है। अब आप अपने प्रशासनिक पोर्टल पर लॉग इन कर सकते हैं।",
+        openPortal: "अपने मंदिर पोर्टल पर जाएं",
+        alreadyHaveAccount: "क्या ट्रस्ट पहले से पंजीकृत है? यहाँ लॉग इन करें",
+        invalidSlug: "सबडोमेन में 3–40 छोटे अक्षर, अंक या हाइफ़न होने चाहिए।",
+      },
+      forgot: {
+        title: "पासवर्ड भूल गए?",
+        subtitle: "अपना पंजीकृत ईमेल दर्ज करें और हम आपको पासवर्ड रीसेट करने के निर्देश भेजेंगे।",
+        instructions: "अपने कर्मचारी खाते से जुड़ा ईमेल पता दर्ज करें।",
+        emailLabel: "पंजीकृत ईमेल",
+        submit: "रीसेट लिंक भेजें",
+        submitting: "भेजा जा रहा है…",
+        backToLogin: "वापस लॉग इन पर जाएं",
+        devTokenNotice: "लोकल डेवलपमेंट मोड: आपके लिए एक रीसेट टोकन उत्पन्न किया गया है।",
+        proceedToReset: "पासवर्ड रीसेट करने के लिए आगे बढ़ें",
+      },
+      reset: {
+        title: "अपना पासवर्ड रीसेट करें",
+        subtitle: "अपने खाते के लिए एक नया मजबूत पासवर्ड चुनें (कम से कम 12 अक्षर)।",
+        newPassword: "नया पासवर्ड",
+        confirmPassword: "नए पासवर्ड की पुष्टि करें",
+        submit: "पासवर्ड रीसेट करें",
+        submitting: "रीसेट हो रहा है…",
+        mismatch: "पासवर्ड मेल नहीं खा रहे हैं।",
+        tokenMissing: "पासवर्ड रीसेट लिंक अमान्य या गायब है। कृपया नया लिंक मांगें।",
+      },
     },
   },
 };

@@ -19,7 +19,6 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
-    out-of-order: true
 
   # Uploads: devotee CSV import only (M2). 2 MB fits the 5,000-row cap with room to spare;
   # anything larger is rejected by the container before the app reads it.

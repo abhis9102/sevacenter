@@ -54,18 +54,27 @@ const CONTROL =
 
 export function TextField({
   label,
+  action,
   error,
   hint,
   className = "",
   ...rest
-}: React.InputHTMLAttributes<HTMLInputElement> & { label: string; error?: string; hint?: string }) {
+}: React.InputHTMLAttributes<HTMLInputElement> & {
+  label: string;
+  action?: React.ReactNode;
+  error?: string;
+  hint?: string;
+}) {
   const id = useId();
   const describedBy = [error ? `${id}-err` : null, hint ? `${id}-hint` : null].filter(Boolean).join(" ");
   return (
     <div className={`flex flex-col gap-1 ${className}`}>
-      <label htmlFor={id} className="text-sm font-medium">
-        {label}
-      </label>
+      <div className="flex items-center justify-between">
+        <label htmlFor={id} className="text-sm font-medium">
+          {label}
+        </label>
+        {action}
+      </div>
       <input
         id={id}
         aria-invalid={error ? true : undefined}

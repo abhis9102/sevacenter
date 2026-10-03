@@ -52,6 +52,8 @@ public class SecurityConfig {
             "/api/v1/ping",
             "/api/v1/register",
             "/api/v1/auth/setup",   // one-time setup link: the user has no password yet
+            "/api/v1/auth/forgot-password",
+            "/api/v1/auth/reset-password",
             "/api/v1/csrf",
             "/actuator/health",
             "/actuator/health/**",

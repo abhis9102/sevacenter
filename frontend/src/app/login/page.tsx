@@ -1,10 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
 import { api } from "@/components/apiClient";
 import { AuthFrame } from "@/components/AuthFrame";
+import { useLanguage } from "@/components/LanguageProvider";
 import { useTenant } from "@/components/TenantProvider";
 import { Alert, Button, TextField } from "@/components/ui";
 import { ApiError, describeError } from "@/lib/errors";
@@ -24,6 +26,7 @@ function LoginForm() {
   const params = useSearchParams();
   const tenant = useTenant();
   const next = safeReturnTo(params.get("next"));
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -66,25 +69,28 @@ function LoginForm() {
       setPassword("");
       if (err instanceof ApiError && err.status === 401) {
         // Generic on purpose: never say whether the email exists.
-        setError("Email or password is incorrect.");
+        setError(t.auth.invalidCredentials);
       } else if (err instanceof ApiError && err.status === 429) {
-        setError("Too many sign-in attempts. Wait a few minutes, then try again.");
+        setError(t.auth.rateLimited);
       } else {
-        setError(describeError(err));
+        setError(describeError(err, t.errors));
       }
       setBusy(false);
     }
   }
 
   return (
-    <AuthFrame title="Sign in">
+    <AuthFrame title={t.auth.signIn}>
       <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
         {params.get("setup") === "done" ? (
-          <Alert tone="success">Your password is set. Sign in to continue.</Alert>
+          <Alert tone="success">{t.auth.setupDone}</Alert>
+        ) : null}
+        {params.get("reset") === "done" ? (
+          <Alert tone="success">{t.auth.resetDone}</Alert>
         ) : null}
         {error ? <Alert tone="danger">{error}</Alert> : null}
         <TextField
-          label="Email"
+          label={t.auth.email}
           type="email"
           name="email"
           autoComplete="username"
@@ -93,7 +99,15 @@ function LoginForm() {
           onChange={(e) => setEmail(e.target.value)}
         />
         <TextField
-          label="Password"
+          label={t.auth.password}
+          action={
+            <Link
+              href="/forgot-password"
+              className="text-xs text-primary hover:underline"
+            >
+              {t.auth.forgotPassword}
+            </Link>
+          }
           type="password"
           name="password"
           autoComplete="current-password"
@@ -102,11 +116,16 @@ function LoginForm() {
           onChange={(e) => setPassword(e.target.value)}
         />
         <Button type="submit" busy={busy} disabled={!email || !password}>
-          Sign in
+          {t.auth.signInButton}
         </Button>
         <p className="text-xs text-muted">
-          New staff members get a one-time setup link from their trust admin.
+          {t.auth.newStaffHelp}
         </p>
+        <div className="border-t border-line/60 pt-3 text-center text-xs text-muted">
+          <Link href="/register" className="font-medium text-primary hover:underline">
+            {t.auth.registerTrust}
+          </Link>
+        </div>
       </form>
     </AuthFrame>
   );
