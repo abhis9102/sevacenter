@@ -254,6 +254,25 @@ curl -s -b /tmp/jar -X POST localhost:8080/api/v1/register -H 'Content-Type: app
   the donation date. Reversal cancels the receipt (number never reused). Trust/donor snapshots.
 - `ReceiptTest` (12) + `PanProtectionTest` (6).
 
+## Review batch: receipts, profile/avatar/Hindi, registration, password reset (this PR)
+Work from parallel sessions, reviewed before merge. Fixed in review:
+- **Critical:** `/forgot-password` returned the reset token in the response whenever the Spring profile
+  was `local`/`test`/**`default`** (production without a profile) → account takeover of any staff.
+  Now: no token-returning endpoint; admin-issued reset links (Staff → "Reset password link").
+- Reset links die on deactivate/delete; redeeming needs an ACTIVE user (each layer mutation-tested).
+- Avatar bytes no longer load with every request (`UserAvatar`); change-password throttled like login;
+  no "opt out of the activity log"; open redirect in the portal box; lint errors that would fail CI;
+  Flyway `out-of-order` only in the local profile.
+
+**Held back (not merged): devotee portal** (`4ebe069`, still on `feat/m3-80g-receipts`):
+- **Critical:** public `POST /portal/donations` writes any amount/mode to the ledger with an "official
+  receipt", no payment and no login. **Critical:** `/portal/auth/register` creates a devotee and a
+  session for any phone/email **without OTP verification**.
+- V12 drops `NOT NULL` on staff attribution (`recorded_by`, `issued_by`, ...) for all paths; OTPs can be
+  requested without limit (brute force); no SMS/email delivery, so it only works via the dev flag.
+- Rebuild with M3.3 (Razorpay, payment verified server-side), real OTP delivery + throttling,
+  verified registration, attribution kept NOT NULL for staff paths (`created_via` instead).
+
 **Next: M3.3 Razorpay** (needs test-mode keys via env), then **frontend screens for donations and
 receipts**, then M4 Events.
 

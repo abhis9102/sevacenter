@@ -15,11 +15,6 @@ import { UserMenu } from "@/components/UserMenu";
 import { ApiError, describeError } from "@/lib/errors";
 import { hasRole, type Me, type Role } from "@/lib/types";
 
-const NAV: ReadonlyArray<{ href: string; label: string; min: Role }> = [
-  { href: "/devotees", label: "Devotees", min: "MEMBER" },
-  { href: "/staff", label: "Staff", min: "LEADER" },
-];
-
 /** Signed-in shell: loads the current user (401 -> login), nav, user + role, sign out. */
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const tenant = useTenant();

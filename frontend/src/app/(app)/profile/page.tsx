@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- the avatar is a private, session-authenticated API image; next/image would proxy and cache it */
 
 import { useEffect, useRef, useState } from "react";
 
@@ -14,7 +15,7 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"account" | "security" | "privacy" | "notifications">("account");
+  const [activeTab, setActiveTab] = useState<"account" | "security" | "notifications">("account");
 
   // Avatar / Profile photo
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -39,13 +40,6 @@ export default function ProfilePage() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordFieldErrors, setPasswordFieldErrors] = useState<Record<string, string>>({});
 
-  // Privacy controls
-  const [privacyActivityLog, setPrivacyActivityLog] = useState(true);
-  const [privacyShowInDirectory, setPrivacyShowInDirectory] = useState(true);
-  const [privacySaving, setPrivacySaving] = useState(false);
-  const [privacyNotice, setPrivacyNotice] = useState<string | null>(null);
-  const [privacyError, setPrivacyError] = useState<string | null>(null);
-
   // Notification preferences
   const [notifyDevotees, setNotifyDevotees] = useState(true);
   const [notifyDonations, setNotifyDonations] = useState(true);
@@ -62,8 +56,6 @@ export default function ProfilePage() {
         if (!cancelled) {
           setProfile(p);
           setDisplayName(p.displayName);
-          setPrivacyActivityLog(p.privacyActivityLog);
-          setPrivacyShowInDirectory(p.privacyShowInStaffDirectory);
           setNotifyDevotees(p.notifyDevotees);
           setNotifyDonations(p.notifyDonations);
           setNotifySecurity(p.notifySecurity);
@@ -201,28 +193,6 @@ export default function ProfilePage() {
     }
   }
 
-  async function onSavePrivacy(e: React.FormEvent) {
-    e.preventDefault();
-    setPrivacySaving(true);
-    setPrivacyNotice(null);
-    setPrivacyError(null);
-    try {
-      const updated = await api.request<UserProfile>("/profile", {
-        method: "PATCH",
-        json: {
-          privacyActivityLog,
-          privacyShowInStaffDirectory: privacyShowInDirectory,
-        },
-      });
-      setProfile(updated);
-      setPrivacyNotice(t.profile.privacy.savedSuccess);
-    } catch (err) {
-      setPrivacyError(describeError(err, t.errors));
-    } finally {
-      setPrivacySaving(false);
-    }
-  }
-
   async function onSaveNotifications(e: React.FormEvent) {
     e.preventDefault();
     setNotifySaving(true);
@@ -258,10 +228,9 @@ export default function ProfilePage() {
     return <Alert tone="danger">{error ?? t.common.error}</Alert>;
   }
 
-  const tabs: Array<{ id: "account" | "security" | "privacy" | "notifications"; label: string }> = [
+  const tabs: Array<{ id: "account" | "security" | "notifications"; label: string }> = [
     { id: "account", label: t.profile.tabs.account },
     { id: "security", label: t.profile.tabs.security },
-    { id: "privacy", label: t.profile.tabs.privacy },
     { id: "notifications", label: t.profile.tabs.notifications },
   ];
 
@@ -455,57 +424,6 @@ export default function ProfilePage() {
             <div className="flex justify-end pt-2">
               <Button type="submit" busy={passwordSaving}>
                 {passwordSaving ? t.profile.security.savingPassword : t.profile.security.savePassword}
-              </Button>
-            </div>
-          </form>
-        </Card>
-      ) : null}
-
-      {/* Tab: Privacy Settings */}
-      {activeTab === "privacy" ? (
-        <Card className="max-w-3xl flex flex-col gap-5">
-          <div>
-            <h2 className="text-lg font-medium">{t.profile.privacy.heading}</h2>
-            <p className="text-sm text-muted mt-1">{t.profile.privacy.description}</p>
-          </div>
-
-          {privacyNotice ? <Alert tone="success">{privacyNotice}</Alert> : null}
-          {privacyError ? <Alert tone="danger">{privacyError}</Alert> : null}
-
-          <form onSubmit={onSavePrivacy} className="flex flex-col gap-4">
-            <label className="flex items-start gap-3 rounded-[10px] border border-line p-3 hover:bg-surface-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={privacyActivityLog}
-                onChange={(e) => setPrivacyActivityLog(e.target.checked)}
-                className="mt-1 size-4 rounded border-line accent-primary"
-              />
-              <div className="text-sm">
-                <span className="font-medium text-fg">{t.profile.privacy.auditLogTitle}</span>
-                <p className="text-xs text-muted mt-0.5">{t.profile.privacy.auditLogDesc}</p>
-              </div>
-            </label>
-
-            <label className="flex items-start gap-3 rounded-[10px] border border-line p-3 hover:bg-surface-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={privacyShowInDirectory}
-                onChange={(e) => setPrivacyShowInDirectory(e.target.checked)}
-                className="mt-1 size-4 rounded border-line accent-primary"
-              />
-              <div className="text-sm">
-                <span className="font-medium text-fg">{t.profile.privacy.directoryTitle}</span>
-                <p className="text-xs text-muted mt-0.5">{t.profile.privacy.directoryDesc}</p>
-              </div>
-            </label>
-
-            <Alert tone="info" title="ADR 0010 Data Protection">
-              {t.profile.privacy.dataProtectionNotice}
-            </Alert>
-
-            <div className="flex justify-end pt-2">
-              <Button type="submit" busy={privacySaving}>
-                {t.profile.privacy.savePrivacy}
               </Button>
             </div>
           </form>

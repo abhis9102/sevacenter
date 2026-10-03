@@ -51,7 +51,7 @@ export function passwordProblem(password: string, confirm: string): string | nul
 }
 
 /**
- * The backend builds setup links for the production host. On a local `*.localhost` host the
+ * The backend builds setup and password-reset links for the production host. On a local `*.localhost` host the
  * same path + fragment on the current origin is the working equivalent.
  */
 export function localEquivalentSetupUrl(setupUrl: string, currentOrigin: string): string | null {
@@ -63,7 +63,7 @@ export function localEquivalentSetupUrl(setupUrl: string, currentOrigin: string)
   } catch {
     return null;
   }
-  if (!current.hostname.endsWith(".localhost") || link.pathname !== "/setup") {
+  if (!current.hostname.endsWith(".localhost") || (link.pathname !== "/setup" && link.pathname !== "/reset-password")) {
     return null;
   }
   return current.origin + link.pathname + link.hash;

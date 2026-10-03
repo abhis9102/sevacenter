@@ -73,6 +73,16 @@ public class UserController {
         service.delete(id, caller.userId());
     }
 
+    /** A one-time password reset link for an active staff member (shown once, handed over). */
+    @PostMapping("/{id}/reset-link")
+    @PreAuthorize("hasRole('TRUST_ADMIN')")
+    public ResetLinkResponse issueResetLink(@PathVariable long id, @AuthenticationPrincipal StaffUser caller) {
+        return new ResetLinkResponse(service.issueResetLink(id, caller.userId()));
+    }
+
+    public record ResetLinkResponse(String resetUrl) {
+    }
+
     @PostMapping("/{id}/setup-link")
     @PreAuthorize("hasRole('TRUST_ADMIN')")
     public SetupLinkResponse reissueSetupLink(@PathVariable long id) {

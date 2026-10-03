@@ -5,28 +5,26 @@ import { useState } from "react";
 
 import { Diya, Wordmark } from "@/components/Diya";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { portalLoginUrl } from "@/lib/tenant";
 import { useLanguage } from "@/components/LanguageProvider";
 import { Button, Card } from "@/components/ui";
 
 export function LandingPage() {
-  const { lang, t } = useLanguage();
+  const { lang } = useLanguage();
   const [subdomain, setSubdomain] = useState("");
+  const [slugError, setSlugError] = useState(false);
 
   const isHindi = lang === "hi";
 
   function handleGoToSubdomain(e: React.FormEvent) {
     e.preventDefault();
-    const clean = subdomain.trim().toLowerCase();
-    if (!clean) return;
-    if (typeof window !== "undefined") {
-      const { hostname, port, protocol } = window.location;
-      const portPart = port ? `:${port}` : "";
-      if (hostname === "localhost" || hostname === "127.0.0.1") {
-        window.location.href = `${protocol}//${clean}.localhost${portPart}/login`;
-      } else {
-        window.location.href = `${protocol}//${clean}.${hostname}${portPart}/login`;
-      }
+    const url = portalLoginUrl(subdomain, window.location);
+    if (!url) {
+      setSlugError(true);
+      return;
     }
+    // Another origin (the trust's own host), so a full navigation, not the Next.js router.
+    window.location.href = url;
   }
 
   return (
@@ -104,7 +102,10 @@ export function LandingPage() {
                       <input
                         type="text"
                         value={subdomain}
-                        onChange={(e) => setSubdomain(e.target.value)}
+                        onChange={(e) => {
+                          setSubdomain(e.target.value);
+                          setSlugError(false);
+                        }}
                         placeholder={isHindi ? "मंदिर का कोड / slug (उदा. demo)" : "Temple code / slug (e.g. demo)"}
                         className="w-full rounded-[10px] border border-line bg-field px-3.5 py-2 text-sm font-mono placeholder:text-muted focus:border-primary focus:outline-none"
                       />
@@ -113,6 +114,13 @@ export function LandingPage() {
                       {isHindi ? "पोर्टल खोलें" : "Open Portal"}
                     </Button>
                   </form>
+                  {slugError ? (
+                    <p role="alert" className="text-xs text-danger">
+                      {isHindi
+                        ? "3–40 छोटे अक्षर, अंक या हाइफ़न लिखें, जैसे siddheshwar।"
+                        : "Use 3–40 lowercase letters, digits or hyphens, e.g. siddheshwar."}
+                    </p>
+                  ) : null}
 
                   <div className="flex flex-wrap items-center justify-between gap-2 pt-2 text-xs text-muted">
                     <span>

@@ -44,7 +44,6 @@ export interface Translations {
     tabs: {
       account: string;
       security: string;
-      privacy: string;
       notifications: string;
     };
     account: {
@@ -71,17 +70,6 @@ export interface Translations {
       passwordMismatch: string;
       passwordTooShort: string;
       passwordSame: string;
-      savedSuccess: string;
-    };
-    privacy: {
-      heading: string;
-      description: string;
-      auditLogTitle: string;
-      auditLogDesc: string;
-      directoryTitle: string;
-      directoryDesc: string;
-      dataProtectionNotice: string;
-      savePrivacy: string;
       savedSuccess: string;
     };
     notifications: {
@@ -237,12 +225,7 @@ export interface Translations {
       title: string;
       subtitle: string;
       instructions: string;
-      emailLabel: string;
-      submit: string;
-      submitting: string;
       backToLogin: string;
-      devTokenNotice: string;
-      proceedToReset: string;
     };
     reset: {
       title: string;
@@ -298,11 +281,10 @@ export const DICTIONARIES: Record<Language, Translations> = {
     },
     profile: {
       title: "My Profile",
-      description: "Manage your account credentials, security settings, privacy controls, and notification preferences.",
+      description: "Manage your account details, password and notification preferences.",
       tabs: {
         account: "Account",
         security: "Security & Password",
-        privacy: "Privacy",
         notifications: "Notifications",
       },
       account: {
@@ -330,17 +312,6 @@ export const DICTIONARIES: Record<Language, Translations> = {
         passwordTooShort: "Password must be at least 12 characters.",
         passwordSame: "New password must be different from your current password.",
         savedSuccess: "Your password has been changed successfully.",
-      },
-      privacy: {
-        heading: "Privacy controls",
-        description: "SevaCenter protects devotee data and maintains transparent audit records for religious trusts.",
-        auditLogTitle: "Record my staff activity in audit trails",
-        auditLogDesc: "Creates an immutable audit log entry whenever you add, edit, or export devotee records.",
-        directoryTitle: "Show my profile in the trust staff directory",
-        directoryDesc: "Allows leaders and admins in your trust to see your name in the staff team roster.",
-        dataProtectionNotice: "Role-based data masking is active. Members cannot view full devotee contact numbers, email addresses, or dates of birth.",
-        savePrivacy: "Save privacy settings",
-        savedSuccess: "Privacy settings updated successfully.",
       },
       notifications: {
         heading: "Notification preferences",
@@ -512,14 +483,9 @@ export const DICTIONARIES: Record<Language, Translations> = {
       },
       forgot: {
         title: "Forgot your password?",
-        subtitle: "Enter your registered email address and we'll send you instructions to reset your password.",
-        instructions: "Enter the email address associated with your staff account.",
-        emailLabel: "Registered Email",
-        submit: "Send Reset Link",
-        submitting: "Sending…",
+        subtitle: "For your security, password reset links are issued by your trust admin.",
+        instructions: "Ask a trust admin to open Staff and choose “Reset password link” next to your name. The link works once, for one hour, and only on your trust's address.",
         backToLogin: "Back to Sign in",
-        devTokenNotice: "Local development mode: A reset token was generated for you.",
-        proceedToReset: "Proceed to Reset Password",
       },
       reset: {
         title: "Reset your password",
@@ -577,7 +543,6 @@ export const DICTIONARIES: Record<Language, Translations> = {
       tabs: {
         account: "खाता",
         security: "सुरक्षा व पासवर्ड",
-        privacy: "गोपनीयता",
         notifications: "सूचनाएं",
       },
       account: {
@@ -605,17 +570,6 @@ export const DICTIONARIES: Record<Language, Translations> = {
         passwordTooShort: "पासवर्ड कम से कम 12 अक्षरों का होना चाहिए।",
         passwordSame: "नया पासवर्ड वर्तमान पासवर्ड से भिन्न होना चाहिए।",
         savedSuccess: "आपका पासवर्ड सफलतापूर्वक बदल दिया गया है।",
-      },
-      privacy: {
-        heading: "गोपनीयता नियंत्रण",
-        description: "सेवाकेंद्र भक्त डेटा की सुरक्षा करता है और धार्मिक ट्रस्टों के लिए पारदर्शी ऑडिट रिकॉर्ड रखता है।",
-        auditLogTitle: "ऑडिट लॉग में मेरी कार्यप्रणाली दर्ज करें",
-        auditLogDesc: "भक्त रिकॉर्ड जोड़ने, बदलने या एक्सपोर्ट करने पर स्थायी ऑडिट रिकॉर्ड तैयार करता है।",
-        directoryTitle: "ट्रस्ट कर्मचारी सूची में मेरी प्रोफ़ाइल दिखाएं",
-        directoryDesc: "आपके ट्रस्ट के पदाधिकारियों को टीम रोस्टर में आपका नाम देखने की अनुमति देता है।",
-        dataProtectionNotice: "भूमिका-आधारित डेटा मास्किंग सक्रिय है। सदस्य भक्तों के पूर्ण संपर्क नंबर, ईमेल या जन्म तिथि नहीं देख सकते।",
-        savePrivacy: "गोपनीयता सेटिंग्स सुरक्षित करें",
-        savedSuccess: "गोपनीयता सेटिंग्स सफलतापूर्वक अपडेट की गईं।",
       },
       notifications: {
         heading: "सूचना प्राथमिकताएं",
@@ -788,14 +742,9 @@ export const DICTIONARIES: Record<Language, Translations> = {
       },
       forgot: {
         title: "पासवर्ड भूल गए?",
-        subtitle: "अपना पंजीकृत ईमेल दर्ज करें और हम आपको पासवर्ड रीसेट करने के निर्देश भेजेंगे।",
-        instructions: "अपने कर्मचारी खाते से जुड़ा ईमेल पता दर्ज करें।",
-        emailLabel: "पंजीकृत ईमेल",
-        submit: "रीसेट लिंक भेजें",
-        submitting: "भेजा जा रहा है…",
+        subtitle: "आपकी सुरक्षा के लिए, पासवर्ड रीसेट लिंक आपके ट्रस्ट एडमिन द्वारा दिए जाते हैं।",
+        instructions: "किसी ट्रस्ट एडमिन से कहें कि वे स्टाफ़ खोलें और आपके नाम के आगे “पासवर्ड रीसेट लिंक” चुनें। यह लिंक केवल एक बार, एक घंटे के लिए और केवल आपके ट्रस्ट के पते पर काम करता है।",
         backToLogin: "वापस लॉग इन पर जाएं",
-        devTokenNotice: "लोकल डेवलपमेंट मोड: आपके लिए एक रीसेट टोकन उत्पन्न किया गया है।",
-        proceedToReset: "पासवर्ड रीसेट करने के लिए आगे बढ़ें",
       },
       reset: {
         title: "अपना पासवर्ड रीसेट करें",

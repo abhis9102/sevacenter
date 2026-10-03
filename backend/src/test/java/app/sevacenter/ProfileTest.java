@@ -78,8 +78,9 @@ class ProfileTest {
                 .andExpect(jsonPath("$.notifyDevotees").value(true))
                 .andExpect(jsonPath("$.notifyDonations").value(true))
                 .andExpect(jsonPath("$.notifySecurity").value(true))
-                .andExpect(jsonPath("$.privacyActivityLog").value(true))
-                .andExpect(jsonPath("$.privacyShowInStaffDirectory").value(true))
+                // Review finding: no "opt out of the activity log" (staff can't switch off audit).
+                .andExpect(jsonPath("$.privacyActivityLog").doesNotExist())
+                .andExpect(jsonPath("$.privacyShowInStaffDirectory").doesNotExist())
                 .andExpect(jsonPath("$.hasAvatar").value(false));
     }
 
@@ -90,8 +91,6 @@ class ProfileTest {
         req.put("notifyDevotees", false);
         req.put("notifyDonations", false);
         req.put("notifySecurity", true);
-        req.put("privacyActivityLog", true);
-        req.put("privacyShowInStaffDirectory", false);
 
         mvc.perform(on(slug, patch("/api/v1/profile")).session(session).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -100,7 +99,7 @@ class ProfileTest {
                 .andExpect(jsonPath("$.displayName").value("Updated Admin Name"))
                 .andExpect(jsonPath("$.notifyDevotees").value(false))
                 .andExpect(jsonPath("$.notifyDonations").value(false))
-                .andExpect(jsonPath("$.privacyShowInStaffDirectory").value(false));
+                .andExpect(jsonPath("$.notifySecurity").value(true));
 
         // GET /me also immediately reflects the new display name
         mvc.perform(on(slug, get("/api/v1/me")).session(session))
@@ -283,5 +282,33 @@ class ProfileTest {
     private static org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder on(
             String slug, org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder request) {
         return request.with(r -> { r.setServerName(slug + ".sevacenter.app"); return r; });
+    }
+
+    /** Review finding: change-password had no throttle, so a stolen session could guess forever. */
+    @Test
+    void wrongCurrentPasswordsLockLikeLogin() throws Exception {
+        for (int i = 0; i < app.sevacenter.auth.LoginThrottle.MAX_FAILURES; i++) {
+            changePassword("wrong-password-" + i).andExpect(status().isBadRequest());
+        }
+        changePassword(PASSWORD).andExpect(status().isTooManyRequests());
+    }
+
+    /**
+     * Review finding: the avatar bytes (up to 2 MB) were a field of the user entity, which the
+     * session filter loads on every request. They live on UserAvatar only.
+     */
+    @Test
+    void theUserEntityNeverCarriesImageBytes() {
+        for (java.lang.reflect.Field f : app.sevacenter.user.AppUser.class.getDeclaredFields()) {
+            assertThat(f.getType()).as(f.getName()).isNotEqualTo(byte[].class);
+        }
+    }
+
+    private org.springframework.test.web.servlet.ResultActions changePassword(String current) throws Exception {
+        Map<String, Object> req = new LinkedHashMap<>();
+        req.put("currentPassword", current);
+        req.put("newPassword", "a-completely-new-password-1");
+        return mvc.perform(on(slug, post("/api/v1/profile/change-password")).session(session).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(req)));
     }
 }

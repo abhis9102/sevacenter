@@ -1,16 +1,14 @@
 package app.sevacenter;
 
+import static app.sevacenter.TestStaff.on;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import app.sevacenter.auth.RegistrationRequest;
 import app.sevacenter.auth.RegistrationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,205 +17,174 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.ResultActions;
 import tools.jackson.databind.json.JsonMapper;
 
+/**
+ * Password reset links, issued by a trust admin and handed over like setup links. Review finding:
+ * the first version returned the token to whoever posted an email to /forgot-password whenever the
+ * Spring profile was local, test *or default* (i.e. a production deployment without a profile):
+ * account takeover of any staff member. There is now no endpoint that gives a token to its caller.
+ */
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest
 @AutoConfigureMockMvc
 class PasswordResetTest {
 
-    private static final String OLD_PASSWORD = "initial-password-123";
-    private static final String NEW_PASSWORD = "brand-new-secret-password-456";
-    private static final AtomicInteger NEXT_IP = new AtomicInteger(100);
+    private static final String NEW_PASSWORD = "a-brand-new-password-42";
 
     @Autowired
     private MockMvc mvc;
     @Autowired
+    private JsonMapper json;
+    @Autowired
     private RegistrationService registration;
     @Autowired
-    private JsonMapper json;
+    private app.sevacenter.tenant.TenantRepository tenants;
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbc;
+    @Autowired
+    private org.springframework.transaction.support.TransactionTemplate tx;
 
-    private String slug;
-    private String email;
-    private String ip;
+    private TestStaff staff;
+    private String a;
+    private MockHttpSession admin;
+    private MockHttpSession leader;
+    private long leaderId;
 
     @BeforeEach
-    void setUp() {
-        ip = "10.8." + (NEXT_IP.get() / 250) + "." + (NEXT_IP.getAndIncrement() % 250 + 1);
-        slug = "reset-" + UUID.randomUUID().toString().substring(0, 8);
-        email = "admin@" + slug + ".example";
-        registration.register(new RegistrationRequest(slug, "Trust " + slug, email, OLD_PASSWORD, "Admin"));
+    void setUp() throws Exception {
+        staff = new TestStaff(mvc, json, registration);
+        a = staff.tenant("pr-a");
+        admin = staff.loginAdmin(a);
+        leader = staff.staff(a, admin, "LEADER");
+        leaderId = staff.userId(a, leader);
+    }
+
+    /** The takeover regression: nothing anonymous hands out a token, in any form. */
+    @Test
+    void noEndpointGivesAResetTokenToWhoeverAsks() throws Exception {
+        String email = email(leaderId);
+        String body = mvc.perform(on(a, post("/api/v1/auth/forgot-password")).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(staff.body("email", email)))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(body).doesNotContainIgnoringCase("token");
     }
 
     @Test
-    void requestResetForValidUserReturnsDevTokenAndAllowsPasswordReset() throws Exception {
-        // 1. Request reset
-        MvcResult res = mvc.perform(on(slug, post("/api/v1/auth/forgot-password"))
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json.writeValueAsString(Map.of("email", email))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").exists())
-                .andExpect(jsonPath("$.devToken").exists())
-                .andReturn();
+    void anAdminIssuedLinkResetsThePasswordOnce() throws Exception {
+        String token = issue(admin, leaderId);
+        reset(a, token, NEW_PASSWORD).andExpect(status().isNoContent());
+        staff.login(a, email(leaderId), NEW_PASSWORD).andExpect(status().isOk());
+        staff.login(a, email(leaderId), TestStaff.PASSWORD).andExpect(status().isUnauthorized());
+        reset(a, token, "yet-another-password-99").andExpect(status().isBadRequest());
+    }
 
-        Map<?, ?> body = json.readValue(res.getResponse().getContentAsString(), Map.class);
-        String devToken = (String) body.get("devToken");
-        assertThat(devToken).isNotBlank();
-
-        // 2. Reset password
-        mvc.perform(on(slug, post("/api/v1/auth/reset-password"))
-                        .with(csrf())
+    @Test
+    void onlyAdminsIssueLinksForActiveStaffAndNotForThemselves() throws Exception {
+        mvc.perform(on(a, post("/api/v1/users/" + staff.userId(a, admin) + "/reset-link")).session(leader).with(csrf()))
+                .andExpect(status().isForbidden());
+        mvc.perform(on(a, post("/api/v1/users/" + staff.userId(a, admin) + "/reset-link")).session(admin).with(csrf()))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.error").value("use_change_password"));
+        long pending = json.readTree(mvc.perform(on(a, post("/api/v1/users")).session(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json.writeValueAsString(Map.of("token", devToken, "newPassword", NEW_PASSWORD))))
+                        .content(staff.body("email", "pending@x.example", "displayName", "P", "role", "MEMBER")))
+                .andReturn().getResponse().getContentAsString()).at("/user/id").asLong();
+        mvc.perform(on(a, post("/api/v1/users/" + pending + "/reset-link")).session(admin).with(csrf()))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.error").value("not_active"));
+    }
+
+    @Test
+    void aNewLinkKillsTheOldOne() throws Exception {
+        String first = issue(admin, leaderId);
+        String second = issue(admin, leaderId);
+        reset(a, first, NEW_PASSWORD).andExpect(status().isBadRequest());
+        reset(a, second, NEW_PASSWORD).andExpect(status().isNoContent());
+    }
+
+    /** Deactivated or deleted staff stay out: their links die, and a link never revives them. */
+    @Test
+    void deactivatingOrDeletingStaffKillsTheirLinks() throws Exception {
+        String token = issue(admin, leaderId);
+        mvc.perform(on(a, post("/api/v1/users/" + leaderId + "/deactivate")).session(admin).with(csrf()))
+                .andExpect(status().isOk());
+        reset(a, token, NEW_PASSWORD).andExpect(status().isBadRequest());
+
+        MockHttpSession member = staff.staff(a, admin, "MEMBER");
+        long memberId = staff.userId(a, member);
+        String memberToken = issue(admin, memberId);
+        mvc.perform(on(a, delete("/api/v1/users/" + memberId)).session(admin).with(csrf()))
                 .andExpect(status().isNoContent());
+        reset(a, memberToken, NEW_PASSWORD).andExpect(status().isBadRequest());
+    }
 
-        // 3. Old password no longer works
-        mvc.perform(on(slug, post("/api/v1/auth/login"))
-                        .with(csrf())
-                        .with(r -> { r.setRemoteAddr(ip); return r; })
-                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                        .param("email", email)
-                        .param("password", OLD_PASSWORD))
-                .andExpect(status().isUnauthorized());
+    /*
+     * Two independent layers: deactivate/delete kill the link, and redeeming requires an ACTIVE
+     * user. End to end each masks the other (mutation-tested), so each is tested on its own here.
+     */
 
-        // 4. New password works
-        mvc.perform(on(slug, post("/api/v1/auth/login"))
-                        .with(csrf())
-                        .with(r -> { r.setRemoteAddr(ip); return r; })
-                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                        .param("email", email)
-                        .param("password", NEW_PASSWORD))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.email").value(email));
+    @Test
+    void deactivationMarksOutstandingLinksUsed() throws Exception {
+        issue(admin, leaderId);
+        mvc.perform(on(a, post("/api/v1/users/" + leaderId + "/deactivate")).session(admin).with(csrf()))
+                .andExpect(status().isOk());
+        Integer live = pinned(() -> jdbc.queryForObject(
+                "select count(*) from user_password_reset_token where user_id = ? and used_at is null", Integer.class, leaderId));
+        assertThat(live).isZero();
     }
 
     @Test
-    void requestResetForNonExistentUserDoesNotRevealEmailAbsence() throws Exception {
-        mvc.perform(on(slug, post("/api/v1/auth/forgot-password"))
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json.writeValueAsString(Map.of("email", "nobody@example.com"))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").exists())
-                .andExpect(jsonPath("$.devToken").doesNotExist());
+    void aStillValidLinkCantResetAnAccountThatIsNoLongerActive() throws Exception {
+        String token = issue(admin, leaderId);
+        pinned(() -> jdbc.update("update app_user set status = 'DISABLED' where id = ?", leaderId));
+        reset(a, token, NEW_PASSWORD).andExpect(status().isBadRequest());
     }
 
     @Test
-    void tokenCannotBeReused() throws Exception {
-        MvcResult res = mvc.perform(on(slug, post("/api/v1/auth/forgot-password"))
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json.writeValueAsString(Map.of("email", email))))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        String token = (String) json.readValue(res.getResponse().getContentAsString(), Map.class).get("devToken");
-        assertThat(token).isNotNull();
-
-        // First use: ok
-        mvc.perform(on(slug, post("/api/v1/auth/reset-password"))
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json.writeValueAsString(Map.of("token", token, "newPassword", NEW_PASSWORD))))
-                .andExpect(status().isNoContent());
-
-        // Second use: rejected (invalid_or_expired_link)
-        mvc.perform(on(slug, post("/api/v1/auth/reset-password"))
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json.writeValueAsString(Map.of("token", token, "newPassword", "another-new-password-789"))))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("invalid_or_expired_link"));
+    void aLinkOnlyWorksOnItsOwnTrustsHost() throws Exception {
+        String b = staff.tenant("pr-b");
+        String token = issue(admin, leaderId);
+        reset(b, token, NEW_PASSWORD).andExpect(status().isBadRequest());
+        reset(a, token, NEW_PASSWORD).andExpect(status().isNoContent());
     }
 
     @Test
-    void requestingResetAgainInvalidatesPriorToken() throws Exception {
-        // Token 1
-        MvcResult res1 = mvc.perform(on(slug, post("/api/v1/auth/forgot-password"))
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json.writeValueAsString(Map.of("email", email))))
-                .andExpect(status().isOk())
-                .andReturn();
-        String token1 = (String) json.readValue(res1.getResponse().getContentAsString(), Map.class).get("devToken");
-        assertThat(token1).isNotNull();
-
-        // Token 2
-        MvcResult res2 = mvc.perform(on(slug, post("/api/v1/auth/forgot-password"))
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json.writeValueAsString(Map.of("email", email))))
-                .andExpect(status().isOk())
-                .andReturn();
-        String token2 = (String) json.readValue(res2.getResponse().getContentAsString(), Map.class).get("devToken");
-        assertThat(token2).isNotNull();
-
-        // Token 1 should be invalid
-        mvc.perform(on(slug, post("/api/v1/auth/reset-password"))
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json.writeValueAsString(Map.of("token", token1, "newPassword", NEW_PASSWORD))))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("invalid_or_expired_link"));
-
-        // Token 2 succeeds
-        mvc.perform(on(slug, post("/api/v1/auth/reset-password"))
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json.writeValueAsString(Map.of("token", token2, "newPassword", NEW_PASSWORD))))
-                .andExpect(status().isNoContent());
+    void weakPasswordsAreRefused() throws Exception {
+        reset(a, issue(admin, leaderId), "short").andExpect(status().isBadRequest());
     }
 
-    @Test
-    void passwordMustMeetLengthRequirements() throws Exception {
-        MvcResult res = mvc.perform(on(slug, post("/api/v1/auth/forgot-password"))
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json.writeValueAsString(Map.of("email", email))))
-                .andExpect(status().isOk())
-                .andReturn();
+    // --- helpers -----------------------------------------------------------------------------
 
-        String token = (String) json.readValue(res.getResponse().getContentAsString(), Map.class).get("devToken");
-        assertThat(token).isNotNull();
-
-        // Short password (< 12 chars)
-        mvc.perform(on(slug, post("/api/v1/auth/reset-password"))
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json.writeValueAsString(Map.of("token", token, "newPassword", "short"))))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("validation_failed"));
+    private <T> T pinned(java.util.function.Supplier<T> work) {
+        long tenantId = tenants.findBySlug(a).orElseThrow().getId();
+        return tx.execute(st -> {
+            jdbc.queryForObject("select set_config('app.tenant_id', ?, true)", String.class, Long.toString(tenantId));
+            return work.get();
+        });
     }
 
-    @Test
-    void tokenFromAnotherTenantCannotBeRedeemed() throws Exception {
-        String otherSlug = "other-" + UUID.randomUUID().toString().substring(0, 8);
-        registration.register(new RegistrationRequest(otherSlug, "Other Trust", "other@" + otherSlug + ".example", OLD_PASSWORD, "Other Admin"));
-
-        MvcResult res = mvc.perform(on(slug, post("/api/v1/auth/forgot-password"))
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json.writeValueAsString(Map.of("email", email))))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        String token = (String) json.readValue(res.getResponse().getContentAsString(), Map.class).get("devToken");
-        assertThat(token).isNotNull();
-
-        // Attempting to redeem on otherSlug's host fails due to tenant isolation RLS
-        mvc.perform(on(otherSlug, post("/api/v1/auth/reset-password"))
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json.writeValueAsString(Map.of("token", token, "newPassword", NEW_PASSWORD))))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("invalid_or_expired_link"));
+    private String issue(MockHttpSession session, long userId) throws Exception {
+        String url = json.readTree(mvc.perform(on(a, post("/api/v1/users/" + userId + "/reset-link")).session(session)
+                        .with(csrf())).andExpect(status().isOk()).andReturn().getResponse().getContentAsString())
+                .at("/resetUrl").asString();
+        assertThat(url).startsWith("https://" + a + ".sevacenter.app/reset-password#token=");
+        return url.substring(url.indexOf("#token=") + "#token=".length());
     }
 
-    private static MockHttpServletRequestBuilder on(String slug, MockHttpServletRequestBuilder request) {
-        return request.with(r -> { r.setServerName(slug + ".sevacenter.app"); return r; });
+    private ResultActions reset(String slug, String token, String password) throws Exception {
+        return mvc.perform(on(slug, post("/api/v1/auth/reset-password")).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON).content(staff.body("token", token, "newPassword", password)));
+    }
+
+    private String email(long userId) throws Exception {
+        String list = mvc.perform(on(a, get("/api/v1/users")).session(admin)).andReturn().getResponse().getContentAsString();
+        for (var u : json.readTree(list)) {
+            if (u.at("/id").asLong() == userId) {
+                return u.at("/email").asString();
+            }
+        }
+        throw new AssertionError("no user " + userId);
     }
 }

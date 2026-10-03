@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { Diya, Wordmark } from "@/components/Diya";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { portalLoginUrl } from "@/lib/tenant";
 import { useLanguage } from "@/components/LanguageProvider";
 import { useTenant } from "@/components/TenantProvider";
 import { Alert, Button, Card } from "@/components/ui";
@@ -52,20 +53,17 @@ export function AuthFrame({
 function NoTenant() {
   const { t } = useLanguage();
   const [slug, setSlug] = useState("");
+  const [slugError, setSlugError] = useState(false);
 
   function onGo(e: React.FormEvent) {
     e.preventDefault();
-    const clean = slug.trim().toLowerCase();
-    if (!clean) return;
-    if (typeof window !== "undefined") {
-      const { hostname, port, protocol } = window.location;
-      const portPart = port ? `:${port}` : "";
-      if (hostname === "localhost" || hostname === "127.0.0.1") {
-        window.location.href = `${protocol}//${clean}.localhost${portPart}/login`;
-      } else {
-        window.location.href = `${protocol}//${clean}.${hostname}${portPart}/login`;
-      }
+    const url = portalLoginUrl(slug, window.location);
+    if (!url) {
+      setSlugError(true);
+      return;
     }
+    // Another origin (the trust's own host), so a full navigation, not the Next.js router.
+    window.location.href = url;
   }
 
   return (
@@ -84,13 +82,21 @@ function NoTenant() {
             type="text"
             placeholder="e.g. demo"
             value={slug}
-            onChange={(e) => setSlug(e.target.value)}
+            onChange={(e) => {
+              setSlug(e.target.value);
+              setSlugError(false);
+            }}
             className="flex-1 rounded-[10px] border border-line bg-surface px-3 py-1.5 text-sm font-mono focus:border-primary focus:outline-none"
           />
           <Button type="submit" disabled={!slug.trim()} className="px-3 py-1.5 text-xs">
             Go
           </Button>
         </div>
+        {slugError ? (
+          <p role="alert" className="text-xs text-danger">
+            Use 3–40 lowercase letters, digits or hyphens, e.g. siddheshwar.
+          </p>
+        ) : null}
       </form>
 
       <div className="border-t border-line/60 pt-4 flex flex-col gap-2">

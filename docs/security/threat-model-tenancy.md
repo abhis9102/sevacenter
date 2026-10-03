@@ -160,6 +160,22 @@ Tests in `ReceiptTest` and `PanProtectionTest`; rows also in `authz_probe.py`.
 | Rewriting an issued receipt | Insert-only grants; trust/donor snapshots; reversal adds a cancellation row, number never reused | `theAppRoleCannotEditOrDeleteReceipts`, `anIssuedReceiptKeepsTheTrustDetails…`, `reversingAReceiptedDonationCancels…` |
 | BOLA on receipts / donations of another trust | Forced RLS → 404 | `anotherTenantsReceiptsAndDonationsAreNotFound` |
 
+### Profile, avatar and password reset: threat → control → test
+
+From the review of the profile/avatar/i18n and password-reset work (tests in `ProfileTest`,
+`PasswordResetTest`).
+
+| Threat | Control | Test |
+|---|---|---|
+| **Account takeover:** `/forgot-password` returned the reset token to the caller when the profile was `local`, `test` *or `default`* (any deployment without a profile) | No endpoint gives a token to its caller. Reset links are issued by a TRUST_ADMIN (`POST /users/{id}/reset-link`) and handed over like setup links | `noEndpointGivesAResetTokenToWhoeverAsks`, probe |
+| Reset links surviving deactivation/deletion, or reviving a disabled account | Deactivate/delete mark links used; redeeming requires an ACTIVE user (each layer tested on its own) | `deactivationMarksOutstandingLinksUsed`, `aStillValidLinkCantResetAnAccountThatIsNoLongerActive`, `deactivatingOrDeletingStaffKillsTheirLinks` |
+| Reset link replay / old links / wrong host | Single use, newest only, 1 h, RLS-scoped | `anAdminIssuedLinkResetsThePasswordOnce`, `aNewLinkKillsTheOldOne`, `aLinkOnlyWorksOnItsOwnTrustsHost` |
+| Password guessing through change-password with a stolen session | Same per-account lockout as login | `wrongCurrentPasswordsLockLikeLogin` |
+| Avatar as stored XSS / MIME confusion | Type from magic bytes (PNG/JPEG/WebP only), 2 MB, served under `/api/**` (nosniff + sandbox CSP) | `ProfileTest` avatar tests |
+| Avatar bytes (2 MB) loaded on every request (the session filter re-reads the user) | Image columns mapped on `UserAvatar` only | `theUserEntityNeverCarriesImageBytes` |
+| Staff opting out of the audit trail | No "activity log" opt-out (removed with the unused directory toggle) | `getProfileReturnsCurrentUserInfoAndDefaultPreferences` |
+| Open redirect via the "go to your temple" box (`evil.example/x` became the host) | Slug validated like registration before building the URL | `routing.test.ts` → `portalLoginUrl` |
+
 ## Open questions
 
 - Public donor access: own login vs. link/OTP (affects the auth surface).

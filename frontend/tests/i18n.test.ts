@@ -51,8 +51,6 @@ describe("i18n dictionaries", () => {
     assert.match(DICTIONARIES.hi.nav.profile, /प्रोफ़ाइल/);
     assert.equal(DICTIONARIES.en.profile.tabs.security, "Security & Password");
     assert.equal(DICTIONARIES.hi.profile.tabs.security, "सुरक्षा व पासवर्ड");
-    assert.equal(DICTIONARIES.en.profile.tabs.privacy, "Privacy");
-    assert.equal(DICTIONARIES.hi.profile.tabs.privacy, "गोपनीयता");
     assert.equal(DICTIONARIES.en.profile.tabs.notifications, "Notifications");
     assert.equal(DICTIONARIES.hi.profile.tabs.notifications, "सूचनाएं");
     assert.equal(DICTIONARIES.en.profile.avatar.uploadPhoto, "Upload photo");

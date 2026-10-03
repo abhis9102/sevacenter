@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { safeReturnTo } from "../src/lib/returnTo";
-import { slugFromHost } from "../src/lib/tenant";
+import { portalLoginUrl, slugFromHost } from "../src/lib/tenant";
 import { downstreamResponseHeaders, upstreamPath, upstreamRequestHeaders } from "../src/lib/upstream";
 
 describe("safeReturnTo (no open redirects)", () => {
@@ -94,5 +94,22 @@ describe("API proxy headers", () => {
     assert.equal(upstreamPath("/api/v2/x"), null);
     assert.equal(upstreamPath("/api/v1/a%2Fb"), null);
     assert.equal(upstreamPath("/api/v1"), null);
+  });
+});
+
+
+describe("portalLoginUrl", () => {
+  const prod = { protocol: "https:", hostname: "sevacenter.app", port: "" };
+  it("builds the sign-in URL on the trust's own host", () => {
+    assert.equal(portalLoginUrl("Siddheshwar ", prod), "https://siddheshwar.sevacenter.app/login");
+    assert.equal(portalLoginUrl("demo", { protocol: "http:", hostname: "localhost", port: "3001" }),
+      "http://demo.localhost:3001/login");
+    assert.equal(portalLoginUrl("demo", { protocol: "https:", hostname: "www.sevacenter.app", port: "" }),
+      "https://demo.sevacenter.app/login");
+  });
+  it("never turns typed input into another site's address", () => {
+    for (const bad of ["evil.example/x", "evil.example#", "a@evil.example", "//evil.example", "ab", "-demo", "demo.", "de mo", ""]) {
+      assert.equal(portalLoginUrl(bad, prod), null, bad);
+    }
   });
 });
