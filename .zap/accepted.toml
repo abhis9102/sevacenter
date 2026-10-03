@@ -38,6 +38,13 @@ reason = "Abhi (AppSec): reproduced from the report: the attack value is the URL
 
 [[accepted]]
 pluginId = "6" # Path Traversal (heuristic, low confidence)
+param = "title"
+uri = '/api/v1/events/[0-9]+$'
+ignoreUntil = 2026-12-31
+reason = "Abhi (AppSec): same heuristic as events/capacity (it picks a different param per run): the attack value '10' is the URL's own last segment and a valid title, so the update succeeds while ZAP's random comparison value gets 400. Titles are stored as text, never used as a path. Kept per param on purpose: this rule found the real startsAt bug."
+
+[[accepted]]
+pluginId = "6" # Path Traversal (heuristic, low confidence)
 param = "dakshina"
 uri = '/api/v1/pujas/[0-9]+$'
 ignoreUntil = 2026-12-31
