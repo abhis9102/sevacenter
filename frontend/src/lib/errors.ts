@@ -48,6 +48,10 @@ const MESSAGES: Record<string, string> = {
   payments_not_configured: "This trust hasn't connected a payment account yet.",
   payment_not_verified: "The payment could not be verified, so no donation was recorded.",
   gateway_unavailable: "Razorpay didn't respond. Nothing was recorded; please try again.",
+  invalid_code: "That code isn't right or has expired. Check it, or ask for a new one.",
+  channel_unavailable: "That way of signing in isn't available here yet.",
+  delivery_failed: "We couldn't send the code just now. Please try again in a minute.",
+  not_logged_in: "Please sign in again.",
   not_pending: "This person has already set up their account, so they don't need a new setup link.",
   invalid_or_expired_link:
     "This setup link is invalid, expired or already used. Ask your trust admin for a new one.",

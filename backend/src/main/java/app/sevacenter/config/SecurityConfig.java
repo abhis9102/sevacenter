@@ -54,6 +54,9 @@ public class SecurityConfig {
             "/api/v1/auth/setup",   // one-time setup link: the user has no password yet
             "/api/v1/auth/reset-password",
             "/api/v1/public/**",    // donate page on the trust's host (ADR 0013); still CSRF-protected
+            // Devotee portal (ADR 0018): authenticated by the devotee cookie in PortalController,
+            // deliberately not a Spring Security login, so it can never satisfy a staff endpoint.
+            "/api/v1/portal/**",
             "/api/v1/csrf",
             "/actuator/health",
             "/actuator/health/**",

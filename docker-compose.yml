@@ -20,5 +20,14 @@ services:
       timeout: 3s
       retries: 10
 
+  # Catches the app's outgoing email locally (devotee login codes, ADR 0018): nothing is ever
+  # delivered to a real inbox. UI: http://localhost:8025. Local only; SES/SMTP in production.
+  mail:
+    image: axllent/mailpit:v1.27
+    container_name: sevacenter-mail
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+
 volumes:
   pgdata:

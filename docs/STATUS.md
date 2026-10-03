@@ -311,8 +311,18 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
   exist (donate, events, pujas, seva). Staff **Temple page** editor (LEADER+). `TempleTest` (4),
   mutation-checked 4/4.
 
-**MVP features are now complete except devotee OTP login** (needs an SMS/email provider decision).
-Then: M5 containers → M6 AWS → M7 gates.
+## Devotee login + "my seva" ✅ (this PR, ADR 0018)
+- `V17`: `devotee_otp` (HMAC'd contact + code, never the values), `devotee_account` (created only on
+  verification), `devotee_session` (SHA-256 of a 256-bit token). All forced RLS, no DELETE.
+- One-time codes by **email** (SMTP: Mailpit locally via `make db-up`, SES in M6) and **SMS** (MSG91;
+  needs `MSG91_AUTH_KEY` + `MSG91_OTP_TEMPLATE_ID`, offered only when set). New key `SEVACENTER_OTP_KEY`.
+- 10-min codes, single use, 5 guesses; 3/15 min + 10/day per contact, 20/15 min per IP, daily
+  per-trust caps; SMS only to Indian mobiles; same answer for every contact.
+- `SC_DEVOTEE` cookie (HttpOnly, `Path=/api/v1/portal`) is not a Spring Security login: no staff
+  API reachable with it, and no portal API with a staff session. Public **/my-seva** page.
+- `DevoteeLoginTest` (14), **mutation-checked 17/17** (found first: dead "supersede" code, removed; expiry untested, added); probe +5 rows.
+
+**MVP features are now complete.** Then: M5 containers → M6 AWS → M7 gates.
 
 ## Next up — M1 slice 2
 - Login + sessions (cookie session per ADR 0007; set cookie flags HttpOnly/Secure/SameSite); tenant-aware `UserDetailsService` (scope lookup by `TenantContext`).

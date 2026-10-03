@@ -40,8 +40,9 @@ DB_APP_PASSWORD=$(openssl rand -hex 16)
 PAN_KEY=$(openssl rand -base64 32)
 PAN_INDEX_KEY=$(openssl rand -base64 32)
 SECRETS_KEY=$(openssl rand -base64 32)  # gateway credentials (ADR 0013)
+OTP_KEY=$(openssl rand -base64 32)      # devotee login codes (ADR 0018)
 if [ -n "${GITHUB_ACTIONS:-}" ]; then
-  for v in "$DB_PASSWORD" "$DB_APP_PASSWORD" "$PAN_KEY" "$PAN_INDEX_KEY" "$SECRETS_KEY"; do echo "::add-mask::$v"; done
+  for v in "$DB_PASSWORD" "$DB_APP_PASSWORD" "$PAN_KEY" "$PAN_INDEX_KEY" "$SECRETS_KEY" "$OTP_KEY"; do echo "::add-mask::$v"; done
 fi
 
 echo "--- ephemeral Postgres (same least-privilege init as local dev)"
@@ -61,6 +62,7 @@ SPRING_PROFILES_ACTIVE=local SERVER_PORT=$APP_PORT \
   DB_URL="$JDBC_URL" DB_USERNAME=sevacenter \
   DB_PASSWORD="$DB_PASSWORD" DB_APP_USERNAME=sevacenter_app DB_APP_PASSWORD="$DB_APP_PASSWORD" \
   SEVACENTER_PAN_KEY="$PAN_KEY" SEVACENTER_PAN_INDEX_KEY="$PAN_INDEX_KEY" SEVACENTER_SECRETS_KEY="$SECRETS_KEY" \
+  SEVACENTER_OTP_KEY="$OTP_KEY" SEVACENTER_MAIL_FROM= \
   java -jar "$JAR" > "$OUT/app.log" 2>&1 &
 APP_PID=$!
 for _ in $(seq 90); do

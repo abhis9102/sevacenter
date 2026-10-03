@@ -53,6 +53,18 @@ sevacenter:
   # separate from the PAN key; empty default so the app refuses to start without it.
   secrets:
     key: ${SEVACENTER_SECRETS_KEY:}
+  # Devotee login codes (ADR 0018): HMAC key for stored codes and contacts. Own key; required.
+  otp:
+    key: ${SEVACENTER_OTP_KEY:}
+  # Sender address for login codes. Email login is offered only when this and spring.mail.host
+  # (SPRING_MAIL_HOST etc.: Mailpit locally, SES SMTP in production) are set.
+  mail:
+    from: ${SEVACENTER_MAIL_FROM:}
+  # SMS login via MSG91 (DLT template with an ##otp## variable). Offered only when both are set.
+  sms:
+    msg91:
+      auth-key: ${MSG91_AUTH_KEY:}
+      template-id: ${MSG91_OTP_TEMPLATE_ID:}
   pan:
     encryption-key: ${SEVACENTER_PAN_KEY:}
     index-key: ${SEVACENTER_PAN_INDEX_KEY:}
