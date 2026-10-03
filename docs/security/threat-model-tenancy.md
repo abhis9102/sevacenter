@@ -144,6 +144,22 @@ Tests in `DonationTest`; rows also in `authz_probe.py`.
 | Wrong FY totals (UTC vs IST, Apr–Mar) | FY computed in `Asia/Kolkata`, 1 Apr – 31 Mar | `summariesFollowTheIndianFinancialYear` |
 | Erasure vs statutory retention | Donor with donations → anonymised (row kept, PII gone); ledger keeps its donor-name snapshot (legal obligation) | `erasingADonorAnonymisesThemAndKeepsTheLedger` |
 
+### 80G receipts and PAN (M3.2, ADR 0012): threat → control → test
+
+Tests in `ReceiptTest` and `PanProtectionTest`; rows also in `authz_probe.py`.
+
+| Threat | Control | Test |
+|---|---|---|
+| Donor PAN leaked from a DB dump, backup, log or replica | AES-256-GCM in the app, random nonce; DB holds ciphertext + last 4 + HMAC index only; keys from env (KMS in M6) | `thePanIsStoredOnlyEncryptedAndShownInFullOnlyOnTheReceipt`, `roundTripsAndNeverRepeatsACiphertext` |
+| Ciphertext copied across tenants (SQL bug, insider) | Tenant id bound as GCM associated data | `aCiphertextMovedToAnotherTenantFailsToDecrypt` |
+| Tampered ciphertext or wrong key | GCM authentication: decrypt fails, nothing partial returned | `tamperedCiphertextAndOtherKeysFail` |
+| App started with no / placeholder / reused keys | Fails to start: 32-byte, non-constant, distinct keys required | `theAppRefusesToStartWithoutRealKeys` |
+| Full PAN in lists, browser caches, error messages | Lists show `XXXXXX1234`; single receipt `no-store`; validation errors never echo the value | `thePanIsStoredOnly…`, `anInvalidPanIsRejectedWithoutEchoingIt` |
+| Duplicate / skipped receipt numbers (tax compliance) | Per-tenant per-FY counter upsert, row-locked in the issuing transaction; `UNIQUE (tenant, fy, seq)` | `numbersAreSequentialPerFinancialYearAndPerTrust`, `concurrentIssuesGetUniqueConsecutiveNumbers` |
+| Ineligible 80G receipts (cash > ₹2,000, reversed or duplicate donations, registration not valid that day) | Refused with a specific 409 | `cashAboveTwoThousandRupeesIsNotEligible`, `oneReceiptPerDonation…`, `theTrustNeedsAProfile…` |
+| Rewriting an issued receipt | Insert-only grants; trust/donor snapshots; reversal adds a cancellation row, number never reused | `theAppRoleCannotEditOrDeleteReceipts`, `anIssuedReceiptKeepsTheTrustDetails…`, `reversingAReceiptedDonationCancels…` |
+| BOLA on receipts / donations of another trust | Forced RLS → 404 | `anotherTenantsReceiptsAndDonationsAreNotFound` |
+
 ## Open questions
 
 - Public donor access: own login vs. link/OTP (affects the auth surface).

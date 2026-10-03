@@ -243,8 +243,19 @@ curl -s -b /tmp/jar -X POST localhost:8080/api/v1/register -H 'Content-Type: app
 - Devotee erasure: anonymised (row kept, PII removed, `erased_at`) when donations reference them.
 - Audit log lines for record/reverse. `DonationTest` (13), probe +14 checks.
 
-**Next: M3.2 80G receipts** (PAN encrypted at app level, gapless receipt numbers per FY, trust
-80G details), then **M3.3 Razorpay** (needs test-mode keys via env).
+## M3.2 — 80G receipts + PAN protection ✅ (this PR, ADR 0012)
+- `V8`: `trust_profile`, `receipt_counter`, `receipt`, `receipt_cancellation` (all forced RLS; receipts
+  insert-only). `PUT/GET /api/v1/trust-profile`, `POST /api/v1/donations/{id}/receipt`, `GET /api/v1/receipts[/{id}]`.
+- **Donor PAN:** AES-256-GCM with the tenant bound as associated data + HMAC blind index under a
+  second key; DB never sees it in clear. Keys `SEVACENTER_PAN_KEY` / `SEVACENTER_PAN_INDEX_KEY` from env:
+  the app refuses to start without real ones (`.env.example`; `dast.sh` generates per-run keys).
+- **Receipt numbers** `2026-27/000123`: gapless per trust per FY under concurrency (upsert row lock).
+- 80G rules: no cash > ₹2,000 (80G(5D)), one per donation, none for reversals, registration valid on
+  the donation date. Reversal cancels the receipt (number never reused). Trust/donor snapshots.
+- `ReceiptTest` (12) + `PanProtectionTest` (6).
+
+**Next: M3.3 Razorpay** (needs test-mode keys via env), then **frontend screens for donations and
+receipts**, then M4 Events.
 
 ## Next up — M1 slice 2
 - Login + sessions (cookie session per ADR 0007; set cookie flags HttpOnly/Secure/SameSite); tenant-aware `UserDetailsService` (scope lookup by `TenantContext`).

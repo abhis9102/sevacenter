@@ -33,3 +33,4 @@ dast-out/
 
 # Private local context for Claude Code (never committed)
 CLAUDE.local.md
+.claude/

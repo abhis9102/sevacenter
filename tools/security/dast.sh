@@ -36,7 +36,12 @@ trap cleanup EXIT
 mkdir -p "$OUT" && chmod 777 "$OUT" # ZAP's container runs as its own uid and writes reports here
 DB_PASSWORD=$(openssl rand -hex 16)
 DB_APP_PASSWORD=$(openssl rand -hex 16)
-if [ -n "${GITHUB_ACTIONS:-}" ]; then echo "::add-mask::$DB_PASSWORD"; echo "::add-mask::$DB_APP_PASSWORD"; fi
+# Throwaway PAN keys (ADR 0012) for this run only: the app refuses to start without them.
+PAN_KEY=$(openssl rand -base64 32)
+PAN_INDEX_KEY=$(openssl rand -base64 32)
+if [ -n "${GITHUB_ACTIONS:-}" ]; then
+  for v in "$DB_PASSWORD" "$DB_APP_PASSWORD" "$PAN_KEY" "$PAN_INDEX_KEY"; do echo "::add-mask::$v"; done
+fi
 
 echo "--- ephemeral Postgres (same least-privilege init as local dev)"
 docker run -d --name "$DB_NAME" -p "127.0.0.1:$DB_PORT:5432" \
@@ -54,6 +59,7 @@ JDBC_URL="jdbc:postgresql://127.0.0.1:$DB_PORT/sevacenter" # trufflehog:ignore â
 SPRING_PROFILES_ACTIVE=local SERVER_PORT=$APP_PORT \
   DB_URL="$JDBC_URL" DB_USERNAME=sevacenter \
   DB_PASSWORD="$DB_PASSWORD" DB_APP_USERNAME=sevacenter_app DB_APP_PASSWORD="$DB_APP_PASSWORD" \
+  SEVACENTER_PAN_KEY="$PAN_KEY" SEVACENTER_PAN_INDEX_KEY="$PAN_INDEX_KEY" \
   java -jar "$JAR" > "$OUT/app.log" 2>&1 &
 APP_PID=$!
 for _ in $(seq 90); do
@@ -128,7 +134,9 @@ DEVOTEES=$(docker exec -e PGPASSWORD="$DB_PASSWORD" "$DB_NAME" psql -h 127.0.0.1
   "select count(*) from devotee d join tenant t on t.id = d.tenant_id where t.slug = '$SLUG'")
 DONATIONS=$(docker exec -e PGPASSWORD="$DB_PASSWORD" "$DB_NAME" psql -h 127.0.0.1 -U sevacenter -d sevacenter -tAc \
   "select count(*) from donation d join tenant t on t.id = d.tenant_id where t.slug = '$SLUG'")
-echo "session after scan: HTTP $SESSION_AFTER | created by the scan: $USERS users, $DEVOTEES devotees, $DONATIONS donations"
+RECEIPTS=$(docker exec -e PGPASSWORD="$DB_PASSWORD" "$DB_NAME" psql -h 127.0.0.1 -U sevacenter -d sevacenter -tAc \
+  "select count(*) from receipt r join tenant t on t.id = r.tenant_id where t.slug = '$SLUG'")
+echo "session after scan: HTTP $SESSION_AFTER | created by the scan: $USERS users, $DEVOTEES devotees, $DONATIONS donations, $RECEIPTS receipts"
 if [ "$SESSION_AFTER" != 200 ]; then
   echo "::error::the session died during the authenticated scan, so later requests were tested as anonymous"
   exit 1
