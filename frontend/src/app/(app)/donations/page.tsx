@@ -462,6 +462,12 @@ export default function DonationsPage() {
                         }`}
                       >
                         {item.mode}
+                        {item.channel === "ONLINE" ? (
+                          <span className="ml-1 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700"
+                                title={item.paymentRef ? `Razorpay ${item.paymentRef}` : "Paid online"}>
+                            Online
+                          </span>
+                        ) : null}
                       </span>
                     </td>
 

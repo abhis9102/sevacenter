@@ -128,7 +128,7 @@ export interface ChangePasswordInput {
   newPassword: string;
 }
 
-export type DonationMode = "CASH" | "UPI" | "CHEQUE" | "BANK_TRANSFER" | "CARD";
+export type DonationMode = "CASH" | "UPI" | "CHEQUE" | "BANK_TRANSFER" | "CARD" | "WALLET";
 
 export const DONATION_MODES: DonationMode[] = ["UPI", "CASH", "CARD", "BANK_TRANSFER", "CHEQUE"];
 
@@ -144,6 +144,9 @@ export interface DonationItem {
   reversesId: number | null;
   reversalReason: string | null;
   recordedBy: number | null;
+  /** STAFF = recorded by hand; ONLINE = verified Razorpay payment (paymentRef = Razorpay payment id). */
+  channel: "STAFF" | "ONLINE";
+  paymentRef: string | null;
   createdAt: string;
 }
 
