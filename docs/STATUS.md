@@ -9,7 +9,7 @@ Flyway (V1 baseline), 12-factor config, hermetic Testcontainers tests, docker-co
 Makefile, pre-commit guardrails, GitHub Actions CI, PR template + AI-declaration, CODEOWNERS,
 CONTRIBUTING, SECURITY, ADRs 0001–0006, design system + styleguide. springdoc/OpenAPI wired up.
 
-**M1 — auth, tenancy, RLS: 🚧 in progress. Slice 1 ✅ runs end to end (2026-10-02).**
+**M1 — auth, tenancy, RLS: ✅ complete (2026-10-03).**
 
 ### M1 slice 1 — done and verified running
 - `V2__tenancy_and_users.sql`: `tenant` (registry, no RLS) + `app_user` (RLS **enabled + forced**,
@@ -171,7 +171,19 @@ curl -s -b /tmp/jar -X POST localhost:8080/api/v1/register -H 'Content-Type: app
   stack holds, not that each layer does.
 - 64 tests. Setup links are returned to the admin for now (no email yet).
 
-**Next: M1 slice 2c: authenticated DAST including cross-tenant attack attempts.**
+## M1 slice 2c — authenticated DAST + authorization probe ✅ (this PR) — **M1 complete**
+- `dast.sh` now has 3 stages: `authz_probe.py` (27 cross-tenant/role checks, real `Host` header) →
+  ZAP logged in as TRUST_ADMIN → ZAP unauthenticated (G5). Gate reads both ZAP reports.
+- Coverage checks: the session must survive the authenticated scan, and that scan must create users.
+- **Caught a false-clean scan on its first run**: `zap-api-scan.py` splits `-z` on spaces, so
+  `a=1; b=2` cookies lost the CSRF token → all 403, ZAP said 0 failures. Fixed.
+- **Validated:** 4 planted flaws (missing `@PreAuthorize`, loose Host match, CSRF off, `USING (true)`
+  RLS policy) → all caught, 11/27 checks red.
+- DAST false positive (path traversal, `slug=register`) root-caused to scan ordering; fixed at the
+  cause. Auth-flow names (`register`, `signup`, `password`, …) are now reserved slugs (phishing).
+- Policy: `docs/security/dast.md`.
+
+**Next: M2 Devotees.** Every new endpoint gets a row in `authz_probe.py`.
 
 ## Next up — M1 slice 2
 - Login + sessions (cookie session per ADR 0007; set cookie flags HttpOnly/Secure/SameSite); tenant-aware `UserDetailsService` (scope lookup by `TenantContext`).

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """DAST (ZAP) policy gate. Policy: docs/security/dast.md
 
-  gate  Read ZAP's JSON report, drop accepted risks (.zap/accepted.toml), then:
+  gate  Read ZAP's JSON report(s) (authenticated + unauthenticated pass), drop accepted risks (.zap/accepted.toml), then:
           Medium/High  -> fail (blocks the PR; the job is a required check)
           Low          -> warning here, ticket on main
           Informational -> ignored
@@ -98,15 +98,19 @@ def main() -> int:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = p.add_subparsers(dest="cmd", required=True)
     g = sub.add_parser("gate", help="fail on unaccepted findings at or above --fail-at")
-    g.add_argument("zap_json")
+    g.add_argument("zap_json", nargs="+", help="one or more ZAP JSON reports")
     g.add_argument("--accepted", default=".zap/accepted.toml")
     g.add_argument("--fail-at", choices=["low", "medium", "high"], default="medium")
     g.add_argument("--out", help="write remaining Low+ findings (JSON) for ticketing")
     args = p.parse_args()
 
     rules, errors = load_accepted(args.accepted, dt.date.today())
-    with open(args.zap_json, encoding="utf-8") as f:
-        found = findings(json.load(f), rules)
+    merged: dict[str, dict] = {}
+    for path in args.zap_json:
+        with open(path, encoding="utf-8") as f:
+            for item in findings(json.load(f), rules):
+                merged.setdefault(item["key"], item)
+    found = list(merged.values())
     threshold = LEVEL[args.fail_at]
     for item in sorted(found, key=lambda x: -LEVEL[x["risk"]]):
         msg = (f"[{item['risk']}] {item['name']} ({item['pluginId']}) on {item['method']} "

@@ -60,12 +60,52 @@ malformed request lines (no version shown) is an accepted, scoped, expiring risk
 **Lesson:** a gate is only as good as what it actually exercises. Know each scanner's blind spots
 and cover them at the right layer. Here that's real-server regression tests, which run before DAST.
 
+## Authenticated DAST + authorization probe (M1 slice 2c)
+
+`dast.sh` runs three stages against the same jar and database:
+
+| Stage | What | Why this order |
+|---|---|---|
+| 1. `authz_probe.py` | Cross-tenant + role matrix: 27 checks over anonymous, member, leader, admin A, admin B. BOLA by id, list leaks, mass assignment, setup links on the wrong host, CSRF, Host spoofing, session replay on another tenant. Uses the real `Host` header, like production. | First: the per-IP login throttle allows 5 failures, and stage 3 attacks the login endpoint. |
+| 2. ZAP as a logged-in TRUST_ADMIN | Session cookie + CSRF + tenant header on every request. Spec minus login/logout (would rotate or kill the session) and register (public). | Needs a fresh, unthrottled login. |
+| 3. ZAP unauthenticated | The G5 scan, including login/logout/register. | Last: it trips the login throttle. |
+
+**Why a separate probe:** ZAP can't judge access control. A `200` on `PATCH /users/7/role` is
+normal unless you know user 7 belongs to another tenant. The probe knows who owns what, so
+it asserts the expected status for each identity.
+
+**Coverage checks (each a hard failure):**
+- probe: any check off its expected status;
+- authenticated pass: the session must still be valid afterwards, and the scan must have
+  created at least one user (it got past authz, CSRF and validation to the database);
+- unauthenticated pass: it must have created a tenant itself (stages 1-2 create tenants too, so
+  only the difference counts).
+
+### Validation (2026-10-03)
+
+- **The coverage check caught a false "clean" scan on its first run.** ZAP reported 117 passes
+  and 0 failures for the authenticated pass, yet it created no users. `zap-api-scan.py` splits
+  `-z` options on whitespace, so the cookie `SC_SESSION=…; XSRF-TOKEN=…` lost its CSRF half
+  and every state-changing request got 403. Fixed (no spaces in replacer values).
+- **Planted flaws, one jar, probe run against it:** a missing `@PreAuthorize` (member promotes
+  themselves), a loose Host match (`<slug>.attacker.example` accepted), CSRF disabled on
+  `/users`, and a permissive RLS policy (`USING (true)`). **All 4 caught, 11/27 checks red.**
+- **False positive, root-caused:** "Path Traversal (High, low confidence)" on `register.slug`
+  with value `register`. Reproduced by hand: `register` behaves like any fresh slug (201) and real
+  traversal payloads get 400. It appeared because the authenticated pass had already taken the
+  example slug, so the unauthenticated baseline was a 409. Fix: the authenticated pass no longer
+  attacks public endpoints. Side effect worth keeping: auth-flow names (`register`, `signup`,
+  `password`, …) are now reserved slugs, since tenant hosts serve login pages and those names
+  would be ready-made phishing hosts.
+
 ## Known gaps
 
 - No beta/alpha ZAP rules: fetching add-ons at scan time would pull unpinned code into CI. If
   needed, build a pinned ZAP image with them instead.
-- Unauthenticated scan only. Authenticated scanning (per role, per tenant, including cross-tenant
-  attempts) comes with login in M1 slice 2.
+- ZAP scans as a TRUST_ADMIN only. Lower roles and cross-tenant cases are covered by the probe,
+  which must grow with every new endpoint (M2+: devotees, donations, events).
+- The authenticated ZAP pass sends the tenant in the dev-only `X-Tenant-Slug` header (ZAP can't
+  rewrite `Host` and the app rejects `127.0.0.1`). Host-based resolution is covered by the probe.
 - The scan runs the `local` profile (header-based tenant override enabled). A production-like
   profile comes with M6.
 - After the first registration, later attacks on the same slug get `409 slug_taken`, so the insert

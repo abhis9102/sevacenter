@@ -9,7 +9,7 @@ role) runs *inside* every milestone, not after.
 | # | Milestone | Dev (agents) build | AppSec (Abhi) does | DevOps | Target |
 |---|---|---|---|---|---|
 | **M0** ✅ | Repo + guardrails | Spring Boot skeleton (Maven), hello-world endpoint, Postgres via docker-compose | pre-commit hooks (gitleaks/trufflehog/semgrep), PR template + AI-declaration, threat-model the tenancy model; **Python** CI glue | local docker-compose | ~1 wk |
-| **M1** 🚧 | Auth + tenancy core | registration, login/sessions (**Spring Security**), RBAC (trust-admin/leader/member via `@PreAuthorize`), **tenant model + Postgres RLS** (session var per request), Host-based tenant routing (servlet filter) | threat model auth+tenancy; test RLS bypass, Host-header tenant confusion, reserved subdomains, authz-per-endpoint | — | ~3-4 wks |
+| **M1** ✅ | Auth + tenancy core | registration, login/sessions (**Spring Security**), RBAC (trust-admin/leader/member via `@PreAuthorize`), **tenant model + Postgres RLS** (session var per request), Host-based tenant routing (servlet filter) | threat model auth+tenancy; test RLS bypass, Host-header tenant confusion, reserved subdomains, authz-per-endpoint | — | ~3-4 wks |
 | **M2** | Devotees (People) | devotee CRUD, search, CSV import/export, invites | test IDOR/BOLA, cross-tenant leaks, mass-assignment, CSV/formula injection, export authz | — | ~2 wks |
 | **M3** | Donations + 80G | Razorpay order + webhook, donation history, **80G receipt + PAN capture**, FY reporting | test amount tampering, webhook-signature bypass, idempotency/replay, refund abuse, PAN PII exposure; map to PCI SAQ + DPDP | — | ~3 wks |
 | **M4** | Events/Registrations | public event pages, registration forms, (optional) file upload | test public-form abuse, rate limiting, upload validation, enumeration, CSRF | — | ~2 wks |
@@ -43,5 +43,5 @@ M7 then becomes "consolidate + AI-code provenance + hallucinated-package check +
 
 ## Immediate next step
 
-M1: `TenantIsolationTest` (automated proof of cross-tenant isolation), then slice 2 (login,
-roles); G4 (SBOM) alongside. See `docs/STATUS.md`.
+M2 Devotees: CRUD + search first, then CSV import/export. Each endpoint ships with its
+`@PreAuthorize`, its RLS-backed tests and its row in `authz_probe.py`. See `docs/STATUS.md`.

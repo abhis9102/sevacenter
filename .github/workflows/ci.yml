@@ -197,7 +197,7 @@ jobs:
     name: DAST (ZAP)
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30 # probe + two ZAP passes (~8 min locally)
     permissions:
       contents: read
     steps:
@@ -215,11 +215,11 @@ jobs:
       - name: ZAP scan of the built jar (fails if the attacks never reached the database)
         run: tools/security/dast.sh build/backend-*.jar dast-out
       - name: Policy gate (Medium+ blocks; Low becomes a ticket on main)
-        run: python3 tools/security/dast_policy.py gate dast-out/zap.json --out dast-out/findings.json
+        run: python3 tools/security/dast_policy.py gate dast-out/zap-authed.json dast-out/zap.json --out dast-out/findings.json
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: ${{ !cancelled() }}
         with:
-          name: dast-report # zap.html (full report), zap.json, findings.json, app.log
+          name: dast-report # zap[-authed].html/.json, authz-probe.json, findings.json, app.log
           path: dast-out/
           retention-days: 14
 
