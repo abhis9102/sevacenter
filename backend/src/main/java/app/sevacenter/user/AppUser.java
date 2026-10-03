@@ -67,6 +67,10 @@ public class AppUser {
     @Column(name = "avatar_content_type", insertable = false, updatable = false)
     private String avatarContentType;
 
+    /** Per-module limits (ADR 0021), canonical form; null = none. */
+    @Column(name = "module_limits")
+    private String moduleLimits;
+
     protected AppUser() { }
 
     public AppUser(Long tenantId, String email, String passwordHash, String displayName, Role role) {
@@ -124,6 +128,9 @@ public class AppUser {
 
     public void changeRole(Role newRole) {
         this.role = newRole;
+        if (newRole == Role.TRUST_ADMIN) {
+            this.moduleLimits = null; // admins are never limited
+        }
     }
 
     public Long getId() { return id; }
@@ -134,6 +141,15 @@ public class AppUser {
     public Role getRole() { return role; }
     public UserStatus getStatus() { return status; }
     public OffsetDateTime getDeletedAt() { return deletedAt; }
+
+    /** Effective limits: always none for a TRUST_ADMIN. */
+    public java.util.Map<StaffModule, ModuleAccess> getModuleLimits() {
+        return role == Role.TRUST_ADMIN ? java.util.Map.of() : ModuleAccess.parse(moduleLimits);
+    }
+
+    void limitModules(java.util.Map<StaffModule, ModuleAccess> limits) {
+        this.moduleLimits = ModuleAccess.format(limits);
+    }
     public OffsetDateTime getCreatedAt() { return createdAt; }
     public boolean isNotifyDevotees() { return notifyDevotees; }
     public boolean isNotifyDonations() { return notifyDonations; }

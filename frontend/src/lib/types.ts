@@ -26,6 +26,26 @@ export interface Me {
   role: string;
   tenant: string | null;
   hasAvatar: boolean;
+  /** Per-module limits a trust admin set (ADR 0021); missing module = full access for the role. */
+  moduleLimits?: ModuleLimits;
+}
+
+export type StaffModule = "DEVOTEES" | "DONATIONS" | "EVENTS" | "PUJAS" | "VOLUNTEERS" | "TEMPLE";
+export type ModuleAccess = "FULL" | "VIEW" | "NONE";
+export type ModuleLimits = Partial<Record<StaffModule, ModuleAccess>>;
+
+export const STAFF_MODULES: { id: StaffModule; label: string }[] = [
+  { id: "DEVOTEES", label: "Devotees" },
+  { id: "DONATIONS", label: "Donations & receipts" },
+  { id: "EVENTS", label: "Events" },
+  { id: "PUJAS", label: "Pujas" },
+  { id: "VOLUNTEERS", label: "Volunteers" },
+  { id: "TEMPLE", label: "Temple page" },
+];
+
+/** UI hint only: the server enforces limits on every call. */
+export function moduleAccess(limits: ModuleLimits | undefined, module: StaffModule): ModuleAccess {
+  return limits?.[module] ?? "FULL";
 }
 
 export type UserStatus = "PENDING" | "ACTIVE" | "DISABLED";
@@ -37,6 +57,7 @@ export interface StaffUser {
   role: Role;
   status: UserStatus;
   createdAt: string;
+  moduleLimits?: ModuleLimits;
 }
 
 export interface CreatedStaffUser {

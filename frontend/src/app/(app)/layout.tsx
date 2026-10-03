@@ -13,7 +13,7 @@ import { useTenant } from "@/components/TenantProvider";
 import { Alert, Spinner } from "@/components/ui";
 import { UserMenu } from "@/components/UserMenu";
 import { ApiError, describeError } from "@/lib/errors";
-import { hasRole, type Me, type Role } from "@/lib/types";
+import { hasRole, moduleAccess, type Me, type Role, type StaffModule } from "@/lib/types";
 
 /** Signed-in shell: loads the current user (401 -> login), nav, user + role, sign out. */
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -87,16 +87,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const navItems = [
-    { href: "/devotees", label: t.nav.devotees, min: "MEMBER" as Role },
-    { href: "/donations", label: t.nav.donations, min: "LEADER" as Role },
-    { href: "/staff", label: t.nav.staff, min: "LEADER" as Role },
-    { href: "/events", label: t.nav.events, min: "MEMBER" as Role },
-    { href: "/pujas", label: t.nav.pujas, min: "MEMBER" as Role },
-    { href: "/volunteers", label: t.nav.volunteers, min: "LEADER" as Role },
-    { href: "/temple", label: t.nav.temple, min: "MEMBER" as Role },
-    { href: "/payments", label: t.nav.payments, min: "TRUST_ADMIN" as Role },
-    { href: "/audit", label: t.nav.audit, min: "TRUST_ADMIN" as Role },
+  const navItems: { href: string; label: string; min: Role; module?: StaffModule }[] = [
+    { href: "/devotees", label: t.nav.devotees, min: "MEMBER", module: "DEVOTEES" },
+    { href: "/donations", label: t.nav.donations, min: "LEADER", module: "DONATIONS" },
+    { href: "/staff", label: t.nav.staff, min: "LEADER" },
+    { href: "/events", label: t.nav.events, min: "MEMBER", module: "EVENTS" },
+    { href: "/pujas", label: t.nav.pujas, min: "MEMBER", module: "PUJAS" },
+    { href: "/volunteers", label: t.nav.volunteers, min: "LEADER", module: "VOLUNTEERS" },
+    { href: "/temple", label: t.nav.temple, min: "MEMBER", module: "TEMPLE" },
+    { href: "/payments", label: t.nav.payments, min: "TRUST_ADMIN" },
+    { href: "/audit", label: t.nav.audit, min: "TRUST_ADMIN" },
   ];
 
   return (
@@ -112,7 +112,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               {me.tenant ?? tenant}
             </span>
             <nav aria-label="Main" className="order-last flex w-full gap-1 sm:order-none sm:w-auto">
-              {navItems.filter((n) => hasRole(me.role, n.min)).map((n) => {
+              {navItems.filter((n) => hasRole(me.role, n.min)
+                && (!n.module || moduleAccess(me.moduleLimits, n.module) !== "NONE")).map((n) => {
                 const active = pathname === n.href || pathname.startsWith(`${n.href}/`);
                 return (
                   <Link

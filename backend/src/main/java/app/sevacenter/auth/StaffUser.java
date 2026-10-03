@@ -24,6 +24,7 @@ public final class StaffUser implements UserDetails, CredentialsContainer {
     private final String displayName;
     private final Role role;
     private final boolean active;
+    private final java.util.Map<app.sevacenter.user.StaffModule, app.sevacenter.user.ModuleAccess> limits;
     private String passwordHash;
 
     StaffUser(AppUser user) {
@@ -33,7 +34,17 @@ public final class StaffUser implements UserDetails, CredentialsContainer {
         this.displayName = user.getDisplayName();
         this.role = user.getRole();
         this.active = user.getStatus() == UserStatus.ACTIVE;
+        this.limits = user.getModuleLimits();
         this.passwordHash = user.getPasswordHash();
+    }
+
+    /** This user's access to a module (ADR 0021): FULL unless a TRUST_ADMIN narrowed it. */
+    public app.sevacenter.user.ModuleAccess access(app.sevacenter.user.StaffModule module) {
+        return limits.getOrDefault(module, app.sevacenter.user.ModuleAccess.FULL);
+    }
+
+    public java.util.Map<app.sevacenter.user.StaffModule, app.sevacenter.user.ModuleAccess> moduleLimits() {
+        return limits;
     }
 
     public long userId() {

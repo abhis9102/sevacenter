@@ -193,6 +193,23 @@ public class UserManagementService {
         return user;
     }
 
+    /**
+     * Narrows what a LEADER or MEMBER can reach (ADR 0021). Limits only ever take away; a
+     * TRUST_ADMIN is never limited, so the trust can't lock itself out of its own admin.
+     */
+    @Transactional
+    public AppUser changeModuleAccess(long userId, java.util.Map<StaffModule, ModuleAccess> limits) {
+        AppUser user = find(userId);
+        if (user.getRole() == Role.TRUST_ADMIN) {
+            throw new UserConflictException("admins_not_limited");
+        }
+        user.limitModules(limits);
+        String summary = ModuleAccess.format(limits);
+        auditTrail.record(AuditAction.USER_ACCESS_CHANGED, "user", user.getId(),
+                summary == null ? "no limits" : summary.length() > 80 ? summary.substring(0, 77) + "..." : summary);
+        return user;
+    }
+
     @Transactional
     public AppUser deactivate(long userId) {
         AppUser user = find(userId);

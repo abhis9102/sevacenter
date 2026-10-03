@@ -36,6 +36,7 @@ const MESSAGES: Record<string, string> = {
   too_many_attempts: "Too many attempts. Wait a few minutes before trying again.",
   email_taken: "A staff member with this email already exists.",
   last_admin: "The trust must keep at least one active trust admin. Make someone else an admin first.",
+  admins_not_limited: "Trust admins always have full access. Change their role first to limit it.",
   cannot_delete_self: "You can't delete your own account. Ask another trust admin.",
   use_change_password: "For your own account, use Profile → Change password.",
   not_active: "Only active staff can get a password reset link.",

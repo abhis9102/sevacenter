@@ -340,8 +340,18 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
   equivalent (found first: the same-transaction guarantee was untested, and a second annotated entry
   point could bypass it; removed); probe +4 rows.
 
-Next (user decisions 2026-10-04): server-enforced module permissions → donation funds → staff
-dashboard → dark mode + logo.
+## Module access limits ✅ (this PR, ADR 0021)
+- `V20`: `app_user.module_limits` (DB CHECK on format). Per user, per module (Devotees, Donations,
+  Events, Pujas, Volunteers, Temple): VIEW (read-only) or NONE. **Only narrows the role**; admins are
+  never limited (API refuses, promotion clears, stored limits ignored).
+- `ModuleAccessInterceptor` enforces it on every API call; one prefix table; `ModuleCoverageTest` fails
+  if any endpoint is unmapped. Applies on the next request (principal rebuilt from the DB). Audited.
+- Staff screen "Access" editor; nav hides closed modules. `ModuleAccessTest` (7) + coverage (2),
+  **mutation-checked 11/11** (found first: stored limits on an admin were only ignored by accident of
+  promotion clearing them; now tested directly); probe +7 rows.
+- Replaces a UI-only proposal that hid menus while every API stayed open.
+
+Next (user decisions 2026-10-04): donation funds → staff dashboard → dark mode + logo.
 
 **MVP features are now complete.** Then: M5 containers → M6 AWS → M7 gates.
 
