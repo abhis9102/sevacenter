@@ -6,5 +6,7 @@ public enum DonationMode {
     UPI,
     CHEQUE,
     BANK_TRANSFER,
-    CARD
+    CARD,
+    /** Wallets and other online methods, as Razorpay reports them (ADR 0013). */
+    WALLET
 }

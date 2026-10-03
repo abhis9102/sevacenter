@@ -176,6 +176,25 @@ From the review of the profile/avatar/i18n and password-reset work (tests in `Pr
 | Staff opting out of the audit trail | No "activity log" opt-out (removed with the unused directory toggle) | `getProfileReturnsCurrentUserInfoAndDefaultPreferences` |
 | Open redirect via the "go to your temple" box (`evil.example/x` became the host) | Slug validated like registration before building the URL | `routing.test.ts` → `portalLoginUrl` |
 
+### Online donations (M3.3, ADR 0013): threat → control → test
+
+Tests in `OnlineDonationTest` (fake gateway), `RazorpayGatewayLiveTest` (opt-in, Razorpay test mode),
+`payments.test.ts`; rows in `authz_probe.py`.
+
+| Threat | Control | Test |
+|---|---|---|
+| Forged "payment succeeded" call | HMAC-SHA256(order\|payment, trust secret), constant-time compare | `aForgedSignatureRecordsNothing` |
+| Signature ok but payment wrong (amount, status, currency, order) | The payment is re-fetched from Razorpay and must match the server-side intent exactly | `theGatewaysRecordMustMatchAmountOrderAndStatus`, `aPaymentForOneOrderNeverSettlesAnotherOfTheSameAmount` |
+| Amount tampering in the browser | Order created server-side; confirm takes no amount | `aVerifiedPaymentBecomesOneOnlineLedgerEntry` |
+| Replay / double counting | Intent row-locked; idempotent confirm; `UNIQUE (payment_ref)`, `UNIQUE (razorpay_payment_id)` | `confirmingTwiceIsIdempotent`, `aPaymentCantBeReplayedOnAnotherOrder` |
+| Another trust's order settled on this host | RLS on `payment_intent` | `anOrderOnlyResolvesOnItsOwnTrustsHost`, probe |
+| Gateway secret leak (DB dump, API, logs) | AES-GCM (tenant-bound) under its own key; write-only API; `Credentials.toString()` masks it | `onlyAdminsConnectAGatewayAndTheSecretIsNeverStoredOrShownInClear` |
+| Wrong or junk credentials saved | Verified with Razorpay before saving | `credentialsRazorpayRejectsAreNotSaved`, live test |
+| Lost payments (browser closed after paying) | Admin reconciliation asks Razorpay about pending orders | `reconciliationRecoversAPaymentWhoseBrowserClosed` |
+| Spam orders on a public endpoint | 20 per IP per 15 min; amounts Rs 1 - Rs 10,00,000 | `ordersAreRateLimitedPerClientAndAmountsBounded` |
+| Unattributed ledger entries | DB CHECK: STAFF needs `recorded_by`, ONLINE needs `payment_ref` | `everyLedgerEntryNamesItsStaffMemberOrItsPayment` |
+| Third-party script on our pages | Checkout allowed (script + frames) on `/donate` only; injected by nonce'd code under `strict-dynamic` | `payments.test.ts` (CSP) |
+
 ## Open questions
 
 - Public donor access: own login vs. link/OTP (affects the auth surface).

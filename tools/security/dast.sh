@@ -39,8 +39,9 @@ DB_APP_PASSWORD=$(openssl rand -hex 16)
 # Throwaway PAN keys (ADR 0012) for this run only: the app refuses to start without them.
 PAN_KEY=$(openssl rand -base64 32)
 PAN_INDEX_KEY=$(openssl rand -base64 32)
+SECRETS_KEY=$(openssl rand -base64 32)  # gateway credentials (ADR 0013)
 if [ -n "${GITHUB_ACTIONS:-}" ]; then
-  for v in "$DB_PASSWORD" "$DB_APP_PASSWORD" "$PAN_KEY" "$PAN_INDEX_KEY"; do echo "::add-mask::$v"; done
+  for v in "$DB_PASSWORD" "$DB_APP_PASSWORD" "$PAN_KEY" "$PAN_INDEX_KEY" "$SECRETS_KEY"; do echo "::add-mask::$v"; done
 fi
 
 echo "--- ephemeral Postgres (same least-privilege init as local dev)"
@@ -59,7 +60,7 @@ JDBC_URL="jdbc:postgresql://127.0.0.1:$DB_PORT/sevacenter" # trufflehog:ignore â
 SPRING_PROFILES_ACTIVE=local SERVER_PORT=$APP_PORT \
   DB_URL="$JDBC_URL" DB_USERNAME=sevacenter \
   DB_PASSWORD="$DB_PASSWORD" DB_APP_USERNAME=sevacenter_app DB_APP_PASSWORD="$DB_APP_PASSWORD" \
-  SEVACENTER_PAN_KEY="$PAN_KEY" SEVACENTER_PAN_INDEX_KEY="$PAN_INDEX_KEY" \
+  SEVACENTER_PAN_KEY="$PAN_KEY" SEVACENTER_PAN_INDEX_KEY="$PAN_INDEX_KEY" SEVACENTER_SECRETS_KEY="$SECRETS_KEY" \
   java -jar "$JAR" > "$OUT/app.log" 2>&1 &
 APP_PID=$!
 for _ in $(seq 90); do

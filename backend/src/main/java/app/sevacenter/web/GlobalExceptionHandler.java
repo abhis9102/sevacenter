@@ -112,6 +112,21 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(Map.of("error", "too_many_attempts"));
     }
 
+    @ExceptionHandler(app.sevacenter.donation.OnlineDonationService.PaymentNotVerifiedException.class)
+    public ResponseEntity<Map<String, Object>> onPaymentNotVerified() {
+        return ResponseEntity.badRequest().body(Map.of("error", "payment_not_verified"));
+    }
+
+    @ExceptionHandler(app.sevacenter.donation.OnlineDonationService.PaymentsNotConfiguredException.class)
+    public ResponseEntity<Map<String, Object>> onPaymentsNotConfigured() {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "payments_not_configured"));
+    }
+
+    @ExceptionHandler(app.sevacenter.donation.OnlineDonationService.GatewayUnavailableException.class)
+    public ResponseEntity<Map<String, Object>> onGatewayUnavailable() {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of("error", "gateway_unavailable"));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> onValidation(MethodArgumentNotValidException ex) {
         // Sorted, so identical requests get byte-identical responses. With a HashMap the field

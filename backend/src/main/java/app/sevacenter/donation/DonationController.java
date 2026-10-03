@@ -115,11 +115,12 @@ public class DonationController {
 
     public record DonationResponse(long id, Long devoteeId, String donorName, String amount, DonationMode mode,
                                    String reference, String purpose, LocalDate receivedOn, Long reversesId,
-                                   String reversalReason, Long recordedBy, OffsetDateTime createdAt) {
+                                   String reversalReason, Long recordedBy, DonationChannel channel,
+                                   String paymentRef, OffsetDateTime createdAt) {
         static DonationResponse of(Donation d) {
             return new DonationResponse(d.getId(), d.getDevoteeId(), d.getDonorName(), Money.toRupees(d.getAmountPaise()),
                     d.getMode(), d.getReference(), d.getPurpose(), d.getReceivedOn(), d.getReversesId(),
-                    d.getReversalReason(), d.getRecordedBy(), d.getCreatedAt());
+                    d.getReversalReason(), d.getRecordedBy(), d.getChannel(), d.getPaymentRef(), d.getCreatedAt());
         }
     }
 
