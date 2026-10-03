@@ -127,3 +127,76 @@ export interface ChangePasswordInput {
   currentPassword: string;
   newPassword: string;
 }
+
+export type DonationMode = "CASH" | "UPI" | "CHEQUE" | "BANK_TRANSFER" | "CARD" | "WALLET";
+
+export const DONATION_MODES: DonationMode[] = ["UPI", "CASH", "CARD", "BANK_TRANSFER", "CHEQUE"];
+
+export interface DonationItem {
+  id: number;
+  devoteeId: number | null;
+  donorName: string;
+  amount: string;
+  mode: DonationMode;
+  reference: string | null;
+  purpose: string | null;
+  receivedOn: string;
+  reversesId: number | null;
+  reversalReason: string | null;
+  recordedBy: number | null;
+  /** STAFF = recorded by hand; ONLINE = verified Razorpay payment (paymentRef = Razorpay payment id). */
+  channel: "STAFF" | "ONLINE";
+  paymentRef: string | null;
+  createdAt: string;
+}
+
+export interface DonationPage {
+  items: DonationItem[];
+  page: number;
+  size: number;
+  total: number;
+}
+
+export interface ModeSummary {
+  mode: DonationMode;
+  net: string;
+  donations: number;
+  reversals: number;
+}
+
+export interface DonationSummary {
+  financialYear: string;
+  from: string;
+  to: string;
+  net: string;
+  byMode: ModeSummary[];
+}
+
+export interface ReceiptDetail {
+  id: number;
+  number: string;
+  donationId: number;
+  issuedOn: string;
+  donorName: string;
+  donorAddress: string;
+  donorPan: string;
+  amount: string;
+  mode: DonationMode;
+  receivedOn: string;
+  trustLegalName: string;
+  trustAddress: string;
+  trustPan: string;
+  trustRegistration80g: string;
+  cancelled: boolean;
+  cancellationReason: string | null;
+}
+
+export interface RecordDonationInput {
+  donorName?: string;
+  devoteeId?: number | null;
+  amount: string;
+  mode: DonationMode;
+  reference?: string | null;
+  purpose?: string | null;
+  receivedOn: string;
+}

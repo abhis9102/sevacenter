@@ -70,6 +70,14 @@ public class ReceiptController {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(full(service.get(id)));
     }
 
+    @GetMapping("/api/v1/donations/{id}/receipt")
+    @PreAuthorize("hasRole('LEADER')")
+    public ResponseEntity<ReceiptResponse> getForDonation(@PathVariable long id) {
+        return service.findByDonationId(id)
+                .map(r -> ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(full(r)))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/api/v1/receipts")
     @PreAuthorize("hasRole('LEADER')")
     public ReceiptPage list(@RequestParam(required = false) Integer fy,

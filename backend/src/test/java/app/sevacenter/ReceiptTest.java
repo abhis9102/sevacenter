@@ -261,6 +261,32 @@ class ReceiptTest {
                 .isInstanceOf(DataAccessException.class).rootCause().hasMessageContaining("permission denied");
     }
 
+    @Test
+    void aDonationsReceiptIsForLeadersOfThatTrustOnly() throws Exception {
+        long d = donation(a, leader, "1500", "UPI", YESTERDAY);
+        issue(leader, d, PAN).andExpect(status().isCreated());
+        MockHttpSession member = staff.staff(a, admin, "MEMBER");
+        mvc.perform(on(a, get("/api/v1/donations/" + d + "/receipt")).session(member)).andExpect(status().isForbidden());
+        String b = staff.tenant("rc-b");
+        MockHttpSession adminB = staff.loginAdmin(b);
+        mvc.perform(on(b, get("/api/v1/donations/" + d + "/receipt")).session(adminB)).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getForDonationReturnsReceiptWhenIssuedAnd404WhenNot() throws Exception {
+        long d = donation(a, leader, "1500", "UPI", YESTERDAY);
+        mvc.perform(on(a, get("/api/v1/donations/" + d + "/receipt")).session(leader))
+                .andExpect(status().isNotFound());
+
+        issue(leader, d, PAN).andExpect(status().isCreated());
+
+        mvc.perform(on(a, get("/api/v1/donations/" + d + "/receipt")).session(leader))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(jsonPath("$.donationId").value(d))
+                .andExpect(jsonPath("$.donorPan").value(PAN));
+    }
+
     // --- helpers -----------------------------------------------------------------------------
 
     private ResultActions profile(String slug, MockHttpSession session, String name) throws Exception {
