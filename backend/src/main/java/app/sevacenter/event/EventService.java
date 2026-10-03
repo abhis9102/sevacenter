@@ -155,6 +155,12 @@ public class EventService {
     // --- helpers -------------------------------------------------------------------------------
 
     private void apply(Event e, EventDetails d, long staffId) {
+        // Plausible times only. JSON numbers (and numeric strings) parse as epoch seconds, so "10"
+        // would otherwise be accepted as 1 January 1970 (found by DAST).
+        OffsetDateTime earliest = OffsetDateTime.parse("2000-01-01T00:00:00Z");
+        if (d.startsAt().isBefore(earliest) || d.startsAt().isAfter(now().plusYears(5))) {
+            throw new InvalidFieldException("startsAt", "startsAt must be a real date within the next five years");
+        }
         if (!d.endsAt().isAfter(d.startsAt())) {
             throw new InvalidFieldException("endsAt", "endsAt must be after startsAt");
         }

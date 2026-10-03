@@ -118,6 +118,15 @@ class EventTest {
         register(closed, "Lakshmi", 1).andExpect(status().isConflict());
     }
 
+    /** DAST found "10" accepted as a start time (epoch seconds, i.e. 1970). Only plausible dates. */
+    @Test
+    void implausibleEventTimesAreRejected() throws Exception {
+        mvc.perform(on(a, post("/api/v1/events")).session(leader).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                .content(staff.body("title", "Epoch", "startsAt", "10", "endsAt", "20", "capacity", 10, "registrationOpen", true)))
+                .andExpect(status().isBadRequest());
+        create(leader, OffsetDateTime.now().plusYears(6), 10).andExpect(status().isBadRequest());
+    }
+
     // --- capacity ----------------------------------------------------------------------------
 
     @Test
