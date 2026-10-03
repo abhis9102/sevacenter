@@ -24,3 +24,4 @@ change a decision, add a new ADR that supersedes the old one.
 | [0016](0016-puja-bookings-seva-income.md) | Puja bookings: dakshina is seva income (never in the 80G ledger), verified payments only, priest sees no contacts | Accepted |
 | [0017](0017-public-temple-page.md) | Public temple page on the trust host: temple-entered content only, links from real service state | Accepted |
 | [0018](0018-devotee-login-one-time-codes.md) | Devotee login: one-time codes by SMS/email, HMAC-stored, attempt + send limits, separate portal-scoped session | Accepted |
+| [0019](0019-donation-history-in-my-seva.md) | Donation history in "my seva": optional checkout contact, exact-contact matching, receipt copies with PAN masked | Accepted |

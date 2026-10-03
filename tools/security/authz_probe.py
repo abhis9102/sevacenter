@@ -395,6 +395,7 @@ class Probe:
         devotee.cookies["SC_DEVOTEE"] = "A" * 43
         self.expect("a forged devotee cookie", 401, devotee.request("GET", "/api/v1/portal/me"))
         self.expect("a forged devotee cookie opens no staff API", 401, devotee.request("GET", "/api/v1/devotees"))
+        self.expect("no devotee session, no receipt copy", 401, devotee.request("GET", "/api/v1/portal/donations/1/receipt"))
         status, body = devotee.request("POST", "/api/v1/public/devotee-login/verify",
                                        body={"channel": "EMAIL", "contact": "probe@example.org", "code": "123456"})
         self.check("a guessed code is refused without detail", status == 400 and body == {"error": "invalid_code"},

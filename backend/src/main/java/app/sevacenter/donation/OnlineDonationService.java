@@ -89,13 +89,18 @@ public class OnlineDonationService {
     // --- public: order + confirm --------------------------------------------------------------
 
     @Transactional
-    public CreatedOrder createOrder(long amountPaise, String donorName, String purpose) {
+    public CreatedOrder createOrder(long amountPaise, String donorName, String purpose, String phone, String email) {
         if (amountPaise < MIN_PAISE || amountPaise > MAX_PAISE) {
             throw new InvalidFieldException("amount", "amount must be between Rs 1 and Rs 10,00,000");
         }
         String name = donorName == null ? "" : donorName.strip();
         if (name.isEmpty() || name.length() > 120) {
             throw new InvalidFieldException("donorName", "donorName is required");
+        }
+        String donorPhone = phone == null || phone.isBlank() ? null : app.sevacenter.devotee.DevoteeService.phone(phone);
+        String donorEmail = email == null || email.isBlank() ? null : email.strip().toLowerCase(java.util.Locale.ROOT);
+        if (donorEmail != null && (donorEmail.length() > 254 || !donorEmail.matches("[^@\\s]+@[^@\\s]+\\.[^@\\s]+"))) {
+            throw new InvalidFieldException("email", "email is not valid");
         }
         long tenantId = currentTenant();
         Credentials creds = credentials(tenantId);
@@ -105,7 +110,8 @@ public class OnlineDonationService {
         } catch (GatewayException e) {
             throw new GatewayUnavailableException();
         }
-        intents.save(new PaymentIntent(tenantId, orderId, amountPaise, name, blankToNull(purpose)));
+        intents.save(new PaymentIntent(tenantId, orderId, amountPaise, name, blankToNull(purpose))
+                .withContact(donorPhone, donorEmail));
         return new CreatedOrder(orderId, creds.keyId(), amountPaise);
     }
 
