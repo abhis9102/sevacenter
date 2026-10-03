@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import app.sevacenter.auth.LoginThrottle;
 import app.sevacenter.auth.RegistrationRequest;
 import app.sevacenter.auth.RegistrationService;
 import org.junit.jupiter.api.BeforeEach;
@@ -144,10 +145,20 @@ class StaffAuthTest {
 
     @Test
     void oneIpSprayingManyAccountsGetsLocked() throws Exception {
-        for (int i = 0; i < 5; i++) {
+        // Below the per-account limit for each account, so only the IP limit can trip.
+        for (int i = 0; i < LoginThrottle.MAX_IP_FAILURES; i++) {
             login(a, "user" + i + "@example.org", "wrong-password-1").andExpect(status().isUnauthorized());
         }
         login(b, admin(b), PASSWORD).andExpect(status().isTooManyRequests());
+    }
+
+    /** A shared IP (carrier NAT) isn't locked by a handful of typos from other people on it. */
+    @Test
+    void aFewFailuresFromASharedIpDontLockItsOtherUsers() throws Exception {
+        for (int i = 0; i < LoginThrottle.MAX_FAILURES; i++) {
+            login(a, "user" + i + "@example.org", "wrong-password-1").andExpect(status().isUnauthorized());
+        }
+        login(b, admin(b), PASSWORD).andExpect(status().isOk());
     }
 
     // --- helpers -----------------------------------------------------------------------------
