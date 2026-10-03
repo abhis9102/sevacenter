@@ -80,6 +80,7 @@ Tests in `UserManagementTest` unless noted. 22 mutations, all killed.
 | Setup link redeemed on another tenant's host | `user_setup_token` under forced RLS | `aLinkOnlyWorksOnItsOwnTenantsHost`, `everyTenantScopedTableHasForcedRlsAndAPolicy` |
 | Stale links after reissue / deactivation | Reissue and deactivation delete the user's links | `reissuingALinkKillsTheOldOne`, `deactivatingAPendingUserDeletesTheirLink` |
 | Weak first password | ≥ 12 characters | `weakPasswordsAreRefusedAtSetup` |
+| Deleting staff destroys the audit trail, or leaves a way back in | PENDING invites hard-deleted; anyone who could act is tombstoned (email freed, no password, DISABLED, `deleted_at`; display name kept for records); session ends next request; TRUST_ADMIN only, never yourself | `onlyAdminsCanDeleteStaffAndNobodyCanDeleteThemselves`, `deletingAnInvitationRemovesItAndFreesTheEmail`, `deletingActiveStaffEndsTheirAccessButKeepsWhoTheyWereForTheRecords`, `anotherTenantsStaffCantBeDeleted` |
 | Trust locked out (no admin left), incl. two admins demoting each other at once | Last-admin check counted under a row lock | `theLastAdminCannotBeDemotedOrDeactivated`, `adminsAreCountedUnderARowLock` |
 | Deactivated / demoted user keeps acting until the session expires | `StaffSessionFilter` re-reads the user on every request | `deactivationEndsTheUsersSessionOnTheirNextRequest`, `aDemotionAppliesToTheUsersVeryNextRequest` |
 | Session replayed on another tenant's host if RLS were misconfigured | The filter's own tenant check, independent of RLS | `StaffSessionFilterTest` (unit) |

@@ -19,7 +19,9 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> {
 
     boolean existsByEmail(String email);
 
-    List<AppUser> findAllByOrderByCreatedAtAsc();
+    List<AppUser> findAllByDeletedAtIsNullOrderByCreatedAtAsc();
+
+    Optional<AppUser> findByIdAndDeletedAtIsNull(Long id);
 
     /**
      * The tenant's active admins, row-locked: demoting or disabling an admin re-counts under the

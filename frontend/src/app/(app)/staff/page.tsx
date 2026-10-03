@@ -38,6 +38,7 @@ export default function StaffPage() {
   const [creating, setCreating] = useState(false);
   const [link, setLink] = useState<{ name: string; url: string } | null>(null);
   const [toDeactivate, setToDeactivate] = useState<StaffUser | null>(null);
+  const [toDelete, setToDelete] = useState<StaffUser | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -83,6 +84,18 @@ export default function StaffPage() {
       setNotice({ tone: "danger", text: describeError(err) });
     }
     setToDeactivate(null);
+    await load();
+  }
+
+  async function remove(user: StaffUser) {
+    setNotice(null);
+    try {
+      await api.request<void>(`/users/${user.id}`, { method: "DELETE" });
+      setNotice({ tone: "success", text: `${user.displayName} has been removed.` });
+    } catch (err) {
+      setNotice({ tone: "danger", text: describeError(err) });
+    }
+    setToDelete(null);
     await load();
   }
 
@@ -162,6 +175,11 @@ export default function StaffPage() {
                               Deactivate
                             </Button>
                           ) : null}
+                          {!self ? (
+                            <Button variant="ghost" className="text-danger" onClick={() => setToDelete(u)}>
+                              Delete
+                            </Button>
+                          ) : null}
                         </div>
                       </td>
                     ) : null}
@@ -205,6 +223,29 @@ export default function StaffPage() {
           </Button>
           <Button variant="danger" onClick={() => toDeactivate && void deactivate(toDeactivate)}>
             Deactivate
+          </Button>
+        </div>
+      </Dialog>
+
+      <Dialog open={toDelete !== null} onClose={() => setToDelete(null)} title="Delete staff member?">
+        {toDelete?.status === "PENDING" ? (
+          <p>
+            The invitation for {toDelete?.displayName} will be cancelled and their setup link will stop working. You can
+            invite the same email again later.
+          </p>
+        ) : (
+          <p>
+            {toDelete?.displayName} will be signed out everywhere, removed from this list and can never sign in again.
+            This can&apos;t be undone. Their name stays on records they made (devotee changes, donations), so the
+            history still shows who did what. Their email can be invited again.
+          </p>
+        )}
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" onClick={() => setToDelete(null)}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={() => toDelete && void remove(toDelete)}>
+            {toDelete?.status === "PENDING" ? "Cancel invitation" : "Delete"}
           </Button>
         </div>
       </Dialog>

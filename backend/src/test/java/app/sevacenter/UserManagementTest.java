@@ -3,6 +3,7 @@ package app.sevacenter;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -293,6 +294,72 @@ class UserManagementTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body("email", "DUP@x.example", "displayName", "Dup", "role", "MEMBER")))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.error").value("email_taken"));
+    }
+
+    // --- deleting staff ----------------------------------------------------------------------
+
+    @Test
+    void onlyAdminsCanDeleteStaffAndNobodyCanDeleteThemselves() throws Exception {
+        long leaderId = onboard(a, adminA, "leader@x.example", "LEADER");
+        MockHttpSession leader = loginAs(a, leaderId);
+        long target = userId(createUser(a, adminA, "target@x.example", "MEMBER"));
+        mvc.perform(on(a, delete("/api/v1/users/" + target)).session(leader).with(csrf()))
+                .andExpect(status().isForbidden());
+        mvc.perform(on(a, delete("/api/v1/users/" + meId(a, adminA))).session(adminA).with(csrf()))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.error").value("cannot_delete_self"));
+    }
+
+    @Test
+    void deletingAnInvitationRemovesItAndFreesTheEmail() throws Exception {
+        JsonNode created = createUser(a, adminA, "invitee@x.example", "MEMBER");
+        long id = userId(created);
+        mvc.perform(on(a, delete("/api/v1/users/" + id)).session(adminA).with(csrf())).andExpect(status().isNoContent());
+
+        assertThat(pinned(a, () -> jdbc.queryForObject("select count(*) from app_user where id = ?", Integer.class, id))).isZero();
+        setup(a, token(created.at("/setupUrl").asString()), PASSWORD).andExpect(status().isBadRequest());
+        createUser(a, adminA, "invitee@x.example", "MEMBER"); // the email can be invited again
+    }
+
+    /**
+     * Someone who could have acted is tombstoned, not removed: their records (devotee changes,
+     * consent, donations) keep pointing at a row that still says who they were.
+     */
+    @Test
+    void deletingActiveStaffEndsTheirAccessButKeepsWhoTheyWereForTheRecords() throws Exception {
+        long id = onboard(a, adminA, "leaver@x.example", "LEADER");
+        MockHttpSession leaver = loginAs(a, id);
+        mvc.perform(on(a, post("/api/v1/devotees")).session(leaver).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"fullName\":\"Recorded By Leaver\",\"consentSource\":\"IN_PERSON\"}"))
+                .andExpect(status().isCreated());
+
+        mvc.perform(on(a, delete("/api/v1/users/" + id)).session(adminA).with(csrf())).andExpect(status().isNoContent());
+
+        mvc.perform(on(a, get("/api/v1/me")).session(leaver)).andExpect(status().isUnauthorized());
+        login(a, "leaver@x.example", PASSWORD, 401);
+        String list = mvc.perform(on(a, get("/api/v1/users")).session(adminA)).andReturn().getResponse().getContentAsString();
+        assertThat(list).doesNotContain("leaver@x.example", "deleted-");
+        changeRole(a, adminA, id, "TRUST_ADMIN").andExpect(status().isNotFound());
+        mvc.perform(on(a, delete("/api/v1/users/" + id)).session(adminA).with(csrf())).andExpect(status().isNotFound());
+
+        java.util.Map<String, Object> row = pinned(a, () -> jdbc.queryForMap(
+                "select email, display_name, password_hash, status, deleted_at from app_user where id = ?", id));
+        assertThat(row.get("email")).isEqualTo("deleted-" + id + "@users.invalid");
+        assertThat(row.get("display_name")).isEqualTo("User");
+        assertThat(row.get("password_hash")).isNull();
+        assertThat(row.get("status")).isEqualTo("DISABLED");
+        assertThat(row.get("deleted_at")).isNotNull();
+        assertThat(pinned(a, () -> jdbc.queryForObject(
+                "select count(*) from devotee where created_by = ?", Integer.class, id))).isEqualTo(1);
+        createUser(a, adminA, "leaver@x.example", "MEMBER"); // the email is free again
+    }
+
+    @Test
+    void anotherTenantsStaffCantBeDeleted() throws Exception {
+        MockHttpSession adminB = login(b, admin(b), PASSWORD);
+        long theirs = userId(createUser(b, adminB, "victim@x.example", "MEMBER"));
+        mvc.perform(on(a, delete("/api/v1/users/" + theirs)).session(adminA).with(csrf())).andExpect(status().isNotFound());
+        assertThat(pinned(b, () -> jdbc.queryForObject("select count(*) from app_user where id = ?", Integer.class, theirs)))
+                .isEqualTo(1);
     }
 
     // --- the last admin ----------------------------------------------------------------------

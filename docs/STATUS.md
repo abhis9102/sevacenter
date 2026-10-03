@@ -214,12 +214,19 @@ curl -s -b /tmp/jar -X POST localhost:8080/api/v1/register -H 'Content-Type: app
   `CSP: default-src 'none'; sandbox` anyway, then a scoped accepted risk. Three 500s fixed (bad
   multipart → 400, oversize → 413, concurrent delete → 409). 96 tests.
 
-## Fix: login throttle behind a proxy (this PR)
+## Fix: login throttle behind a proxy ✅ (#23)
 - Found while connecting the frontend: behind any proxy (Next dev proxy, the M6 load balancer)
   every login came from the proxy's IP, so 5 wrong passwords from anyone locked out everyone.
 - Now: `server.forward-headers-strategy: native` + `TRUSTED_PROXIES` (loopback by default; LB
   subnets in M6). Only a trusted peer's `X-Forwarded-For` counts, rightmost hop first (unspoofable).
   Per-IP limit raised to 50 (shared carrier NAT); per-account stays 5. Mutation-checked.
+
+## Delete staff (this PR)
+- `DELETE /api/v1/users/{id}` (TRUST_ADMIN, not yourself) + a Delete button with a confirm dialog.
+- A PENDING invitation is removed outright. Anyone who could have acted is **tombstoned** (`V7`:
+  `deleted_at`; email freed, no password, DISABLED): signed out on the next request, gone from the
+  list, can't log in; the display name stays so records they made still say who made them.
+  Mutation-checked 7/7; probe +2 rows.
 
 ## Frontend track (started 2026-10-03)
 - Next.js + TS admin app (`frontend/`), being built in parallel: login, account setup, staff,
