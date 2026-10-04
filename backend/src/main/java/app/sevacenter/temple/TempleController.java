@@ -91,7 +91,7 @@ public class TempleController {
         if (list.size() > MAX_AARTIS) {
             throw new InvalidFieldException("aartis", "at most " + MAX_AARTIS + " aartis");
         }
-        TempleProfile p = profiles.findById(tenantId).orElseGet(() -> new TempleProfile(tenantId));
+        TempleProfile p = locked(tenantId, staff.userId());
         p.edit(clean(r.deity()), clean(r.address()),
                 r.helpline() == null || r.helpline().isBlank() ? null : DevoteeService.phone(r.helpline()),
                 clean(r.timings()), clean(r.announcement()), staff.userId(), OffsetDateTime.now(clock));
@@ -113,11 +113,8 @@ public class TempleController {
     @Transactional
     public Profile setStatus(@Valid @RequestBody StatusRequest r, @AuthenticationPrincipal StaffUser staff) {
         long tenantId = TenantContext.get();
-        TempleProfile p = profiles.findById(tenantId).orElseGet(() -> new TempleProfile(tenantId));
+        TempleProfile p = locked(tenantId, staff.userId());
         p.override(r.status() == null ? null : r.status().name(), LocalDate.now(clock), clean(r.note()));
-        if (p.getUpdatedAt() == null) {
-            p.edit(null, null, null, null, null, staff.userId(), OffsetDateTime.now(clock));
-        }
         profiles.save(p);
         auditTrail.record(AuditAction.TEMPLE_PAGE_SAVED, "temple_profile", null, null);
         return profile(p);
@@ -143,6 +140,15 @@ public class TempleController {
     private static DarshanStatus status(TempleProfile p, LocalDate today) {
         String s = p == null ? null : p.overrideFor(today);
         return s == null ? null : DarshanStatus.valueOf(s);
+    }
+
+    /**
+     * This temple's row, created if missing and locked for the rest of the transaction, so parallel
+     * saves can't interleave their timetable delete-and-insert (found by DAST) or race to create it.
+     */
+    private TempleProfile locked(long tenantId, long staffId) {
+        profiles.ensureRow(tenantId, staffId);
+        return profiles.lockById(tenantId).orElseThrow();
     }
 
     private static Hours hours(TempleProfile p) {

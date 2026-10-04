@@ -1,6 +1,7 @@
 package app.sevacenter;
 
 import static app.sevacenter.TestStaff.on;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -13,6 +14,10 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import app.sevacenter.auth.RegistrationService;
 import org.junit.jupiter.api.BeforeEach;
@@ -175,6 +180,36 @@ class TempleTest {
                 .andExpect(jsonPath("$.aartis.length()").value(0))
                 .andExpect(jsonPath("$.hours").doesNotExist())
                 .andExpect(jsonPath("$.status").doesNotExist());
+    }
+
+    /**
+     * Found by DAST: parallel saves each deleted the rows they could see and inserted their own, so
+     * the timetable came back doubled (and ZAP read the extra rows as a boolean SQL injection).
+     * Saves of one temple now take a row lock first; the very first save of a new temple too.
+     */
+    @Test
+    void parallelSavesNeverDuplicateTheTimetable() throws Exception {
+        int n = 8;
+        CountDownLatch go = new CountDownLatch(1);
+        ExecutorService pool = Executors.newFixedThreadPool(n);
+        try {
+            List<Future<Integer>> results = new ArrayList<>();
+            for (int i = 0; i < n; i++) {
+                results.add(pool.submit(() -> {
+                    go.await();
+                    return schedule(leader, hours("05:30", "12:30", null, null),
+                            List.of(aarti("Kakad Aarti", "05:30"), aarti("Shej Aarti", "21:00")))
+                            .andReturn().getResponse().getStatus();
+                }));
+            }
+            go.countDown();
+            for (Future<Integer> r : results) {
+                assertThat(r.get()).isEqualTo(200);
+            }
+        } finally {
+            pool.shutdownNow();
+        }
+        mvc.perform(on(a, get("/api/v1/public/temple"))).andExpect(jsonPath("$.aartis.length()").value(2));
     }
 
     private static Map<String, Object> hours(String mo, String mc, String eo, String ec) {
