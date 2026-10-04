@@ -64,6 +64,36 @@ public class SevakSignup {
         this.notes = notes;
     }
 
+    @Column(name = "team_id")
+    private Long teamId;
+
+    private String duty;
+
+    @Column(name = "registered_by", updatable = false)
+    private Long registeredBy;
+
+    @Column(name = "removed_at")
+    private OffsetDateTime removedAt;
+
+    /** Registered by staff (ADR 0028): approved by the person who registered them. */
+    void registeredBy(long staffId, boolean approved, OffsetDateTime now) {
+        this.registeredBy = staffId;
+        if (approved) {
+            review(true, staffId, now);
+        }
+    }
+
+    void assign(Long teamId, String duty) {
+        this.teamId = teamId;
+        this.duty = teamId == null ? null : duty;
+    }
+
+    void remove(OffsetDateTime now) {
+        this.removedAt = now;
+        this.teamId = null;
+        this.duty = null;
+    }
+
     void review(boolean approve, long staffId, OffsetDateTime now) {
         this.status = approve ? "APPROVED" : "DECLINED";
         this.reviewedBy = staffId;
@@ -80,4 +110,8 @@ public class SevakSignup {
     public String getStatus() { return status; }
     public OffsetDateTime getReviewedAt() { return reviewedAt; }
     public OffsetDateTime getCreatedAt() { return createdAt; }
+    public Long getTeamId() { return teamId; }
+    public String getDuty() { return duty; }
+    public boolean isRegisteredByStaff() { return registeredBy != null; }
+    public OffsetDateTime getRemovedAt() { return removedAt; }
 }

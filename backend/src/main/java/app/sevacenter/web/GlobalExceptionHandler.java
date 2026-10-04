@@ -155,6 +155,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({app.sevacenter.event.EventService.EventNotFoundException.class,
             app.sevacenter.event.EventService.PassNotFoundException.class,
             app.sevacenter.sevak.SevakService.SignupNotFoundException.class,
+            app.sevacenter.sevak.SevakService.TeamNotFoundException.class,
             app.sevacenter.puja.PujaService.PujaNotFoundException.class,
             app.sevacenter.donation.FundService.FundNotFoundException.class,
             app.sevacenter.portal.DevoteeLoginService.NotOnATrustHostException.class})

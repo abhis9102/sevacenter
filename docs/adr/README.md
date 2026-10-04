@@ -33,3 +33,4 @@ change a decision, add a new ADR that supersedes the old one.
 | [0025](0025-devotee-contacts-and-profile.md) | One devotee, several OTP-verified contacts (merge on link), the devotee's own profile, forms pre-filled | Accepted |
 | [0026](0026-counter-bookings.md) | Counter bookings and gate passes for walk-ins: staff-only, contact optional, paid dakshina records its mode | Accepted |
 | [0027](0027-priests.md) | Priests (pujaris): listed per temple, deactivated not deleted, assigned to sankalps (composite FK) | Accepted |
+| [0028](0028-sevak-hub.md) | Sevak Hub: seva teams with shifts (create/edit/delete), staff-registered volunteers, deploy/release, remove keeps the row | Accepted |

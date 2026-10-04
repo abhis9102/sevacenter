@@ -1,5 +1,7 @@
 package app.sevacenter;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static app.sevacenter.TestStaff.on;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -9,6 +11,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.Map;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import app.sevacenter.auth.RegistrationService;
@@ -125,6 +129,98 @@ class SevakTest {
             jdbc.queryForObject("select set_config('app.tenant_id', ?, true)", String.class, Long.toString(tenantA));
             jdbc.update("delete from sevak_signup");
         })).isInstanceOf(DataAccessException.class).rootCause().hasMessageContaining("permission denied");
+    }
+
+    // --- Sevak Hub: teams, staff registration, assignment, removal (ADR 0028) -----------------------
+
+    @Test
+    void leadersCreateEditAndDeleteSevaTeamsWithShifts() throws Exception {
+        MockHttpSession member = staff.staff(a, admin, "MEMBER");
+        team(member, "Annadanam kitchen").andExpect(status().isForbidden());
+        long id = id(team(leader, "Annadanam kitchen").andExpect(status().isCreated()));
+        team(leader, "annadanam KITCHEN").andExpect(status().isBadRequest()).andExpect(jsonPath("$.fields.name").exists());
+        mvc.perform(on(a, get("/api/v1/seva-teams")).session(leader)).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].shifts.length()").value(2))
+                .andExpect(jsonPath("$[0].shifts[0].name").value("Pratah preparation"))
+                .andExpect(jsonPath("$[0].targetCount").value(15));
+        mvc.perform(on(a, put("/api/v1/seva-teams/" + id)).session(leader).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                .content(staff.body("name", "Annadanam kitchen", "targetCount", 20, "shifts", List.of(
+                        Map.of("name", "All day", "startsAt", "06:00", "endsAt", "22:00")))))
+                .andExpect(status().isOk());
+        mvc.perform(on(a, get("/api/v1/seva-teams")).session(leader)).andExpect(jsonPath("$[0].shifts.length()").value(1));
+        // A deleted team disappears, and its name can be used again.
+        mvc.perform(on(a, delete("/api/v1/seva-teams/" + id)).session(leader).with(csrf())).andExpect(status().isNoContent());
+        mvc.perform(on(a, get("/api/v1/seva-teams")).session(leader)).andExpect(jsonPath("$.length()").value(0));
+        team(leader, "Annadanam kitchen").andExpect(status().isCreated());
+        mvc.perform(on(a, delete("/api/v1/seva-teams/" + id)).session(leader).with(csrf())).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void staffRegisterAndAssignVolunteersAndDeletingATeamReleasesThem() throws Exception {
+        long kitchen = id(team(leader, "Annadanam kitchen"));
+        long ravi = id(register(leader, "Ravi Kumar", kitchen).andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("APPROVED"))
+                .andExpect(jsonPath("$.teamId").value(kitchen))
+                .andExpect(jsonPath("$.registeredByStaff").value(true)));
+        signUp(a, "Snehal Pawar", "98765 43211").andExpect(status().isCreated());
+        long snehal = json.readTree(mvc.perform(on(a, get("/api/v1/sevaks")).session(leader)).andReturn().getResponse()
+                .getContentAsString()).get(0).at("/id").asLong();
+        // Placing a new offer in a team approves it.
+        assign(snehal, kitchen).andExpect(status().isOk()).andExpect(jsonPath("$.status").value("APPROVED"))
+                .andExpect(jsonPath("$.duty").value("Morning kitchen"));
+        mvc.perform(on(a, delete("/api/v1/seva-teams/" + kitchen)).session(leader).with(csrf())).andExpect(status().isNoContent());
+        mvc.perform(on(a, get("/api/v1/sevaks")).session(leader))
+                .andExpect(jsonPath("$[?(@.teamId != null)]").isEmpty());
+        assign(ravi, kitchen).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void aRemovedVolunteerIsGoneFromEveryListButKeptForTheAuditTrail() throws Exception {
+        long ravi = id(register(leader, "Ravi Kumar", null));
+        MockHttpSession member = staff.staff(a, admin, "MEMBER");
+        mvc.perform(on(a, delete("/api/v1/sevaks/" + ravi)).session(member).with(csrf())).andExpect(status().isForbidden());
+        mvc.perform(on(a, delete("/api/v1/sevaks/" + ravi)).session(leader).with(csrf())).andExpect(status().isNoContent());
+        mvc.perform(on(a, get("/api/v1/sevaks")).session(leader)).andExpect(jsonPath("$.length()").value(0));
+        mvc.perform(on(a, delete("/api/v1/sevaks/" + ravi)).session(leader).with(csrf())).andExpect(status().isNotFound());
+        long tenantId = tenants.findBySlug(a).orElseThrow().getId();
+        Integer kept = tx.execute(st -> {
+            jdbc.queryForObject("select set_config('app.tenant_id', ?, true)", String.class, Long.toString(tenantId));
+            return jdbc.queryForObject("select count(*) from sevak_signup where removed_at is not null", Integer.class);
+        });
+        assertThat(kept).isEqualTo(1);
+    }
+
+    @Test
+    void anotherTrustsTeamCannotBeUsed() throws Exception {
+        String b = staff.tenant("sv-b");
+        MockHttpSession otherAdmin = staff.loginAdmin(b);
+        long theirs = json.readTree(mvc.perform(on(b, post("/api/v1/seva-teams")).session(otherAdmin).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON).content(staff.body("name", "Their team")))
+                .andReturn().getResponse().getContentAsString()).at("/id").asLong();
+        register(leader, "Ravi Kumar", theirs).andExpect(status().isNotFound());
+        mvc.perform(on(a, delete("/api/v1/seva-teams/" + theirs)).session(leader).with(csrf())).andExpect(status().isNotFound());
+        mvc.perform(on(a, get("/api/v1/seva-teams")).session(leader)).andExpect(jsonPath("$.length()").value(0));
+    }
+
+    private ResultActions team(MockHttpSession session, String name) throws Exception {
+        return mvc.perform(on(a, post("/api/v1/seva-teams")).session(session).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                .content(staff.body("name", name, "description", "Cooking and serving mahaprasad", "targetCount", 15,
+                        "shifts", List.of(Map.of("name", "Pratah preparation", "startsAt", "06:00", "endsAt", "12:00"),
+                                Map.of("name", "Sandhya bhandara", "startsAt", "17:00", "endsAt", "22:00")))));
+    }
+
+    private ResultActions register(MockHttpSession session, String name, Long teamId) throws Exception {
+        return mvc.perform(on(a, post("/api/v1/sevaks")).session(session).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                .content(staff.body("fullName", name, "phone", "98765 43212", "sevaAreas", "Kitchen", "teamId", teamId)));
+    }
+
+    private ResultActions assign(long id, long teamId) throws Exception {
+        return mvc.perform(on(a, post("/api/v1/sevaks/" + id + "/assign")).session(leader).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON).content(staff.body("teamId", teamId, "duty", "Morning kitchen")));
+    }
+
+    private long id(ResultActions created) throws Exception {
+        return json.readTree(created.andReturn().getResponse().getContentAsString()).at("/id").asLong();
     }
 
     private ResultActions signUp(String slug, String name, String phone) throws Exception {
