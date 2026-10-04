@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 
 import { api } from "@/components/apiClient";
-import { MandirPageTitle } from "@/components/MandirShell";
+import { MandirPageTitle, useDevotee } from "@/components/MandirShell";
+import { prefill } from "@/lib/devotee";
 import { Alert, Button, Card, TextField } from "@/components/ui";
 import { ApiError, describeError } from "@/lib/errors";
 import { formatIst, formatPassCode, type PassIssued, type PublicEvent } from "@/lib/events";
@@ -78,10 +79,11 @@ export default function UpcomingPage() {
 }
 
 function RegisterForm({ event, onCancel, onDone }: { event: PublicEvent; onCancel: () => void; onDone: (p: PassIssued) => void }) {
-  const [name, setName] = useState("");
+  const pre = prefill(useDevotee());
+  const [name, setName] = useState(pre.name);
   const [count, setCount] = useState("1");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState(pre.phone);
+  const [email, setEmail] = useState(pre.email);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Readonly<Record<string, string>>>({});

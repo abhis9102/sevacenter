@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 
 import { api } from "@/components/apiClient";
-import { MandirPageTitle } from "@/components/MandirShell";
+import { MandirPageTitle, useDevotee } from "@/components/MandirShell";
+import { prefill } from "@/lib/devotee";
 import { Alert, Button, Card, TextField } from "@/components/ui";
 import { ApiError, describeError } from "@/lib/errors";
 import { formatPassCode } from "@/lib/events";
@@ -64,8 +65,12 @@ export default function BookPujaPage() {
 function BookingForm({ puja, onBack, onDone }: {
   puja: Puja; onBack: () => void; onDone: (d: { code: string; puja: string; date: string }) => void;
 }) {
-  const [f, setF] = useState({ devoteeName: "", gotra: "", nakshatra: "", rashi: "", familyNames: "", pujaDate: todayIst(),
-                                phone: "", email: "" });
+  const devotee = useDevotee();
+  const [f, setF] = useState(() => {
+    const pre = prefill(devotee), p = devotee?.profile;
+    return { devoteeName: pre.name, gotra: p?.gotra ?? "", nakshatra: p?.nakshatra ?? "", rashi: p?.rashi ?? "",
+             familyNames: p?.familyNames ?? "", pujaDate: todayIst(), phone: pre.phone, email: pre.email };
+  });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Readonly<Record<string, string>>>({});

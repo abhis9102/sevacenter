@@ -132,6 +132,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(Map.of("error", "invalid_code"));
     }
 
+    @ExceptionHandler(app.sevacenter.portal.DevoteeLoginService.TooManyContactsException.class)
+    public ResponseEntity<Map<String, Object>> onTooManyContacts() {
+        return ResponseEntity.badRequest().body(Map.of("error", "too_many_contacts"));
+    }
+
     @ExceptionHandler(app.sevacenter.portal.DevoteeLoginService.ChannelUnavailableException.class)
     public ResponseEntity<Map<String, Object>> onChannelUnavailable() {
         return ResponseEntity.badRequest().body(Map.of("error", "channel_unavailable"));

@@ -5,27 +5,17 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "@/components/apiClient";
 import { MandirPageTitle } from "@/components/MandirShell";
 import { Alert, Badge, Button, Card, TextField } from "@/components/ui";
+import { displayPhone, type Channel, type DevoteeProfile, type MySeva } from "@/lib/devotee";
 import { ApiError, describeError } from "@/lib/errors";
 import { DEVOTEE_CHANGED } from "@/lib/temple";
 import type { ReceiptDetail } from "@/lib/types";
 
-type Channel = "EMAIL" | "SMS";
-
-interface MySeva {
-  channel: Channel;
-  contact: string;
-  donations: {
-    id: number; receivedOn: string; amount: string; mode: string; purpose: string | null; reversed: boolean;
-    receiptNumber: string | null; receiptValid: boolean;
-  }[];
-  pujaBookings: { bookingCode: string; pujaName: string; pujaDate: string; amount: string; status: string }[];
-  eventPasses: { passCode: string; eventTitle: string | null; startsAt: string | null; attendeeCount: number; status: string }[];
-  sevakSignups: { sevaAreas: string; status: string; createdAt: string }[];
-}
+const changed = () => window.dispatchEvent(new Event(DEVOTEE_CHANGED));
 
 /**
- * Devotee sign-in with a one-time code, then "my seva" (ADR 0018). The session is an HttpOnly
- * cookie scoped to /api/v1/portal; this page never sees it. 401 here just means "not signed in".
+ * Devotee sign-in with a one-time code, then "my seva" (ADR 0018), now across every phone and email
+ * the devotee has verified, with their own profile (ADR 0025). The session is an HttpOnly cookie
+ * scoped to /api/v1/portal; this page never sees it. 401 here just means "not signed in".
  */
 export default function MySevaPage() {
   const [seva, setSeva] = useState<MySeva | null>(null);
@@ -35,7 +25,7 @@ export default function MySevaPage() {
     () => api.get<MySeva>("/portal/me", { allowUnauthorized: true }).then(setSeva, () => setSeva(null))
       .finally(() => {
         setLoading(false);
-        window.dispatchEvent(new Event(DEVOTEE_CHANGED));
+        changed();
       }),
     [],
   );
@@ -48,20 +38,42 @@ export default function MySevaPage() {
   async function signOut() {
     await api.request("/portal/logout", { method: "POST", allowUnauthorized: true }).catch(() => undefined);
     setSeva(null);
-    window.dispatchEvent(new Event(DEVOTEE_CHANGED));
+    changed();
   }
+
+  const update = (next: MySeva) => {
+    setSeva(next);
+    changed();
+  };
 
   return (
     <div className="flex flex-col gap-6">
-      <MandirPageTitle icon="user" title="My Mandir"
-                       subtitle={seva ? `Signed in as ${seva.contact}` : "Your donations, receipts, puja bookings, passes and seva in one place."}
+      <MandirPageTitle icon="user" title={seva?.profile.fullName ? `Namaste, ${seva.profile.fullName}` : "My Mandir"}
+                       subtitle={seva ? "Everything you've done with the temple, from any of your linked contacts."
+                         : "Your donations, receipts, puja bookings, passes and seva in one place."}
                        actions={seva ? <Button variant="secondary" onClick={() => void signOut()}>Sign out</Button> : null} />
-      {loading ? null : seva ? <SevaView seva={seva} /> : <div className="mx-auto w-full max-w-md"><SignIn onSignedIn={load} /></div>}
+      {loading ? null : seva ? (
+        <div className="grid items-start gap-6 lg:grid-cols-[1fr_22rem]">
+          <div className="flex flex-col gap-4"><SevaView seva={seva} /></div>
+          <aside className="flex flex-col gap-4">
+            <ProfileCard profile={seva.profile} onSaved={update} />
+            <ContactsCard seva={seva} onLinked={update} />
+          </aside>
+        </div>
+      ) : (
+        <div className="mx-auto w-full max-w-md"><Verifier mode="login" onDone={() => void load()} /></div>
+      )}
     </div>
   );
 }
 
-function SignIn({ onSignedIn }: { onSignedIn: () => Promise<void> }) {
+/**
+ * Proves a phone or email with a one-time code: to sign in, or (signed in) to link it to this
+ * account. Linking a contact that already had its own account merges the two.
+ */
+function Verifier({ mode, onDone, onCancel }: {
+  mode: "login" | "link"; onDone: (seva?: MySeva) => void; onCancel?: () => void;
+}) {
   const [channels, setChannels] = useState<{ email: boolean; sms: boolean } | null>(null);
   const [channel, setChannel] = useState<Channel>("SMS");
   const [contact, setContact] = useState("");
@@ -86,7 +98,8 @@ function SignIn({ onSignedIn }: { onSignedIn: () => Promise<void> }) {
       await action();
     } catch (err) {
       if (err instanceof ApiError) setFields(err.fields);
-      setError(describeError(err));
+      setError(err instanceof ApiError && err.code === "too_many_contacts"
+        ? "You can link up to 6 mobile numbers and emails." : describeError(err));
     } finally {
       setBusy(false);
     }
@@ -103,9 +116,13 @@ function SignIn({ onSignedIn }: { onSignedIn: () => Promise<void> }) {
   const verify = (e: React.FormEvent) => {
     e.preventDefault();
     void run(async () => {
-      await api.request("/public/devotee-login/verify", { method: "POST", json: { channel, contact, code } });
-      await api.refreshCsrf();
-      await onSignedIn();
+      if (mode === "login") {
+        await api.request("/public/devotee-login/verify", { method: "POST", json: { channel, contact, code } });
+        await api.refreshCsrf();
+        onDone();
+      } else {
+        onDone(await api.request<MySeva>("/portal/contacts", { method: "POST", json: { channel, contact, code } }));
+      }
     });
   };
 
@@ -114,42 +131,143 @@ function SignIn({ onSignedIn }: { onSignedIn: () => Promise<void> }) {
     return <Card><p>Signing in isn&apos;t available at this temple yet.</p></Card>;
   }
 
-  return (
-    <Card>
-      {!sent ? (
-        <form onSubmit={sendCode} className="flex flex-col gap-3" noValidate>
-          <p className="text-sm text-muted">
-            See your puja bookings, event passes and seva. We&apos;ll send a 6-digit code to confirm it&apos;s you.
-          </p>
-          {channels.email && channels.sms ? (
-            <div className="flex gap-2" role="group" aria-label="Send the code by">
-              <Button variant={channel === "SMS" ? "primary" : "secondary"} onClick={() => setChannel("SMS")}>Mobile</Button>
-              <Button variant={channel === "EMAIL" ? "primary" : "secondary"} onClick={() => setChannel("EMAIL")}>Email</Button>
-            </div>
-          ) : null}
-          {channel === "SMS" ? (
-            <TextField label="Mobile number" inputMode="tel" autoComplete="tel" value={contact}
-                       onChange={(e) => setContact(e.target.value)} error={fields.contact} />
-          ) : (
-            <TextField label="Email" type="email" autoComplete="email" value={contact}
-                       onChange={(e) => setContact(e.target.value)} error={fields.contact} />
-          )}
-          <p className="text-xs text-muted">Use the same mobile or email you gave when booking.</p>
-          {error ? <Alert tone="danger">{error}</Alert> : null}
-          <div><Button type="submit" busy={busy}>Send code</Button></div>
-        </form>
+  const body = !sent ? (
+    <form onSubmit={sendCode} className="flex flex-col gap-3" noValidate>
+      <p className="text-sm text-muted">
+        {mode === "login"
+          ? "See your donations, receipts, puja bookings, passes and seva. We'll send a 6-digit code to confirm it's you."
+          : "Add another mobile number or email you use with the temple. We'll send it a code to confirm it's yours."}
+      </p>
+      {channels.email && channels.sms ? (
+        <div className="flex gap-2" role="group" aria-label="Send the code by">
+          <Button type="button" variant={channel === "SMS" ? "primary" : "secondary"} onClick={() => setChannel("SMS")}>Mobile</Button>
+          <Button type="button" variant={channel === "EMAIL" ? "primary" : "secondary"} onClick={() => setChannel("EMAIL")}>Email</Button>
+        </div>
+      ) : null}
+      {channel === "SMS" ? (
+        <TextField label="Mobile number" inputMode="tel" autoComplete="tel" value={contact}
+                   onChange={(e) => setContact(e.target.value)} error={fields.contact} />
       ) : (
-        <form onSubmit={verify} className="flex flex-col gap-3" noValidate>
-          <p className="text-sm">We sent a code to <strong>{contact}</strong>. It expires in 10 minutes.</p>
-          <TextField label="6-digit code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code}
-                     onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} />
-          <p className="text-xs text-muted">Nobody from the temple will ever ask you for this code.</p>
+        <TextField label="Email" type="email" autoComplete="email" value={contact}
+                   onChange={(e) => setContact(e.target.value)} error={fields.contact} />
+      )}
+      {mode === "login" ? <p className="text-xs text-muted">Use a mobile or email you gave when donating or booking.</p> : null}
+      {error ? <Alert tone="danger">{error}</Alert> : null}
+      <div className="flex gap-2">
+        <Button type="submit" busy={busy}>Send code</Button>
+        {onCancel ? <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button> : null}
+      </div>
+    </form>
+  ) : (
+    <form onSubmit={verify} className="flex flex-col gap-3" noValidate>
+      <p className="text-sm">We sent a code to <strong>{contact}</strong>. It expires in 10 minutes.</p>
+      <TextField label="6-digit code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code}
+                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} />
+      <p className="text-xs text-muted">Nobody from the temple will ever ask you for this code.</p>
+      {error ? <Alert tone="danger">{error}</Alert> : null}
+      <div className="flex gap-2">
+        <Button type="submit" busy={busy}>{mode === "login" ? "Sign in" : "Link it"}</Button>
+        <Button type="button" variant="secondary" onClick={() => { setSent(false); setCode(""); setError(null); }}>Change</Button>
+      </div>
+    </form>
+  );
+  return mode === "login" ? <Card>{body}</Card> : body;
+}
+
+function ContactsCard({ seva, onLinked }: { seva: MySeva; onLinked: (s: MySeva) => void }) {
+  const [adding, setAdding] = useState(false);
+  return (
+    <Card className="flex flex-col gap-3">
+      <div>
+        <h2 className="text-base font-semibold">Your mobile numbers &amp; emails</h2>
+        <p className="text-xs text-muted">Anything you did with any of these shows up here, and any of them signs you in.</p>
+      </div>
+      <ul className="flex flex-col gap-1.5 text-sm">
+        {seva.contacts.map((c) => (
+          <li key={c.channel + c.contact} className="flex items-center justify-between gap-2">
+            <span className="truncate">{c.channel === "SMS" ? displayPhone(c.contact) : c.contact}</span>
+            <Badge tone="success">Verified</Badge>
+          </li>
+        ))}
+      </ul>
+      {adding ? (
+        <Verifier mode="link" onCancel={() => setAdding(false)}
+                  onDone={(s) => { if (s) onLinked(s); setAdding(false); }} />
+      ) : seva.contacts.length < 6 ? (
+        <div><Button variant="secondary" onClick={() => setAdding(true)}>Add mobile or email</Button></div>
+      ) : null}
+    </Card>
+  );
+}
+
+const PROFILE_FIELDS: Array<[keyof DevoteeProfile, string, string?]> = [
+  ["fullName", "Full name"], ["gotra", "Gotra"], ["nakshatra", "Nakshatra"], ["rashi", "Rashi"],
+  ["dateOfBirth", "Date of birth", "date"], ["familyNames", "Family members (for sankalp)"],
+  ["addressLine", "Address"], ["city", "City"], ["state", "State"], ["pincode", "Pincode"],
+];
+
+function ProfileCard({ profile, onSaved }: { profile: DevoteeProfile; onSaved: (s: MySeva) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [f, setF] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [fields, setFields] = useState<Readonly<Record<string, string>>>({});
+
+  function start() {
+    setF(Object.fromEntries(PROFILE_FIELDS.map(([k]) => [k, profile[k] ?? ""])));
+    setError(null);
+    setFields({});
+    setEditing(true);
+  }
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    setFields({});
+    try {
+      onSaved(await api.request<MySeva>("/portal/profile", {
+        method: "PUT", json: Object.fromEntries(Object.entries(f).map(([k, v]) => [k, v.trim() || null])),
+      }));
+      setEditing(false);
+    } catch (err) {
+      if (err instanceof ApiError) setFields(err.fields);
+      setError(describeError(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const filled = PROFILE_FIELDS.filter(([k]) => profile[k]);
+  return (
+    <Card className="flex flex-col gap-3">
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <h2 className="text-base font-semibold">Your profile</h2>
+          <p className="text-xs text-muted">Used to fill in your sankalp and donations. Only the temple sees it.</p>
+        </div>
+        {!editing ? <Button variant="secondary" onClick={start}>{filled.length ? "Edit" : "Add"}</Button> : null}
+      </div>
+      {editing ? (
+        <form onSubmit={save} className="flex flex-col gap-3" noValidate>
+          {PROFILE_FIELDS.map(([k, label, type]) => (
+            <TextField key={k} label={label} type={type ?? "text"} value={f[k] ?? ""} error={fields[k]}
+                       onChange={(e) => setF({ ...f, [k]: e.target.value })} />
+          ))}
           {error ? <Alert tone="danger">{error}</Alert> : null}
           <div className="flex gap-2">
-            <Button type="submit" busy={busy}>Sign in</Button>
-            <Button variant="secondary" onClick={() => { setSent(false); setCode(""); setError(null); }}>Change</Button>
+            <Button type="submit" busy={busy}>Save</Button>
+            <Button type="button" variant="secondary" onClick={() => setEditing(false)}>Cancel</Button>
           </div>
         </form>
+      ) : filled.length ? (
+        <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
+          {filled.map(([k, label]) => (
+            <div key={k} className="contents"><dt className="text-muted">{label}</dt><dd>{profile[k]}</dd></div>
+          ))}
+        </dl>
+      ) : (
+        <p className="text-sm text-muted">Add your name, gotra and family so the priest has them for your sankalp.</p>
       )}
     </Card>
   );
@@ -175,9 +293,8 @@ function SevaView({ seva }: { seva: MySeva }) {
 
   return (
     <>
-      <p className="text-sm text-muted">Signed in as {seva.contact}</p>
       {empty ? (
-        <Card><p>Nothing here yet for {seva.contact}. Bookings made with this {seva.channel === "SMS" ? "mobile number" : "email"} will show up here.</p></Card>
+        <Card><p>Nothing here yet. Donations, bookings, passes and seva made with any of your linked mobile numbers or emails will show up here.</p></Card>
       ) : null}
       {seva.donations.length > 0 ? (
         <Card>
