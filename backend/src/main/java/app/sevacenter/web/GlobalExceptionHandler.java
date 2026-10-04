@@ -151,6 +151,7 @@ public class GlobalExceptionHandler {
             app.sevacenter.event.EventService.PassNotFoundException.class,
             app.sevacenter.sevak.SevakService.SignupNotFoundException.class,
             app.sevacenter.puja.PujaService.PujaNotFoundException.class,
+            app.sevacenter.donation.FundService.FundNotFoundException.class,
             app.sevacenter.portal.DevoteeLoginService.NotOnATrustHostException.class})
     public ResponseEntity<Map<String, Object>> onEventOrPassNotFound() {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));

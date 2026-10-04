@@ -27,3 +27,4 @@ change a decision, add a new ADR that supersedes the old one.
 | [0019](0019-donation-history-in-my-seva.md) | Donation history in "my seva": optional checkout contact, exact-contact matching, receipt copies with PAN masked | Accepted |
 | [0020](0020-audit-log.md) | Audit log: append-only (DB grants), same-transaction writes, actor from the session, no personal data, TRUST_ADMIN viewer | Accepted |
 | [0021](0021-module-access-limits.md) | Per-module access limits (VIEW/NONE) that only narrow a role, enforced on every API call, admins never limited | Accepted |
+| [0022](0022-donation-funds.md) | Earmarked funds: managed per-trust list, active-only for new gifts, reversals net out per fund, online earmarking | Accepted |

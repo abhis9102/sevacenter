@@ -425,6 +425,18 @@ class Probe:
         self.expect("...on every endpoint of the module", 403, limited.request("GET", "/api/v1/devotees/1"))
         self.expect("a limit grants nothing beyond the role", 403, limited.request("GET", "/api/v1/donations"))
 
+        print("\ndonation funds (ADR 0022)")
+        self.expect("leader cannot create a fund", 403,
+                    leader.request("POST", "/api/v1/donation-funds", body={"name": "Probe fund"}))
+        status, fund = admin_a.request("POST", "/api/v1/donation-funds", body={"name": "Probe fund A"})
+        self.expect("admin creates a fund", 201, (status, fund))
+        fund_a = fund["id"] if isinstance(fund, dict) else 0
+        self.expect("member cannot list funds", 403, member.request("GET", "/api/v1/donation-funds"))
+        self.expect("B's admin cannot edit A's fund", 404,
+                    admin_b.request("PUT", f"/api/v1/donation-funds/{fund_a}", body={"name": "Hijacked"}))
+        _, public_b = self.client(b).request("GET", "/api/v1/public/donation-funds")
+        self.check("B's donate page never lists A's funds", "Probe fund A" not in json.dumps(public_b), str(public_b)[:120])
+
         print("\nCSRF")
         self.expect("state change without the CSRF header", 403,
                     admin_a.request("POST", "/api/v1/users", body=new_user, csrf=False))

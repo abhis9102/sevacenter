@@ -32,11 +32,13 @@ public class DonationService {
     private final DevoteeService devotees;
     private final ReceiptService receipts;
     private final AuditTrail auditTrail;
+    private final FundService funds;
     private final Clock clock = Clock.system(IST);
 
     public DonationService(DonationRepository donations, DevoteeService devotees, ReceiptService receipts,
-                           AuditTrail auditTrail) {
+                           AuditTrail auditTrail, FundService funds) {
         this.auditTrail = auditTrail;
+        this.funds = funds;
         this.donations = donations;
         this.devotees = devotees;
         this.receipts = receipts;
@@ -48,7 +50,7 @@ public class DonationService {
      */
     @Transactional
     public Donation record(Long devoteeId, String donorName, long amountPaise, DonationMode mode, String reference,
-                           String purpose, LocalDate receivedOn, long staffId) {
+                           String purpose, Long fundId, LocalDate receivedOn, long staffId) {
         LocalDate today = LocalDate.now(clock);
         if (receivedOn.isAfter(today)) {
             throw new InvalidFieldException("receivedOn", "receivedOn can't be in the future");
@@ -63,7 +65,7 @@ public class DonationService {
             name = donorName.strip();
         }
         Donation saved = donations.save(Donation.received(currentTenant(), devoteeId, name, amountPaise, mode,
-                blankToNull(reference), blankToNull(purpose), receivedOn, staffId));
+                blankToNull(reference), blankToNull(purpose), receivedOn, staffId).toFund(funds.usable(fundId)));
         audit.info("event=donation_recorded tenant={} user={} donation={} paise={}", currentTenant(), staffId,
                 saved.getId(), amountPaise);
         auditTrail.record(AuditAction.DONATION_RECORDED, "donation", saved.getId(), "Rs " + Money.toRupees(amountPaise));
@@ -107,6 +109,12 @@ public class DonationService {
     @Transactional(readOnly = true)
     public List<DonationRepository.ModeTotal> totals(FinancialYear fy) {
         return donations.totalsByMode(fy.start(), fy.end());
+    }
+
+    /** Net per fund (ADR 0022); reversals carry their donation's fund, so they net out. */
+    @Transactional(readOnly = true)
+    public List<DonationRepository.FundTotal> fundTotals(FinancialYear fy) {
+        return donations.totalsByFund(fy.start(), fy.end());
     }
 
     FinancialYear currentFinancialYear() {

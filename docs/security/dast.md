@@ -136,6 +136,26 @@ Final run: probe 49/49, both passes 0 failures, **0 app ERROR lines**.
 
 **Lesson:** a richer scan (more data reached) finds more, real and false. Reproduce each one.
 
+## Decision: one guarded acceptance for path traversal (rule 6), 2026-10-04
+
+ZAP's path-traversal heuristic sends the URL's own last segment (`10`, `/receipt`) as the value of
+any free-text field. That's valid text, so the request succeeds while ZAP's random comparison value
+fails validation, and ZAP reports a difference. Across PRs #31–#42 it flagged a **different field
+every run**: event `capacity`, `startsAt`, `title`; puja `name`, `dakshina`, `displayOrder`; fund
+`name`; receipt `donorAddress`. Each one blocked a merge for a retry cycle.
+
+- **Premise:** the backend makes **no filesystem calls at all**, so no input can ever reach a path.
+- **Decision (AppSec):** one rule-6 entry for `/api/v1/` replaces the per-field ones.
+- **Guard:** the premise is enforced. `NoFilesystemAccessTest` scans main sources and fails the build
+  on `File`, `java.nio.file`, `Path.of`, streams or resource loaders, and was proven to fail by adding
+  one. If filesystem access is ever needed, that test fails first and forces this acceptance to be
+  re-reviewed.
+- **Not lost:** the one real bug this rule surfaced (`startsAt` accepting `10` as 1970) was a
+  validation bug, now covered by `EventTest`. The SQLi and 500 checks still gate every field.
+
+**Why not demote rule 6 to INFO?** That would drop the signal everywhere, with nothing guarding the
+reason it's safe.
+
 ## Known gaps
 
 - No beta/alpha ZAP rules: fetching add-ons at scan time would pull unpinned code into CI. If

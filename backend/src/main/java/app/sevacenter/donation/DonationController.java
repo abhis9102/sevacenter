@@ -52,7 +52,7 @@ public class DonationController {
         }
         return DonationResponse.of(service.record(request.devoteeId(), request.donorName(),
                 Money.toPaise("amount", request.amount()), request.mode(), request.reference(), request.purpose(),
-                request.receivedOn(), staff.userId()));
+                request.fundId(), request.receivedOn(), staff.userId()));
     }
 
     @GetMapping
@@ -93,7 +93,11 @@ public class DonationController {
                 .map(t -> new ModeSummary(t.getMode(), Money.toRupees(t.getNetPaise()), t.getDonations(), t.getReversals()))
                 .toList();
         long net = totals.stream().mapToLong(DonationRepository.ModeTotal::getNetPaise).sum();
-        return new SummaryResponse(year.label(), year.start(), year.end(), Money.toRupees(net), modes);
+        List<FundSummary> funds = service.fundTotals(year).stream()
+                .map(f -> new FundSummary(f.getFundId(), f.getFundName() == null ? "General fund" : f.getFundName(),
+                        Money.toRupees(f.getNetPaise()), f.getDonations()))
+                .toList();
+        return new SummaryResponse(year.label(), year.start(), year.end(), Money.toRupees(net), modes, funds);
     }
 
     /** Examples are valid on purpose, so DAST attacks reach the database. */
@@ -106,6 +110,7 @@ public class DonationController {
             @Schema(example = "UPI") @NotNull DonationMode mode,
             @Schema(example = "UTR 412345678901") @Size(max = 64) String reference,
             @Schema(example = "Annadanam") @Size(max = 120) String purpose,
+            @Schema(description = "Optional earmarked fund (ADR 0022); omit for the general fund") Long fundId,
             @Schema(example = "2026-04-14") @NotNull LocalDate receivedOn) {
     }
 
@@ -116,11 +121,12 @@ public class DonationController {
     public record DonationResponse(long id, Long devoteeId, String donorName, String amount, DonationMode mode,
                                    String reference, String purpose, LocalDate receivedOn, Long reversesId,
                                    String reversalReason, Long recordedBy, DonationChannel channel,
-                                   String paymentRef, OffsetDateTime createdAt) {
+                                   String paymentRef, OffsetDateTime createdAt, Long fundId) {
         static DonationResponse of(Donation d) {
             return new DonationResponse(d.getId(), d.getDevoteeId(), d.getDonorName(), Money.toRupees(d.getAmountPaise()),
                     d.getMode(), d.getReference(), d.getPurpose(), d.getReceivedOn(), d.getReversesId(),
-                    d.getReversalReason(), d.getRecordedBy(), d.getChannel(), d.getPaymentRef(), d.getCreatedAt());
+                    d.getReversalReason(), d.getRecordedBy(), d.getChannel(), d.getPaymentRef(), d.getCreatedAt(),
+                    d.getFundId());
         }
     }
 
@@ -128,5 +134,8 @@ public class DonationController {
 
     public record ModeSummary(DonationMode mode, String net, long donations, long reversals) { }
 
-    public record SummaryResponse(String financialYear, LocalDate from, LocalDate to, String net, List<ModeSummary> byMode) { }
+    public record FundSummary(Long fundId, String fund, String net, long donations) { }
+
+    public record SummaryResponse(String financialYear, LocalDate from, LocalDate to, String net, List<ModeSummary> byMode,
+                                  List<FundSummary> byFund) { }
 }
