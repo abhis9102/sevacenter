@@ -213,6 +213,32 @@ class SevakTest {
         mvc.perform(on(a, get("/api/v1/seva-teams")).session(leader)).andExpect(jsonPath("$[0].icon").value("cow"));
     }
 
+    /** As DAST found for priests and funds: parallel saves of one team name give one team and clean 400s. */
+    @Test
+    void concurrentSavesOfOneTeamNameGiveOneTeamAndCleanErrors() throws Exception {
+        int n = 8;
+        java.util.concurrent.CountDownLatch go = new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.ExecutorService pool = java.util.concurrent.Executors.newFixedThreadPool(n);
+        try {
+            java.util.List<java.util.concurrent.Future<Integer>> results = new java.util.ArrayList<>();
+            for (int i = 0; i < n; i++) {
+                results.add(pool.submit(() -> {
+                    go.await();
+                    return team(leader, "Race team").andReturn().getResponse().getStatus();
+                }));
+            }
+            go.countDown();
+            java.util.List<Integer> codes = new java.util.ArrayList<>();
+            for (var r : results) {
+                codes.add(r.get());
+            }
+            assertThat(codes).containsOnly(201, 400);
+            assertThat(codes).filteredOn(c -> c == 201).hasSize(1);
+        } finally {
+            pool.shutdownNow();
+        }
+    }
+
     private ResultActions team(MockHttpSession session, String name) throws Exception {
         return mvc.perform(on(a, post("/api/v1/seva-teams")).session(session).with(csrf()).contentType(MediaType.APPLICATION_JSON)
                 .content(staff.body("name", name, "description", "Cooking and serving mahaprasad", "targetCount", 15,
