@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { api } from "@/components/apiClient";
 import { MandirIcon } from "@/components/MandirIcons";
+import { RegisterSevakDialog } from "@/components/StaffDialogs";
 import { ConfirmDialog, EmptyState, Pill, StaffTitle, StatCard, useView, ViewSwitcher } from "@/components/staff";
 import { Alert, Button, Card, Dialog, SelectField, TextField } from "@/components/ui";
 import { ApiError, describeError } from "@/lib/errors";
@@ -222,7 +223,7 @@ export default function VolunteersPage() {
                     onSaved={(n) => { setEditingTeam(null); setNotice({ tone: "success", text: `${n} saved.` }); void load(); }} />
       ) : null}
       {registering !== null && teams ? (
-        <RegisterDialog teams={teams} teamId={registering === "any" ? null : registering} onClose={() => setRegistering(null)}
+        <RegisterSevakDialog teams={teams} teamId={registering === "any" ? null : registering} onClose={() => setRegistering(null)}
                         onSaved={(n) => { setRegistering(null); setNotice({ tone: "success", text: `${n} registered.` }); void load(); }} />
       ) : null}
       {deploying && signups ? (
@@ -308,66 +309,6 @@ function TeamDialog({ team, onClose, onSaved }: { team: Team | null; onClose: ()
         <div className="flex justify-end gap-2">
           <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
           <Button type="submit" busy={busy}>Save team</Button>
-        </div>
-      </form>
-    </Dialog>
-  );
-}
-
-function RegisterDialog({ teams, teamId, onClose, onSaved }: {
-  teams: Team[]; teamId: number | null; onClose: () => void; onSaved: (name: string) => void;
-}) {
-  const [f, setF] = useState({ fullName: "", phone: "", email: "", sevaAreas: teams.find((t) => t.id === teamId)?.name ?? "",
-    availability: "", notes: "", teamId: teamId ? String(teamId) : "", duty: "", approved: "true" });
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [fields, setFields] = useState<Readonly<Record<string, string>>>({});
-  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
-
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setError(null);
-    setFields({});
-    try {
-      await api.request("/sevaks", { method: "POST", json: {
-        fullName: f.fullName.trim(), phone: f.phone.trim() || null, email: f.email.trim() || null,
-        sevaAreas: f.sevaAreas.trim(), availability: f.availability.trim() || null, notes: f.notes.trim() || null,
-        approved: f.approved === "true", teamId: f.teamId ? Number(f.teamId) : null, duty: f.duty.trim() || null } });
-      onSaved(f.fullName.trim());
-    } catch (err) {
-      if (err instanceof ApiError) setFields(err.fields);
-      setError(describeError(err));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <Dialog open onClose={onClose} title="Register a volunteer">
-      <form onSubmit={onSubmit} className="flex flex-col gap-3">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <TextField label="Full name" placeholder="Ramesh Sharma" value={f.fullName} onChange={set("fullName")} error={fields.fullName} />
-          <TextField label="Mobile" inputMode="tel" placeholder="98765 43210" value={f.phone} onChange={set("phone")} error={fields.phone} />
-        </div>
-        <TextField label="Email (if no mobile)" type="email" value={f.email} onChange={set("email")} error={fields.email} />
-        <TextField label="Seva they offer" placeholder="Kitchen, crowd management" value={f.sevaAreas} onChange={set("sevaAreas")}
-                   error={fields.sevaAreas} />
-        <div className="grid gap-3 sm:grid-cols-2">
-          <TextField label="Availability (optional)" placeholder="Weekends & festivals" value={f.availability} onChange={set("availability")} />
-          <SelectField label="Status" value={f.approved} onChange={set("approved")}
-                       options={[{ value: "true", label: "Approved / ready" }, { value: "false", label: "Pending review" }]} />
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <SelectField label="Assign team (optional)" value={f.teamId} onChange={set("teamId")}
-                       options={[{ value: "", label: "— Unassigned —" }, ...teams.map((t) => ({ value: String(t.id), label: t.name }))]} />
-          <TextField label="Duty / shift (optional)" placeholder="Navratri morning kitchen" value={f.duty} onChange={set("duty")} />
-        </div>
-        <TextField label="Skills / notes (optional)" value={f.notes} onChange={set("notes")} />
-        {error ? <Alert tone="danger">{error}</Alert> : null}
-        <div className="flex justify-end gap-2">
-          <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
-          <Button type="submit" busy={busy}>Register volunteer</Button>
         </div>
       </form>
     </Dialog>

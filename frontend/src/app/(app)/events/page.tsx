@@ -4,8 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 
 import { api } from "@/components/apiClient";
 import { useMe } from "@/components/Session";
+import { IssuePassDialog } from "@/components/StaffDialogs";
 import { ConfirmDialog, EmptyState, Pill, StaffTitle, StatCard, useView, ViewSwitcher } from "@/components/staff";
-import { Alert, Button, Card, Dialog, SelectField, TextField } from "@/components/ui";
+import { Alert, Button, Card, Dialog, TextField } from "@/components/ui";
 import { ApiError, describeError } from "@/lib/errors";
 import {
   dateChip, formatIst, formatPassCode, istFromLocalInput, localInputFromIst, type EventPass, type StaffEvent,
@@ -403,53 +404,6 @@ function EventDialog({ event, onClose, onSaved }: { event: StaffEvent | null; on
         <div className="flex justify-end gap-2">
           <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
           <Button type="submit" busy={busy}>{event ? "Save" : "Create draft"}</Button>
-        </div>
-      </form>
-    </Dialog>
-  );
-}
-
-function IssuePassDialog({ event, onClose, onIssued }: { event: StaffEvent; onClose: () => void; onIssued: (p: EventPass) => void }) {
-  const [f, setF] = useState({ name: "", count: "1", phone: "", email: "" });
-  const [error, setError] = useState<string | null>(null);
-  const [fields, setFields] = useState<Readonly<Record<string, string>>>({});
-  const [busy, setBusy] = useState(false);
-
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setError(null);
-    setFields({});
-    try {
-      onIssued(await api.request<EventPass>(`/events/${event.id}/passes`, { method: "POST", json: {
-        name: f.name.trim(), count: Number(f.count), phone: f.phone.trim() || null, email: f.email.trim() || null } }));
-    } catch (err) {
-      if (err instanceof ApiError) setFields(err.fields);
-      setError(err instanceof ApiError && err.code === "event_full" ? "Not enough places left." : describeError(err));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <Dialog open onClose={onClose} title={`Issue a pass · ${event.title}`}>
-      <form onSubmit={onSubmit} className="flex flex-col gap-3">
-        <div className="grid gap-3 sm:grid-cols-[1fr_8rem]">
-          <TextField label="Name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} error={fields.name} />
-          <SelectField label="People" value={f.count} onChange={(e) => setF({ ...f, count: e.target.value })}
-                       options={Array.from({ length: 10 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))} />
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <TextField label="Mobile (optional)" inputMode="tel" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })}
-                     error={fields.phone} />
-          <TextField label="Email (optional)" type="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })}
-                     error={fields.email} />
-        </div>
-        <p className="text-xs text-muted">A mobile or email lets them see the pass in My Mandir. Places still count against capacity.</p>
-        {error ? <Alert tone="danger">{error}</Alert> : null}
-        <div className="flex justify-end gap-2">
-          <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
-          <Button type="submit" busy={busy}>Issue pass</Button>
         </div>
       </form>
     </Dialog>
