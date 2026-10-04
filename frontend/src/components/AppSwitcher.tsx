@@ -7,7 +7,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { useLanguage } from "@/components/LanguageProvider";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { isActive, type NavModule, type Section, type SectionGroup } from "@/lib/apps";
+import { isActive, otherPageFor, type NavModule, type Section, type SectionGroup } from "@/lib/apps";
 
 /** Each section's tint, from the theme tokens so it works in light and dark. */
 const TONES: Record<Section, string> = {
@@ -60,6 +60,8 @@ export function AppSwitcher({ sections, current }: { sections: SectionGroup[]; c
   const ref = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
+  const other = otherPageFor(pathname);
+  const label = current ? t.apps.sections[current.section].name : other ? t.nav[other] : t.apps.menuTitle;
 
   useEffect(() => {
     if (!open) {
@@ -98,7 +100,7 @@ export function AppSwitcher({ sections, current }: { sections: SectionGroup[]; c
         }`}
       >
         <span className="text-muted"><Waffle /></span>
-        <span className="max-w-[9rem] truncate sm:max-w-none">{current ? t.apps.sections[current.section].name : t.apps.menuTitle}</span>
+        <span className="max-w-[9rem] truncate sm:max-w-none">{label}</span>
         <svg viewBox="0 0 16 16" className={`size-3 text-muted transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true">
           <path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
