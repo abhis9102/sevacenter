@@ -41,6 +41,26 @@ export interface Translations {
     newTab: string;
     names: Record<"home" | "people" | "giving" | "worship" | "site" | "admin", { name: string; description: string }>;
   };
+  mandir: {
+    tagline: string;
+    tabs: { home: string; pujas: string; donate: string; utsavs: string; sevak: string; myMandir: string };
+    signIn: string;
+    openNow: string;
+    closedNow: string;
+    until: string;
+    opensAt: string;
+    presidingDeity: string;
+    panchang: { title: string; tithi: string; nakshatra: string; month: string; till: string; shukla: string;
+      krishna: string; adhik: string; note: string };
+    announcement: string;
+    quick: Record<"puja" | "donate" | "pass" | "sevak", { title: string; note: string }>;
+    aartis: { title: string; subtitle: string; next: string };
+    helpline: string;
+    address: string;
+    timingNotes: string;
+    staffSignIn: string;
+    poweredBy: string;
+  };
   roles: {
     TRUST_ADMIN: string;
     LEADER: string;
@@ -338,6 +358,31 @@ export const DICTIONARIES: Record<Language, Translations> = {
         site: { name: "Temple Site", description: "What devotees see on your public page" },
         admin: { name: "Administration", description: "Staff, access and the audit log" },
       },
+    },
+    mandir: {
+      tagline: "Darshan, puja, seva and utsav",
+      tabs: { home: "Home", pujas: "Pujas", donate: "Donate", utsavs: "Utsavs", sevak: "Sevak", myMandir: "My Mandir" },
+      signIn: "Devotee sign in",
+      openNow: "Open for darshan",
+      closedNow: "Darshan closed",
+      until: "until",
+      opensAt: "opens at",
+      presidingDeity: "Presiding deity",
+      panchang: { title: "Today's panchang", tithi: "Tithi", nakshatra: "Nakshatra", month: "Month", till: "till",
+        shukla: "Shukla paksha", krishna: "Krishna paksha", adhik: "Adhik", note: "Calculated for today, Lahiri ayanamsa" },
+      announcement: "Announcement",
+      quick: {
+        puja: { title: "Book a puja", note: "Sankalp in your family's name" },
+        donate: { title: "Donate", note: "Annadanam, gau seva and more" },
+        pass: { title: "Utsav passes", note: "Register for festival darshan" },
+        sevak: { title: "Offer seva", note: "Volunteer at the temple" },
+      },
+      aartis: { title: "Daily aarti", subtitle: "Darshan schedule", next: "Next" },
+      helpline: "Temple helpline",
+      address: "Temple address",
+      timingNotes: "Please note",
+      staffSignIn: "Staff sign in",
+      poweredBy: "Powered by MandirCenter",
     },
     roles: {
       TRUST_ADMIN: "Trust admin",
@@ -653,6 +698,31 @@ export const DICTIONARIES: Record<Language, Translations> = {
         site: { name: "मंदिर पृष्ठ (Temple Site)", description: "भक्तों को दिखने वाला आपका सार्वजनिक पृष्ठ" },
         admin: { name: "प्रशासन (Administration)", description: "कर्मचारी, अनुमतियाँ और ऑडिट लॉग" },
       },
+    },
+    mandir: {
+      tagline: "दर्शन, पूजा, सेवा एवं उत्सव",
+      tabs: { home: "मुख्य", pujas: "पूजा", donate: "दान", utsavs: "उत्सव", sevak: "सेवक", myMandir: "मेरा मंदिर" },
+      signIn: "भक्त लॉगिन",
+      openNow: "दर्शन खुले हैं",
+      closedNow: "दर्शन बंद हैं",
+      until: "तक",
+      opensAt: "पर खुलेंगे",
+      presidingDeity: "आराध्य देव",
+      panchang: { title: "आज का पंचांग", tithi: "तिथि", nakshatra: "नक्षत्र", month: "मास", till: "तक",
+        shukla: "शुक्ल पक्ष", krishna: "कृष्ण पक्ष", adhik: "अधिक", note: "आज के लिए गणना, लाहिरी अयनांश" },
+      announcement: "सूचना",
+      quick: {
+        puja: { title: "पूजा बुक करें", note: "सपरिवार संकल्प" },
+        donate: { title: "दान करें", note: "अन्नदान, गौ सेवा आदि" },
+        pass: { title: "उत्सव पास", note: "उत्सव दर्शन हेतु पंजीकरण" },
+        sevak: { title: "सेवा करें", note: "मंदिर में स्वयंसेवा" },
+      },
+      aartis: { title: "दैनिक आरती", subtitle: "दर्शन समय सारणी", next: "अगली" },
+      helpline: "मंदिर हेल्पलाइन",
+      address: "मंदिर का पता",
+      timingNotes: "कृपया ध्यान दें",
+      staffSignIn: "कर्मचारी लॉगिन",
+      poweredBy: "MandirCenter द्वारा संचालित",
     },
     roles: {
       TRUST_ADMIN: "ट्रस्ट प्रबंधक (Admin)",

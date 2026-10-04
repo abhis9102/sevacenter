@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { api } from "@/components/apiClient";
-import { Diya } from "@/components/Diya";
+import { MandirPageTitle } from "@/components/MandirShell";
 import { Alert, Button, Card, TextField } from "@/components/ui";
 import { ApiError, describeError } from "@/lib/errors";
 import { formatIst, formatPassCode, type PassIssued, type PublicEvent } from "@/lib/events";
@@ -23,46 +23,57 @@ export default function UpcomingPage() {
   }, []);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 px-4 py-10">
-      <header className="flex items-center gap-3">
-        <Diya className="size-9" />
-        <h1 className="text-xl font-semibold">Upcoming events</h1>
-      </header>
+    <div className="flex flex-col gap-6">
+      <MandirPageTitle icon="utsav" title="Utsavs & darshan passes" subtitle="Festivals at the temple. Register for a free pass where entry is limited." />
       {error ? <Alert tone="danger">{error}</Alert> : null}
 
       {issued ? (
-        <Card className="flex flex-col gap-2">
+        <Card className="mx-auto flex w-full max-w-md flex-col items-center gap-2 border-2 border-dashed border-primary/40 bg-gradient-to-br from-primary/10 via-surface to-haldi/10 text-center">
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary-strong">Darshan pass</p>
           <h2 className="text-lg font-medium">You&apos;re registered, {issued.name}</h2>
-          <p>{issued.eventTitle} · {formatIst(issued.startsAt)} · {issued.count} {issued.count === 1 ? "person" : "people"}</p>
-          <p className="text-sm text-muted">Show this pass code at the gate:</p>
-          <p className="font-mono text-3xl tracking-widest" aria-label="Pass code">{formatPassCode(issued.passCode)}</p>
-          <p className="text-xs text-muted">Keep it private: anyone with the code can use the pass. Take a screenshot.</p>
-          <div><Button variant="secondary" onClick={() => setIssued(null)}>Back to events</Button></div>
+          <p className="text-sm">{issued.eventTitle} · {formatIst(issued.startsAt)} · {issued.count} {issued.count === 1 ? "person" : "people"}</p>
+          <p className="font-mono text-3xl tracking-widest text-primary-strong" aria-label="Pass code">{formatPassCode(issued.passCode)}</p>
+          <p className="text-xs text-muted">Show this code at the gate. Keep it private: anyone with the code can use the pass.</p>
+          <div><Button variant="secondary" onClick={() => setIssued(null)}>Back to utsavs</Button></div>
         </Card>
       ) : registering ? (
         <RegisterForm event={registering} onCancel={() => setRegistering(null)}
                       onDone={(p) => { setRegistering(null); setIssued(p); }} />
       ) : (
         <div className="flex flex-col gap-4">
-          {events?.length === 0 ? <Card><p className="text-muted">No upcoming events right now.</p></Card> : null}
-          {events?.map((e) => (
-            <Card key={e.id} className="flex flex-col gap-2">
-              <h2 className="font-medium">{e.title}</h2>
-              <p className="text-sm text-muted">{formatIst(e.startsAt)}</p>
-              {e.description ? <p className="text-sm">{e.description}</p> : null}
-              <p className="text-sm">
-                {e.placesLeft === null ? "Open to all" : e.placesLeft === 0 ? "Full" : `${e.placesLeft} places left`}
-              </p>
-              {e.registrationOpen && e.placesLeft !== 0 ? (
-                <div><Button onClick={() => setRegistering(e)}>Register</Button></div>
-              ) : (
-                <p className="text-xs text-muted">Registration closed.</p>
-              )}
-            </Card>
-          ))}
+          {events?.length === 0 ? <Card><p className="text-muted">No upcoming utsavs right now.</p></Card> : null}
+          {events?.map((e) => {
+            const d = new Date(e.startsAt);
+            const day = d.toLocaleDateString("en-IN", { day: "numeric", timeZone: "Asia/Kolkata" });
+            const month = d.toLocaleDateString("en-IN", { month: "short", timeZone: "Asia/Kolkata" });
+            return (
+              <Card key={e.id} className="flex gap-4">
+                <div className="flex size-16 shrink-0 flex-col items-center justify-center rounded-[12px] bg-gradient-to-br from-primary to-kumkum text-white shadow-xs">
+                  <span className="text-2xl font-semibold leading-none">{day}</span>
+                  <span className="text-xs font-semibold uppercase">{month}</span>
+                </div>
+                <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                  <h2 className="text-lg font-semibold">{e.title}</h2>
+                  <p className="text-sm text-muted">{formatIst(e.startsAt)}</p>
+                  {e.description ? <p className="text-sm">{e.description}</p> : null}
+                  <div className="flex flex-wrap items-center gap-3 pt-1">
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                      e.placesLeft === 0 ? "bg-kumkum/12 text-kumkum" : "bg-success/12 text-success"}`}>
+                      {e.placesLeft === null ? "Open to all" : e.placesLeft === 0 ? "Full" : `${e.placesLeft} places left`}
+                    </span>
+                    {e.registrationOpen && e.placesLeft !== 0 ? (
+                      <Button onClick={() => setRegistering(e)}>Get a pass</Button>
+                    ) : (
+                      <span className="text-xs text-muted">Registration closed.</span>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       )}
-    </main>
+    </div>
   );
 }
 
@@ -94,8 +105,8 @@ function RegisterForm({ event, onCancel, onDone }: { event: PublicEvent; onCance
   }
 
   return (
-    <Card className="flex flex-col gap-3">
-      <h2 className="font-medium">Register · {event.title}</h2>
+    <Card className="mx-auto flex w-full max-w-xl flex-col gap-3">
+      <h2 className="text-lg font-semibold">Register · {event.title}</h2>
       <form onSubmit={onSubmit} className="flex flex-col gap-3" noValidate>
         <TextField label="Your name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} error={fields.name} />
         <TextField label="Number of people (1–10)" inputMode="numeric" value={count}

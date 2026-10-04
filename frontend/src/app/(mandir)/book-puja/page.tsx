@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { api } from "@/components/apiClient";
-import { Diya } from "@/components/Diya";
+import { MandirPageTitle } from "@/components/MandirShell";
 import { Alert, Button, Card, TextField } from "@/components/ui";
 import { ApiError, describeError } from "@/lib/errors";
 import { formatPassCode } from "@/lib/events";
@@ -25,36 +25,39 @@ export default function BookPujaPage() {
   }, []);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 px-4 py-10">
-      <header className="flex items-center gap-3">
-        <Diya className="size-9" />
-        <h1 className="text-xl font-semibold">Book a puja</h1>
-      </header>
+    <div className="flex flex-col gap-6">
+      <MandirPageTitle icon="puja" title="Pujas & sankalp" subtitle="Book a puja in your family's name; the priest performs it on the day you choose." />
       {error ? <Alert tone="danger">{error}</Alert> : null}
       {done ? (
-        <Card className="flex flex-col gap-2">
+        <Card className="mx-auto flex w-full max-w-md flex-col items-center gap-2 border-primary/30 bg-gradient-to-br from-primary/10 via-surface to-haldi/10 text-center">
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary-strong">Sankalp booked</p>
           <h2 className="text-lg font-medium">Your {done.puja} is booked for {done.date}</h2>
-          <p className="text-sm text-muted">Booking code:</p>
-          <p className="font-mono text-2xl tracking-widest">{formatPassCode(done.code)}</p>
+          <p className="text-sm text-muted">Booking code</p>
+          <p className="font-mono text-3xl tracking-widest text-primary-strong">{formatPassCode(done.code)}</p>
           <p className="text-xs text-muted">Puja dakshina is a seva fee, not an 80G-eligible donation.</p>
         </Card>
       ) : chosen ? (
         <BookingForm puja={chosen} onBack={() => setChosen(null)} onDone={setDone} />
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="grid gap-4 sm:grid-cols-2">
           {pujas?.length === 0 ? <Card><p className="text-muted">No pujas are open for booking right now.</p></Card> : null}
           {pujas?.map((p) => (
-            <Card key={p.id} className="flex flex-col gap-1">
-              <h2 className="font-medium">{p.name}</h2>
-              {p.deity ? <p className="text-sm text-muted">{p.deity}</p> : null}
-              {p.description ? <p className="text-sm">{p.description}</p> : null}
-              <p className="text-sm">{isFree(p.dakshina) ? "No dakshina" : `Dakshina ₹${p.dakshina}`}</p>
-              <div><Button onClick={() => setChosen(p)}>Book</Button></div>
+            <Card key={p.id} className="flex flex-col gap-2 transition-colors hover:border-primary/40">
+              <div className="flex items-start justify-between gap-3">
+                <h2 className="text-lg font-semibold">{p.name}</h2>
+                <span className={`shrink-0 rounded-full px-2.5 py-0.5 font-mono text-xs font-semibold ${
+                  isFree(p.dakshina) ? "bg-success/12 text-success" : "bg-primary/12 text-primary-strong"}`}>
+                  {isFree(p.dakshina) ? "No dakshina" : `₹${Number(p.dakshina).toLocaleString("en-IN")}`}
+                </span>
+              </div>
+              {p.deity ? <p className="text-xs font-semibold uppercase tracking-wide text-maroon">{p.deity}</p> : null}
+              {p.description ? <p className="flex-1 text-sm text-muted">{p.description}</p> : <span className="flex-1" />}
+              <div className="pt-1"><Button onClick={() => setChosen(p)}>Book this puja</Button></div>
             </Card>
           ))}
         </div>
       )}
-    </main>
+    </div>
   );
 }
 
@@ -109,9 +112,12 @@ function BookingForm({ puja, onBack, onDone }: {
   }
 
   return (
-    <Card className="flex flex-col gap-3">
-      <h2 className="font-medium">{puja.name}{isFree(puja.dakshina) ? "" : ` · ₹${puja.dakshina}`}</h2>
-      <form onSubmit={onSubmit} className="flex flex-col gap-3" noValidate>
+    <Card className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide text-maroon">Sankalp details</p>
+        <h2 className="text-lg font-semibold">{puja.name}{isFree(puja.dakshina) ? "" : ` · ₹${puja.dakshina}`}</h2>
+      </div>
+      <form onSubmit={onSubmit} className="grid gap-3 sm:grid-cols-2" noValidate>
         <TextField label="Name for the sankalp" value={f.devoteeName} onChange={set("devoteeName")} error={fields.devoteeName} />
         <TextField label="Gotra (optional)" value={f.gotra} onChange={set("gotra")} />
         <TextField label="Nakshatra (optional)" value={f.nakshatra} onChange={set("nakshatra")} />
@@ -120,10 +126,12 @@ function BookingForm({ puja, onBack, onDone }: {
         <TextField label="Date" type="date" value={f.pujaDate} onChange={set("pujaDate")} error={fields.pujaDate} />
         <TextField label="Mobile number" inputMode="tel" value={f.phone} onChange={set("phone")} error={fields.phone} />
         <TextField label="Email (if no mobile)" type="email" value={f.email} onChange={set("email")} error={fields.email} />
+        <div className="flex flex-col gap-3 sm:col-span-2">
         {error ? <Alert tone="danger">{error}</Alert> : null}
         <div className="flex gap-2">
           <Button type="submit" busy={busy}>{isFree(puja.dakshina) ? "Book" : `Pay ₹${puja.dakshina} & book`}</Button>
           <Button type="button" variant="secondary" onClick={onBack}>Back</Button>
+        </div>
         </div>
       </form>
     </Card>

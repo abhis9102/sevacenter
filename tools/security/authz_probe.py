@@ -387,6 +387,16 @@ class Probe:
         _, theirs = self.client(b).request("GET", "/api/v1/public/temple")
         self.check("B's public page never shows A's content", "Probe announcement for A" not in json.dumps(theirs),
                    str(theirs)[:120])
+        status_body = {"status": "CLOSED", "note": "Probe closure for A"}
+        self.expect("member cannot set today's darshan status", 403,
+                    member.request("PUT", "/api/v1/temple/status", body=status_body))
+        self.expect("leader sets today's darshan status", 200, leader.request("PUT", "/api/v1/temple/status", body=status_body))
+        timetable = {"aartis": [{"name": "Probe aarti for A", "at": "05:30"}]}
+        self.expect("leader saves the aarti timetable", 200, leader.request("PUT", "/api/v1/temple", body=timetable))
+        _, theirs = self.client(b).request("GET", "/api/v1/public/temple")
+        self.check("B's public page never shows A's status or aartis",
+                   "Probe closure for A" not in json.dumps(theirs) and "Probe aarti for A" not in json.dumps(theirs),
+                   str(theirs)[:120])
 
         print("\ndevotee login (ADR 0018)")
         devotee = self.client(a)

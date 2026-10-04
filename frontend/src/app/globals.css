@@ -24,6 +24,15 @@
   --danger: #bc3b30;
   --info: #2b6e86;
 
+  /* MandirCenter (public temple sites): the full devotional palette. */
+  --mc-primary: #e85d04;
+  --mc-primary-strong: #b8450a;
+  --mc-kumkum: #c1121f;
+  --mc-haldi: #efa00b;
+  --mc-maroon: #6a0f1a;
+  --mc-gold: #cba135;
+  --mc-bg: #fff5e6;
+
   /* Brand mark (diya), as in the styleguide. */
   --mark-flame: #e85d04;
   --mark-core: #efa00b;
@@ -55,6 +64,14 @@
     --danger: #e8766b;
     --info: #6fb6ce;
 
+    --mc-primary: #fb8521;
+    --mc-primary-strong: #fca14c;
+    --mc-kumkum: #e8565f;
+    --mc-haldi: #f3bc4e;
+    --mc-maroon: #e0808c;
+    --mc-gold: #e3c06a;
+    --mc-bg: #241a12;
+
     --mark-flame: #fb8521;
     --mark-core: #f3bc4e;
     --mark-bowl: #e0808c;
@@ -81,6 +98,14 @@
     --warning: #e4b04a;
     --danger: #e8766b;
     --info: #6fb6ce;
+
+    --mc-primary: #fb8521;
+    --mc-primary-strong: #fca14c;
+    --mc-kumkum: #e8565f;
+    --mc-haldi: #f3bc4e;
+    --mc-maroon: #e0808c;
+    --mc-gold: #e3c06a;
+    --mc-bg: #241a12;
 
     --mark-flame: #fb8521;
     --mark-core: #f3bc4e;
@@ -109,6 +134,9 @@
   --color-danger: var(--danger);
   --color-info: var(--info);
 
+  --color-kumkum: var(--mc-kumkum);
+  --color-haldi: var(--mc-haldi);
+
   --color-mark-flame: var(--mark-flame);
   --color-mark-core: var(--mark-core);
   --color-mark-bowl: var(--mark-bowl);
@@ -119,6 +147,19 @@
 
   --radius-card: 12px;
   --radius-control: 10px;
+}
+
+/*
+ * Inside a public temple site, the shared components (buttons, cards, focus rings) take the
+ * MandirCenter palette: the staff app keeps its restrained one.
+ */
+.mandir {
+  --sc-primary: var(--mc-primary);
+  --sc-primary-strong: var(--mc-primary-strong);
+  --sc-maroon: var(--mc-maroon);
+  --sc-gold: var(--mc-gold);
+  --bg: var(--mc-bg);
+  background: var(--bg);
 }
 
 html,
