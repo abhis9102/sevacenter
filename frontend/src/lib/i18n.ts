@@ -37,9 +37,11 @@ export interface Translations {
   apps: {
     switcher: string;
     menuTitle: string;
-    templeSite: string;
+    mandirCenter: string;
     newTab: string;
-    names: Record<"home" | "people" | "giving" | "worship" | "site" | "admin", { name: string; description: string }>;
+    describe: Record<"dashboard" | "devotees" | "donations" | "payments" | "pujas" | "events" | "volunteers" | "mandir"
+      | "staff" | "audit", string>;
+    sections: Record<"dashboard" | "people" | "finance" | "worship" | "mandir" | "admin", { name: string; description: string }>;
   };
   mandir: {
     tagline: string;
@@ -333,32 +335,45 @@ export const DICTIONARIES: Record<Language, Translations> = {
     },
     nav: {
       devotees: "Devotees",
-      staff: "Staff",
+      staff: "Staff & permissions",
       donations: "Donations",
-      payments: "Payments",
+      payments: "Payment setup",
       dashboard: "Dashboard",
-      audit: "Audit log",
-      events: "Events",
-      volunteers: "Volunteers",
-      pujas: "Pujas",
-      temple: "Temple page",
+      audit: "Audit Trail",
+      events: "Utsavs & Passes",
+      volunteers: "Sevak Hub",
+      pujas: "Pujas & Sankalp",
+      temple: "Mandir Center",
       home: "Home",
       profile: "Profile",
     },
     apps: {
-      switcher: "Switch app",
-      menuTitle: "SevaCenter apps",
-      templeSite: "Temple site",
+      switcher: "Switch module",
+      menuTitle: "SevaCenter modules",
+      mandirCenter: "Mandir Center",
       newTab: "opens in a new tab",
-      names: {
-        home: { name: "Overview", description: "Today at the temple, at a glance" },
-        people: { name: "People", description: "Devotee records and volunteer offers" },
-        giving: { name: "Giving", description: "Donations, 80G receipts, funds and online payments" },
-        worship: { name: "Pujas & Events", description: "Puja bookings, festivals, passes and check-in" },
-        site: { name: "Temple Site", description: "What devotees see on your public page" },
-        admin: { name: "Administration", description: "Staff, access and the audit log" },
+      describe: {
+        dashboard: "Today's pujas, utsavs, giving and seva at a glance",
+        devotees: "Devotee records, families and consent",
+        donations: "Donation ledger, funds and 80G receipts",
+        payments: "Online donations into the trust's own account",
+        pujas: "Priest sankalp roster and the puja catalog",
+        events: "Utsavs, darshan passes and gate check-in",
+        volunteers: "Seva teams, shifts and volunteers",
+        mandir: "Your public Mandir Center: darshan, aartis, notices",
+        staff: "Staff, roles and module access",
+        audit: "Every staff action, as it happened",
+      },
+      sections: {
+        dashboard: { name: "Dashboard", description: "Today's pujas, utsavs, giving and seva at a glance" },
+        people: { name: "People", description: "Devotees and the sevak hub" },
+        finance: { name: "Finance & 80G", description: "Donation ledger, 80G receipts and payment setup" },
+        worship: { name: "Pujas & Utsavs", description: "Sankalp roster, puja catalog, utsavs and gate passes" },
+        mandir: { name: "Mandir Center", description: "Your public temple site: darshan, aartis, notices" },
+        admin: { name: "Administration", description: "Staff, permissions and the audit trail" },
       },
     },
+
     mandir: {
       tagline: "Darshan, puja, seva and utsav",
       tabs: { home: "Home", pujas: "Pujas", donate: "Donate", utsavs: "Utsavs", sevak: "Sevak", myMandir: "My Mandir" },
@@ -673,32 +688,45 @@ export const DICTIONARIES: Record<Language, Translations> = {
     },
     nav: {
       devotees: "भक्त (Devotees)",
-      staff: "कर्मचारी (Staff)",
+      staff: "कर्मचारी एवं अनुमतियाँ (Staff)",
       donations: "दान (Donations)",
-      payments: "भुगतान (Payments)",
+      payments: "भुगतान व्यवस्था (Payment setup)",
       dashboard: "डैशबोर्ड (Dashboard)",
-      audit: "ऑडिट लॉग (Audit log)",
-      events: "उत्सव (Events)",
-      volunteers: "सेवक (Volunteers)",
-      pujas: "पूजा (Pujas)",
-      temple: "मंदिर पृष्ठ (Temple page)",
+      audit: "ऑडिट लॉग (Audit Trail)",
+      events: "उत्सव एवं पास (Utsavs)",
+      volunteers: "सेवक केंद्र (Sevak Hub)",
+      pujas: "पूजा एवं संकल्प (Pujas)",
+      temple: "मंदिर सेंटर (Mandir Center)",
       home: "मुख्य पृष्ठ",
       profile: "प्रोफ़ाइल (Profile)",
     },
     apps: {
-      switcher: "ऐप बदलें",
-      menuTitle: "सेवासेंटर ऐप्स",
-      templeSite: "मंदिर साइट",
+      switcher: "मॉड्यूल बदलें",
+      menuTitle: "सेवासेंटर मॉड्यूल",
+      mandirCenter: "मंदिर सेंटर",
       newTab: "नए टैब में खुलता है",
-      names: {
-        home: { name: "सारांश (Overview)", description: "आज मंदिर में क्या हो रहा है, एक नज़र में" },
-        people: { name: "भक्त व सेवक (People)", description: "भक्तों का विवरण और सेवा प्रस्ताव" },
-        giving: { name: "दान (Giving)", description: "दान, 80G रसीदें, निधियाँ और ऑनलाइन भुगतान" },
-        worship: { name: "पूजा व उत्सव (Pujas & Events)", description: "पूजा बुकिंग, उत्सव, पास और प्रवेश जाँच" },
-        site: { name: "मंदिर पृष्ठ (Temple Site)", description: "भक्तों को दिखने वाला आपका सार्वजनिक पृष्ठ" },
-        admin: { name: "प्रशासन (Administration)", description: "कर्मचारी, अनुमतियाँ और ऑडिट लॉग" },
+      describe: {
+        dashboard: "आज की पूजा, उत्सव, दान और सेवा एक नज़र में",
+        devotees: "भक्तों का विवरण, परिवार और सहमति",
+        donations: "दान बहीखाता, निधियाँ और 80G रसीदें",
+        payments: "ट्रस्ट के अपने खाते में ऑनलाइन दान",
+        pujas: "पुजारी संकल्प सूची और पूजा सूची",
+        events: "उत्सव, दर्शन पास और प्रवेश जाँच",
+        volunteers: "सेवा दल, पालियाँ और सेवक",
+        mandir: "आपका सार्वजनिक मंदिर सेंटर: दर्शन, आरती, सूचना",
+        staff: "कर्मचारी, भूमिकाएँ और अनुमतियाँ",
+        audit: "कर्मचारियों की हर कार्रवाई का रिकॉर्ड",
+      },
+      sections: {
+        dashboard: { name: "डैशबोर्ड", description: "आज की पूजा, उत्सव, दान और सेवा एक नज़र में" },
+        people: { name: "भक्तजन", description: "भक्त और सेवक केंद्र" },
+        finance: { name: "दान एवं 80G", description: "दान बहीखाता, 80G रसीदें और भुगतान व्यवस्था" },
+        worship: { name: "पूजा एवं उत्सव", description: "संकल्प सूची, पूजा सूची, उत्सव और पास" },
+        mandir: { name: "मंदिर सेंटर", description: "आपका सार्वजनिक मंदिर पृष्ठ: दर्शन, आरती, सूचना" },
+        admin: { name: "प्रशासन", description: "कर्मचारी, अनुमतियाँ और ऑडिट लॉग" },
       },
     },
+
     mandir: {
       tagline: "दर्शन, पूजा, सेवा एवं उत्सव",
       tabs: { home: "मुख्य", pujas: "पूजा", donate: "दान", utsavs: "उत्सव", sevak: "सेवक", myMandir: "मेरा मंदिर" },

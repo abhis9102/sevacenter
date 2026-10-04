@@ -40,7 +40,7 @@ export const STAFF_MODULES: { id: StaffModule; label: string }[] = [
   { id: "EVENTS", label: "Events" },
   { id: "PUJAS", label: "Pujas" },
   { id: "VOLUNTEERS", label: "Volunteers" },
-  { id: "TEMPLE", label: "Temple page" },
+  { id: "TEMPLE", label: "Mandir Center" },
 ];
 
 /** UI hint only: the server enforces limits on every call. */

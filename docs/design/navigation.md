@@ -1,37 +1,40 @@
 # Staff app navigation
 
-Decided 2026-10-04. Code: `frontend/src/lib/apps.ts` (model, unit-tested),
-`frontend/src/components/AppSwitcher.tsx`, `frontend/src/app/(app)/layout.tsx`.
+Decided 2026-10-04, revised the same day to the prototype's layout. Code: `frontend/src/lib/apps.ts`
+(model, unit-tested), `frontend/src/components/AppSwitcher.tsx`, `frontend/src/app/(app)/layout.tsx`.
 
-## Pattern: apps, then pages
+## Pattern: one bar, with the module switcher as the navigation
 
-Staff pages are grouped into a small set of **apps**. The header has two tiers:
+Decided in review (2026-10-04): a single header bar, no row of module tabs under it; the dropdown
+switcher already lists every module. The bar holds the **module switcher** (bordered button: 9-dot
+icon + the current module's name), the diya and SevaCenter wordmark, the trust's slug with a live
+dot, a **Mandir Center ↗** link to the temple's public site, theme, language and the user menu.
 
-1. **Top bar** — diya (home), the **app switcher** naming the current app, the trust's slug,
-   a "Temple site ↗" link, theme, language, user menu.
-2. **Second bar** — tabs for the **current app's pages** only.
+**Related modules live together** (decided in review): the switcher lists six sections, not ten
+modules, and a section's pages switch from a small control at the top of the page.
 
-| App | Pages |
+| Section | Pages |
 |---|---|
-| Overview | Dashboard |
-| People | Devotees, Volunteers |
-| Giving | Donations, Payments |
-| Pujas & Events | Pujas, Events |
-| Temple Site | Temple page |
-| Administration | Staff, Audit log |
+| Dashboard | — |
+| People | Devotees · Sevak Hub |
+| Finance & 80G | Donations · Payment setup |
+| Pujas & Utsavs | Pujas & Sankalp · Utsavs & Passes |
+| Mandir Center | — |
+| Administration | Staff & permissions · Audit Trail |
 
-Why: a single row of every page stopped scaling at ~10 items and mixed daily work (pujas,
-donations) with settings. Grouping keeps each bar short and gives every area a name, colour and
-icon staff can recognise. New pages join an existing app; a new app needs a real area of work.
+Each switcher tile has the section's icon on its tint, name, a one-line description and its pages
+as chips (en/hi). The header button names the current section. Inside a page, its own views (e.g.
+Sankalp roster / Puja catalog) are a segmented switcher beside the title.
+
+"Temple site/page" is called **Mandir Center** everywhere on the staff side: it is the product name
+of the public temple site.
 
 ## Rules
 
-- **Visibility = access.** An app shows only the pages the user's role *and* module limits allow
-  (`canOpen`, the same rules the API enforces), and an app with no openable pages is hidden. This
-  is a hint; the server still checks every call.
-- Pages outside any app (e.g. Profile) show the switcher with no second bar.
+- **Visibility = access.** A module shows only if the user's role *and* module limits allow it
+  (`canOpen`, the same rules the API enforces). This is a hint; the server still checks every call.
 - Switcher: disclosure button (`aria-expanded`, `aria-controls`); closes on Escape (focus back to
-  the button), outside click and navigation. Tiles carry name + one-line description, in English
-  and Hindi. Icons are inline SVG on theme-token tints, never emoji, so they work in dark mode.
-- Phones: top bar keeps only home, switcher and user menu; theme, language and the temple-site
-  link move into the switcher panel's footer.
+  the button), outside click and navigation. Icons are inline SVG on theme-token tints, never
+  emoji, so they work in dark mode.
+- Phones: the bar keeps the switcher and user menu; theme,
+  language and the Mandir Center link move into the switcher panel's footer.
