@@ -71,6 +71,34 @@ public class PujaService implements PujaSettlement {
 
     @Transactional
     public Booked book(long pujaId, BookingDetails d) {
+        PujaBooking booking = bookings.saveAndFlush(newBooking(pujaId, d, true));
+        audit.info("event=puja_booked tenant={} booking={} puja={} paise={}", currentTenant(), booking.getId(),
+                pujaId, booking.getAmountPaise());
+        CreatedOrder order = booking.getAmountPaise() == 0 ? null
+                : payments.createPujaOrder(booking.getId(), booking.getAmountPaise(), booking.getDevoteeName(),
+                        "Puja: " + booking.getPujaName());
+        return new Booked(booking, order);
+    }
+
+    /**
+     * Booked by staff for a walk-in devotee (ADR 0026): confirmed at once. A paid puja records how
+     * the dakshina was taken; like online dakshina it is a seva fee, not an 80G donation.
+     */
+    @Transactional
+    public PujaBooking bookAtCounter(long pujaId, BookingDetails d, String mode, String reference, long staffId) {
+        PujaBooking booking = newBooking(pujaId, d, false);
+        if (booking.getAmountPaise() > 0 && (mode == null || !COUNTER_MODES.contains(mode))) {
+            throw new InvalidFieldException("mode", "say how the dakshina was paid");
+        }
+        String ref = booking.getAmountPaise() == 0 ? null : optional("reference", reference, 64);
+        booking.bookedAtCounter(staffId, booking.getAmountPaise() == 0 ? null : mode, ref);
+        booking = bookings.saveAndFlush(booking);
+        auditTrail.record(AuditAction.PUJA_BOOKED_AT_COUNTER, "puja_booking", booking.getId(),
+                booking.getAmountPaise() == 0 ? null : mode);
+        return booking;
+    }
+
+    private PujaBooking newBooking(long pujaId, BookingDetails d, boolean contactRequired) {
         Puja puja = pujas.findById(pujaId).filter(Puja::isActive).orElseThrow(PujaNotFoundException::new);
         LocalDate today = LocalDate.now(clock);
         if (d.pujaDate() == null || d.pujaDate().isBefore(today) || d.pujaDate().isAfter(today.plusDays(MAX_DAYS_AHEAD))) {
@@ -79,22 +107,18 @@ public class PujaService implements PujaSettlement {
         String name = required("devoteeName", d.devoteeName(), 120);
         String phone = d.phone() == null || d.phone().isBlank() ? null : DevoteeService.phone(d.phone());
         String email = d.email() == null || d.email().isBlank() ? null : d.email().strip().toLowerCase(Locale.ROOT);
-        if (phone == null && email == null) {
+        if (contactRequired && phone == null && email == null) {
             throw new InvalidFieldException("phone", "a phone number or an email is required");
         }
         if (email != null && (email.length() > 254 || !email.matches("[^@\\s]+@[^@\\s]+\\.[^@\\s]+"))) {
             throw new InvalidFieldException("email", "email is not valid");
         }
-        PujaBooking booking = bookings.saveAndFlush(new PujaBooking(currentTenant(), puja,
-                Codes.fresh(bookings::existsByBookingCode), name, optional("gotra", d.gotra(), 60),
-                optional("nakshatra", d.nakshatra(), 60), optional("rashi", d.rashi(), 60),
-                optional("familyNames", d.familyNames(), 500), d.pujaDate(), phone, email));
-        audit.info("event=puja_booked tenant={} booking={} puja={} paise={}", currentTenant(), booking.getId(),
-                pujaId, booking.getAmountPaise());
-        CreatedOrder order = booking.getAmountPaise() == 0 ? null
-                : payments.createPujaOrder(booking.getId(), booking.getAmountPaise(), name, "Puja: " + puja.getName());
-        return new Booked(booking, order);
+        return new PujaBooking(currentTenant(), puja, Codes.fresh(bookings::existsByBookingCode), name,
+                optional("gotra", d.gotra(), 60), optional("nakshatra", d.nakshatra(), 60), optional("rashi", d.rashi(), 60),
+                optional("familyNames", d.familyNames(), 500), d.pujaDate(), phone, email);
     }
+
+    private static final java.util.Set<String> COUNTER_MODES = java.util.Set.of("CASH", "UPI", "CARD", "CHEQUE", "BANK_TRANSFER");
 
     // --- settlement (called by the payment flow, inside its transaction) --------------------------
 

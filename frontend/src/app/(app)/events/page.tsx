@@ -4,25 +4,37 @@ import { useCallback, useEffect, useState } from "react";
 
 import { api } from "@/components/apiClient";
 import { useMe } from "@/components/Session";
-import { Alert, Badge, Button, Card, Dialog, PageHeader, TextField } from "@/components/ui";
+import { ConfirmDialog, EmptyState, Pill, StaffTitle, StatCard, useView, ViewSwitcher } from "@/components/staff";
+import { Alert, Button, Card, Dialog, SelectField, TextField } from "@/components/ui";
 import { ApiError, describeError } from "@/lib/errors";
-import { formatIst, formatPassCode, istFromLocalInput, type EventPass, type StaffEvent } from "@/lib/events";
+import {
+  dateChip, formatIst, formatPassCode, istFromLocalInput, localInputFromIst, type EventPass, type StaffEvent,
+} from "@/lib/events";
 import { hasRole } from "@/lib/types";
 
-const STATUS_TONE = { DRAFT: "neutral", PUBLISHED: "success", CANCELLED: "danger" } as const;
+const STATUS = {
+  DRAFT: { tone: "neutral", label: "Draft" },
+  PUBLISHED: { tone: "success", label: "Published" },
+  CANCELLED: { tone: "danger", label: "Cancelled" },
+} as const;
+const VIEWS = ["gate", "festivals", "roster"] as const;
 
 /**
- * Events (ADR 0014). Everyone on staff sees events and can check passes in at the gate (name and
- * head count only). Leaders create, publish and cancel events and see registrations with contacts.
+ * Utsavs & passes (ADR 0014, 0026). Everyone on staff checks passes in at the gate and can issue a
+ * walk-in pass. Leaders create, edit, publish and cancel utsavs, and see the roster with contacts.
  */
 export default function EventsPage() {
   const me = useMe();
   const isLeader = hasRole(me.role, "LEADER");
+  const view = useView(VIEWS);
   const [events, setEvents] = useState<StaffEvent[] | null>(null);
+  const [selected, setSelected] = useState<number | null>(null);
   const [notice, setNotice] = useState<{ tone: "success" | "danger"; text: string } | null>(null);
-  const [creating, setCreating] = useState(false);
-  const [passesFor, setPassesFor] = useState<StaffEvent | null>(null);
-  const [gateFor, setGateFor] = useState<StaffEvent | null>(null);
+  const [editing, setEditing] = useState<StaffEvent | "new" | null>(null);
+  const [issuing, setIssuing] = useState(false);
+  const [cancelling, setCancelling] = useState<StaffEvent | null>(null);
+  // Fixed per visit: what counts as "live" shouldn't shift while staff are working the gate.
+  const [now] = useState(() => Date.now());
 
   const load = useCallback(async () => {
     try {
@@ -37,133 +49,214 @@ export default function EventsPage() {
     void load();
   }, [load]);
 
+  // Gate and roster work on live utsavs: published and not over, soonest first.
+  const live = (events ?? []).filter((e) => e.status === "PUBLISHED" && Date.parse(e.endsAt) > now)
+    .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
+  const forRoster = (events ?? []).filter((e) => e.status !== "DRAFT")
+    .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
+  const pool = view === "gate" ? live : forRoster;
+  const current = pool.find((e) => e.id === selected) ?? pool.find((e) => Date.parse(e.endsAt) > now) ?? pool[0] ?? null;
+
   async function changeStatus(e: StaffEvent, action: "publish" | "cancel") {
     setNotice(null);
     try {
       await api.request(`/events/${e.id}/${action}`, { method: "POST" });
-      setNotice({ tone: "success", text: action === "publish" ? `“${e.title}” is now public.` : `“${e.title}” was cancelled.` });
+      setNotice({ tone: "success", text: action === "publish" ? `“${e.title}” is now on the Mandir Center.` : `“${e.title}” was cancelled.` });
     } catch (err) {
       setNotice({ tone: "danger", text: describeError(err) });
     }
     await load();
   }
 
+  const picker = pool.length > 0 && current ? (
+    <label className="flex flex-wrap items-center gap-2 text-sm font-semibold">
+      Utsav
+      <select value={current.id} onChange={(e) => setSelected(Number(e.target.value))}
+              className="min-w-[16rem] rounded-[10px] border border-line bg-surface px-3 py-1.5 text-sm font-normal">
+        {pool.map((e) => <option key={e.id} value={e.id}>{e.title} ({formatIst(e.startsAt).split(",").slice(0, 2).join(",")})</option>)}
+      </select>
+    </label>
+  ) : null;
+
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Events"
-        description="Festivals, darshan slots and satsangs. Devotees register on the temple's public events page."
-        actions={isLeader ? <Button onClick={() => setCreating(true)}>New event</Button> : null}
+      <StaffTitle
+        title="Utsavs & Gate Pass Check-in"
+        pill="Utsavs & Darshan"
+        description="Check devotees in at the temple gate by pass code, issue passes to walk-ins, and publish upcoming utsavs."
+        views={<ViewSwitcher label="Utsav views" current={view} views={[
+          { id: "gate", label: "Gate Check-in" }, { id: "festivals", label: "Festivals & Passes" },
+          ...(isLeader ? [{ id: "roster" as const, label: "Attendee Roster" }] : [])]} />}
       />
       {notice ? <Alert tone={notice.tone}>{notice.text}</Alert> : null}
 
-      {events?.length === 0 ? <Card><p className="text-muted">No events yet.</p></Card> : null}
-      <div className="grid gap-4 md:grid-cols-2">
-        {events?.map((e) => (
-          <Card key={e.id} className="flex flex-col gap-2">
-            <div className="flex items-start justify-between gap-2">
-              <h2 className="font-medium">{e.title}</h2>
-              <Badge tone={STATUS_TONE[e.status]}>{e.status.toLowerCase()}</Badge>
+      {view === "gate" ? (
+        live.length === 0 || !current ? (
+          <EmptyState title="No utsav is open at the gate right now.">Publish an utsav under Festivals &amp; Passes.</EmptyState>
+        ) : (
+          <div className="grid items-start gap-6 lg:grid-cols-[22rem_1fr]">
+            <GateCard event={current} onCheckedIn={() => void load()} />
+            <div className="flex flex-col gap-4">
+              <Card className="flex flex-wrap items-center justify-between gap-3 py-3">
+                {picker}
+                <Button variant="secondary" onClick={() => setIssuing(true)}>+ Issue walk-in pass</Button>
+              </Card>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <StatCard label="Registered" tone="primary" value={current.seatsTaken}
+                          note={current.capacity !== null ? `of ${current.capacity} places` : "no limit"} />
+                <StatCard label="Starts" tone="maroon" value={dateChip(current.startsAt).day}
+                          note={formatIst(current.startsAt)} />
+                <StatCard label="Registration" tone={current.registrationOpen ? "success" : "warning"}
+                          value={current.registrationOpen ? "Open" : "Closed"} note="Gate passes still allowed" />
+              </div>
+              {isLeader ? <PassList event={current} compact onChanged={() => void load()} /> : null}
             </div>
-            <p className="text-sm text-muted">{formatIst(e.startsAt)} – {formatIst(e.endsAt)}</p>
-            <p className="text-sm">
-              {e.seatsTaken} registered{e.capacity !== null ? ` of ${e.capacity}` : ""}
-              {!e.registrationOpen ? " · registration closed" : ""}
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {e.status === "PUBLISHED" ? (
-                <Button variant="secondary" onClick={() => setGateFor(e)}>Gate check-in</Button>
-              ) : null}
-              {isLeader && e.status === "DRAFT" ? (
-                <Button onClick={() => void changeStatus(e, "publish")}>Publish</Button>
-              ) : null}
-              {isLeader ? <Button variant="secondary" onClick={() => setPassesFor(e)}>Registrations</Button> : null}
-              {isLeader && e.status !== "CANCELLED" ? (
-                <Button variant="ghost" className="text-danger" onClick={() => void changeStatus(e, "cancel")}>Cancel event</Button>
-              ) : null}
+          </div>
+        )
+      ) : view === "festivals" ? (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-muted">Utsavs and holy occasions. Drafts stay private until you publish them on the Mandir Center.</p>
+            {isLeader ? <Button onClick={() => setEditing("new")}>+ Create utsav</Button> : null}
+          </div>
+          {events === null ? null : events.length === 0 ? <EmptyState title="No utsavs yet." /> : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {[...events].sort((a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt)).map((e) => {
+                const chip = dateChip(e.startsAt);
+                const full = e.capacity !== null ? Math.min(100, Math.round((e.seatsTaken / e.capacity) * 100)) : null;
+                return (
+                  <Card key={e.id} className={`flex flex-col gap-3 ${e.status === "CANCELLED" ? "opacity-60" : ""}`}>
+                    <div className="flex items-start gap-4">
+                      <div className="flex size-14 shrink-0 flex-col items-center justify-center rounded-[12px] border border-primary/25 bg-primary/10 text-primary-strong">
+                        <span className="text-xl font-semibold leading-none">{chip.day}</span>
+                        <span className="text-[11px] font-semibold uppercase">{chip.month}</span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <h2 className="text-lg font-semibold">{e.title}</h2>
+                          <Pill tone={STATUS[e.status].tone}>{STATUS[e.status].label}</Pill>
+                        </div>
+                        <p className="font-mono text-xs text-muted">{formatIst(e.startsAt)} – {formatIst(e.endsAt).split(", ").pop()}</p>
+                      </div>
+                    </div>
+                    {e.description ? <p className="rounded-[10px] bg-surface-2 p-3 text-sm">{e.description}</p> : null}
+                    <div>
+                      <div className="mb-1 flex justify-between text-xs text-muted">
+                        <span>{e.seatsTaken} registered{e.capacity !== null ? ` of ${e.capacity}` : ""}</span>
+                        <span>{e.registrationOpen ? "Passes open" : "Passes closed"}</span>
+                      </div>
+                      {full !== null ? (
+                        <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
+                          <div className="h-full rounded-full bg-primary" style={{ width: `${full}%` }} />
+                        </div>
+                      ) : null}
+                    </div>
+                    {isLeader && e.status !== "CANCELLED" ? (
+                      <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3">
+                        <Button variant="secondary" onClick={() => setEditing(e)}>Edit</Button>
+                        {e.status === "DRAFT" ? <Button onClick={() => void changeStatus(e, "publish")}>Publish</Button> : null}
+                        <Button variant="danger" onClick={() => setCancelling(e)}>Cancel utsav</Button>
+                      </div>
+                    ) : null}
+                  </Card>
+                );
+              })}
             </div>
+          )}
+        </>
+      ) : !isLeader ? null : forRoster.length === 0 || !current ? (
+        <EmptyState title="No published utsavs yet." />
+      ) : (
+        <>
+          <Card className="flex flex-wrap items-center justify-between gap-3 py-3">
+            {picker}
+            {Date.parse(current.endsAt) > now && current.status === "PUBLISHED"
+              ? <Button variant="secondary" onClick={() => setIssuing(true)}>+ Issue pass</Button> : null}
           </Card>
-        ))}
-      </div>
+          <PassList key={current.id} event={current} onChanged={() => void load()} />
+        </>
+      )}
 
-      {isLeader ? (
-        <CreateEventDialog open={creating} onClose={() => setCreating(false)}
-                           onCreated={() => { setCreating(false); void load(); }} />
+      {isLeader && editing ? (
+        <EventDialog event={editing === "new" ? null : editing} onClose={() => setEditing(null)}
+                     onSaved={(t) => { setEditing(null); setNotice({ tone: "success", text: `“${t}” saved.` }); void load(); }} />
       ) : null}
-      {passesFor ? <PassesDialog event={passesFor} onClose={() => setPassesFor(null)} /> : null}
-      {gateFor ? <GateDialog event={gateFor} onClose={() => { setGateFor(null); void load(); }} /> : null}
+      {issuing && current ? (
+        <IssuePassDialog event={current} onClose={() => setIssuing(false)}
+                         onIssued={(p) => { setIssuing(false); setNotice({ tone: "success",
+                           text: `Pass ${formatPassCode(p.passCode)} issued to ${p.attendeeName} (${p.attendeeCount}).` }); void load(); }} />
+      ) : null}
+      <ConfirmDialog open={cancelling !== null} title="Cancel this utsav?" confirm="Cancel utsav"
+                     onClose={() => setCancelling(null)}
+                     onConfirm={() => { const e = cancelling; setCancelling(null); if (e) void changeStatus(e, "cancel"); }}>
+        {cancelling ? <p>“{cancelling.title}” will be taken off the Mandir Center and its {cancelling.seatsTaken} registered
+          {cancelling.seatsTaken === 1 ? " person" : " people"} can no longer use their passes.</p> : null}
+      </ConfirmDialog>
     </div>
   );
 }
 
-function CreateEventDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [startsAt, setStartsAt] = useState("");
-  const [endsAt, setEndsAt] = useState("");
-  const [capacity, setCapacity] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [fields, setFields] = useState<Readonly<Record<string, string>>>({});
+function GateCard({ event, onCheckedIn }: { event: StaffEvent; onCheckedIn: () => void }) {
+  const [code, setCode] = useState("");
+  const [result, setResult] = useState<{ tone: "success" | "danger" | "warning"; title: string; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    setFields({});
-    const start = istFromLocalInput(startsAt);
-    const end = istFromLocalInput(endsAt);
-    if (!start || !end) {
-      setError("Choose a start and an end time.");
-      return;
-    }
     setBusy(true);
+    setResult(null);
     try {
-      await api.request("/events", {
-        method: "POST",
-        json: {
-          title: title.trim(),
-          description: description.trim() || null,
-          startsAt: start,
-          endsAt: end,
-          capacity: capacity.trim() ? Number(capacity) : null,
-          registrationOpen: true,
-        },
+      const r = await api.request<{ attendeeName: string; attendeeCount: number }>(`/events/${event.id}/check-in`, {
+        method: "POST", json: { passCode: code },
       });
-      setTitle(""); setDescription(""); setStartsAt(""); setEndsAt(""); setCapacity("");
-      onCreated();
+      setResult({ tone: "success", title: `Welcome, ${r.attendeeName}`,
+                  text: `${r.attendeeCount} ${r.attendeeCount === 1 ? "person" : "people"} · ${event.title}` });
+      setCode("");
+      onCheckedIn();
     } catch (err) {
-      if (err instanceof ApiError) setFields(err.fields);
-      setError(describeError(err));
+      if (err instanceof ApiError && err.code === "already_checked_in") {
+        setResult({ tone: "warning", title: "Already used", text: "This pass was checked in earlier." });
+      } else if (err instanceof ApiError && err.status === 404) {
+        setResult({ tone: "danger", title: "Not valid", text: `No such pass for ${event.title}.` });
+      } else {
+        setResult({ tone: "danger", title: "Couldn't check in", text: describeError(err) });
+      }
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <Dialog open={open} onClose={onClose} title="New event">
+    <Card className="flex flex-col gap-4">
+      <div>
+        <h2 className="text-lg font-semibold">Gate entry check-in</h2>
+        <p className="text-sm text-muted">Enter the devotee&apos;s pass code for <strong>{event.title}</strong>.</p>
+      </div>
       <form onSubmit={onSubmit} className="flex flex-col gap-3">
-        <TextField label="Title" value={title} onChange={(e) => setTitle(e.target.value)} error={fields.title} required />
-        <TextField label="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)} />
-        <TextField label="Starts (IST)" type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)}
-                   error={fields.startsAt} required />
-        <TextField label="Ends (IST)" type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)}
-                   error={fields.endsAt} required />
-        <TextField label="Capacity (people, optional)" inputMode="numeric" value={capacity}
-                   onChange={(e) => setCapacity(e.target.value.replace(/\D/g, ""))} error={fields.capacity} />
-        <p className="text-xs text-muted">Saved as a draft. Publish it when you&apos;re ready for registrations.</p>
-        {error ? <Alert tone="danger">{error}</Alert> : null}
-        <div className="flex justify-end gap-2">
-          <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
-          <Button type="submit" busy={busy}>Create draft</Button>
-        </div>
+        <label htmlFor="pass-code" className="font-mono text-sm font-semibold">Pass code</label>
+        <input id="pass-code" value={code} onChange={(e) => setCode(e.target.value)} autoComplete="off" autoFocus
+               placeholder="ABCDE-23456"
+               className="rounded-[10px] border-2 border-primary/60 bg-surface px-4 py-3 font-mono text-lg tracking-widest focus:border-primary focus:outline-none" />
+        <Button type="submit" busy={busy} disabled={!code.trim()} className="py-3 text-base">✓ Verify &amp; check in</Button>
       </form>
-    </Dialog>
+      {result ? (
+        <div role="status" className={`rounded-[12px] border p-4 ${
+          result.tone === "success" ? "border-success/40 bg-success/10" : result.tone === "warning" ? "border-warning/40 bg-warning/10"
+            : "border-danger/40 bg-danger/10"}`}>
+          <p className={`font-semibold ${result.tone === "success" ? "text-success" : result.tone === "warning" ? "text-warning" : "text-danger"}`}>
+            {result.title}
+          </p>
+          <p className="text-sm">{result.text}</p>
+        </div>
+      ) : null}
+    </Card>
   );
 }
 
-function PassesDialog({ event, onClose }: { event: StaffEvent; onClose: () => void }) {
+function PassList({ event, compact, onChanged }: { event: StaffEvent; compact?: boolean; onChanged: () => void }) {
   const [passes, setPasses] = useState<EventPass[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState<EventPass | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -174,88 +267,184 @@ function PassesDialog({ event, onClose }: { event: StaffEvent; onClose: () => vo
   }, [event.id]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- load on open
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- load on open / utsav change
     void load();
-  }, [load]);
+  }, [load, event.seatsTaken]);
 
   async function cancel(p: EventPass) {
     try {
       await api.request(`/events/${event.id}/passes/${p.id}/cancel`, { method: "POST" });
       await load();
+      onChanged();
     } catch (err) {
       setError(describeError(err));
     }
   }
 
+  const active = passes?.filter((p) => p.status === "ACTIVE") ?? [];
+  const people = active.reduce((n, p) => n + p.attendeeCount, 0);
+  const inside = active.filter((p) => p.checkedInAt).reduce((n, p) => n + p.attendeeCount, 0);
+  const shown = compact ? passes?.slice(0, 8) : passes;
+
   return (
-    <Dialog open onClose={onClose} title={`Registrations · ${event.title}`}>
+    <div className="flex flex-col gap-4">
+      {!compact ? (
+        <div className="grid gap-3 sm:grid-cols-4">
+          <StatCard label="Passes" tone="primary" value={active.length} />
+          <StatCard label="People" tone="info" value={people} note={event.capacity !== null ? `of ${event.capacity}` : undefined} />
+          <StatCard label="Checked in" tone="success" value={inside} note={people ? `${Math.round((inside / people) * 100)}%` : undefined} />
+          <StatCard label="Cancelled" tone="neutral" value={(passes?.length ?? 0) - active.length} />
+        </div>
+      ) : null}
       {error ? <Alert tone="danger">{error}</Alert> : null}
-      <div className="max-h-[60vh] overflow-auto">
-        <table className="w-full text-left text-sm">
-          <thead className="text-xs uppercase text-muted">
-            <tr><th className="py-2">Pass</th><th>Name</th><th>People</th><th>Contact</th><th>Status</th><th /></tr>
-          </thead>
-          <tbody>
-            {passes?.map((p) => (
-              <tr key={p.id} className="border-t border-line">
-                <td className="py-2 font-mono">{formatPassCode(p.passCode)}</td>
-                <td>{p.attendeeName}</td>
-                <td>{p.attendeeCount}</td>
-                <td className="text-muted">{p.phone ?? p.email}</td>
-                <td>{p.status === "CANCELLED" ? "cancelled" : p.checkedInAt ? `in · ${formatIst(p.checkedInAt)}` : "registered"}</td>
-                <td>
-                  {p.status === "ACTIVE" && !p.checkedInAt ? (
-                    <Button variant="ghost" className="text-danger" onClick={() => void cancel(p)}>Cancel</Button>
-                  ) : null}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {passes?.length === 0 ? <p className="py-4 text-muted">No registrations yet.</p> : null}
-      </div>
-    </Dialog>
+      <Card className="overflow-x-auto p-0">
+        {compact ? <p className="border-b border-line px-4 py-3 text-sm font-semibold">Latest passes</p> : null}
+        {passes?.length === 0 ? <p className="px-4 py-6 text-sm text-muted">No passes issued yet.</p> : (
+          <table className="w-full text-left text-sm">
+            <thead className="bg-surface-2 text-xs uppercase tracking-wider text-muted">
+              <tr><th className="px-4 py-2">Pass</th><th className="px-4 py-2">Name</th><th className="px-4 py-2">People</th>
+                {!compact ? <th className="px-4 py-2">Contact</th> : null}<th className="px-4 py-2">Status</th><th /></tr>
+            </thead>
+            <tbody>
+              {shown?.map((p) => (
+                <tr key={p.id} className="border-t border-line">
+                  <td className="px-4 py-2 font-mono">{formatPassCode(p.passCode)}</td>
+                  <td className="px-4 py-2 font-medium">{p.attendeeName}</td>
+                  <td className="px-4 py-2">{p.attendeeCount}</td>
+                  {!compact ? <td className="px-4 py-2 text-muted">{p.phone ?? p.email ?? "Walk-in"}</td> : null}
+                  <td className="px-4 py-2">
+                    {p.status === "CANCELLED" ? <Pill>Cancelled</Pill>
+                      : p.checkedInAt ? <Pill tone="success">In · {formatIst(p.checkedInAt).split(", ").pop()}</Pill>
+                      : <Pill tone="primary">Registered</Pill>}
+                  </td>
+                  <td className="px-4 py-2 text-right">
+                    {!compact && p.status === "ACTIVE" && !p.checkedInAt
+                      ? <Button variant="ghost" className="text-danger" onClick={() => setCancelling(p)}>Cancel</Button> : null}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Card>
+      <ConfirmDialog open={cancelling !== null} title="Cancel this pass?" confirm="Cancel pass" onClose={() => setCancelling(null)}
+                     onConfirm={() => { const p = cancelling; setCancelling(null); if (p) void cancel(p); }}>
+        {cancelling ? <p>Pass {formatPassCode(cancelling.passCode)} for {cancelling.attendeeName} ({cancelling.attendeeCount}) will
+          stop working at the gate and its places will be freed.</p> : null}
+      </ConfirmDialog>
+    </div>
   );
 }
 
-function GateDialog({ event, onClose }: { event: StaffEvent; onClose: () => void }) {
-  const [code, setCode] = useState("");
-  const [result, setResult] = useState<{ tone: "success" | "danger" | "warning"; text: string } | null>(null);
+function EventDialog({ event, onClose, onSaved }: { event: StaffEvent | null; onClose: () => void; onSaved: (title: string) => void }) {
+  const [f, setF] = useState({
+    title: event?.title ?? "", description: event?.description ?? "",
+    startsAt: event ? localInputFromIst(event.startsAt) : "", endsAt: event ? localInputFromIst(event.endsAt) : "",
+    capacity: event?.capacity != null ? String(event.capacity) : "", registrationOpen: event?.registrationOpen ?? true,
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [fields, setFields] = useState<Readonly<Record<string, string>>>({});
   const [busy, setBusy] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError(null);
+    setFields({});
+    const start = istFromLocalInput(f.startsAt);
+    const end = istFromLocalInput(f.endsAt);
+    if (!start || !end) {
+      setError("Choose a start and an end time.");
+      return;
+    }
     setBusy(true);
-    setResult(null);
     try {
-      const r = await api.request<{ attendeeName: string; attendeeCount: number }>(`/events/${event.id}/check-in`, {
-        method: "POST",
-        json: { passCode: code },
+      await api.request(event ? `/events/${event.id}` : "/events", {
+        method: event ? "PUT" : "POST",
+        json: { title: f.title.trim(), description: f.description.trim() || null, startsAt: start, endsAt: end,
+                capacity: f.capacity.trim() ? Number(f.capacity) : null, registrationOpen: f.registrationOpen },
       });
-      setResult({ tone: "success", text: `✓ ${r.attendeeName}: ${r.attendeeCount} ${r.attendeeCount === 1 ? "person" : "people"}. Welcome!` });
-      setCode("");
+      onSaved(f.title.trim());
     } catch (err) {
-      if (err instanceof ApiError && err.code === "already_checked_in") {
-        setResult({ tone: "warning", text: "Already used: this pass was checked in earlier." });
-      } else if (err instanceof ApiError && err.status === 404) {
-        setResult({ tone: "danger", text: "No such pass for this event." });
-      } else {
-        setResult({ tone: "danger", text: describeError(err) });
-      }
+      if (err instanceof ApiError) setFields(err.fields);
+      setError(describeError(err));
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <Dialog open onClose={onClose} title={`Gate check-in · ${event.title}`}>
+    <Dialog open onClose={onClose} title={event ? `Edit ${event.title}` : "Create an utsav"}>
       <form onSubmit={onSubmit} className="flex flex-col gap-3">
-        <TextField label="Pass code" value={code} onChange={(e) => setCode(e.target.value)} autoComplete="off"
-                   placeholder="ABCDE-23456" autoFocus />
-        {result ? <Alert tone={result.tone}>{result.text}</Alert> : null}
+        <TextField label="Title" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} error={fields.title} required />
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="font-medium">Description and highlights (optional)</span>
+          <textarea rows={3} maxLength={2000} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })}
+                    className="rounded-[10px] border border-line bg-surface px-3 py-2" />
+        </label>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <TextField label="Starts (IST)" type="datetime-local" value={f.startsAt} onChange={(e) => setF({ ...f, startsAt: e.target.value })}
+                     error={fields.startsAt} required />
+          <TextField label="Ends (IST)" type="datetime-local" value={f.endsAt} onChange={(e) => setF({ ...f, endsAt: e.target.value })}
+                     error={fields.endsAt} required />
+        </div>
+        <TextField label="Capacity (people, optional)" inputMode="numeric" value={f.capacity}
+                   onChange={(e) => setF({ ...f, capacity: e.target.value.replace(/\D/g, "") })} error={fields.capacity} />
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={f.registrationOpen} onChange={(e) => setF({ ...f, registrationOpen: e.target.checked })} />
+          Devotees can register for passes on the Mandir Center
+        </label>
+        {!event ? <p className="text-xs text-muted">Saved as a draft. Publish it when you&apos;re ready.</p> : null}
+        {error ? <Alert tone="danger">{error}</Alert> : null}
         <div className="flex justify-end gap-2">
-          <Button variant="secondary" type="button" onClick={onClose}>Close</Button>
-          <Button type="submit" busy={busy} disabled={!code.trim()}>Check in</Button>
+          <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
+          <Button type="submit" busy={busy}>{event ? "Save" : "Create draft"}</Button>
+        </div>
+      </form>
+    </Dialog>
+  );
+}
+
+function IssuePassDialog({ event, onClose, onIssued }: { event: StaffEvent; onClose: () => void; onIssued: (p: EventPass) => void }) {
+  const [f, setF] = useState({ name: "", count: "1", phone: "", email: "" });
+  const [error, setError] = useState<string | null>(null);
+  const [fields, setFields] = useState<Readonly<Record<string, string>>>({});
+  const [busy, setBusy] = useState(false);
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    setFields({});
+    try {
+      onIssued(await api.request<EventPass>(`/events/${event.id}/passes`, { method: "POST", json: {
+        name: f.name.trim(), count: Number(f.count), phone: f.phone.trim() || null, email: f.email.trim() || null } }));
+    } catch (err) {
+      if (err instanceof ApiError) setFields(err.fields);
+      setError(err instanceof ApiError && err.code === "event_full" ? "Not enough places left." : describeError(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog open onClose={onClose} title={`Issue a pass · ${event.title}`}>
+      <form onSubmit={onSubmit} className="flex flex-col gap-3">
+        <div className="grid gap-3 sm:grid-cols-[1fr_8rem]">
+          <TextField label="Name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} error={fields.name} />
+          <SelectField label="People" value={f.count} onChange={(e) => setF({ ...f, count: e.target.value })}
+                       options={Array.from({ length: 10 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))} />
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <TextField label="Mobile (optional)" inputMode="tel" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })}
+                     error={fields.phone} />
+          <TextField label="Email (optional)" type="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })}
+                     error={fields.email} />
+        </div>
+        <p className="text-xs text-muted">A mobile or email lets them see the pass in My Mandir. Places still count against capacity.</p>
+        {error ? <Alert tone="danger">{error}</Alert> : null}
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
+          <Button type="submit" busy={busy}>Issue pass</Button>
         </div>
       </form>
     </Dialog>

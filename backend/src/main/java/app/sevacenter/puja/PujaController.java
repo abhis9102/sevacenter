@@ -78,6 +78,19 @@ public class PujaController {
         return service.forDate(date).stream().map(b -> BookingResponse.of(b, contacts)).toList();
     }
 
+    /**
+     * A walk-in devotee booked at the counter (ADR 0026). LEADER+, like recording a donation: a
+     * paid puja means money taken in person.
+     */
+    @PostMapping("/api/v1/puja-bookings")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('LEADER')")
+    public BookingResponse bookAtCounter(@Valid @RequestBody CounterBookingRequest r, @AuthenticationPrincipal StaffUser staff) {
+        return BookingResponse.of(service.bookAtCounter(r.pujaId(), new PujaService.BookingDetails(r.devoteeName(),
+                r.gotra(), r.nakshatra(), r.rashi(), r.familyNames(), r.pujaDate(), r.phone(), r.email()),
+                r.mode(), r.reference(), staff.userId()), true);
+    }
+
     @PostMapping("/api/v1/puja-bookings/{id:\\d+}/performed")
     @PreAuthorize("hasRole('MEMBER')")
     public BookingResponse performed(@PathVariable long id, @AuthenticationPrincipal StaffUser staff) {
@@ -151,17 +164,32 @@ public class PujaController {
             @Schema(example = "98765 43210") @Size(max = 30) String phone,
             @Schema(example = "lakshmi@example.org") @Size(max = 254) String email) { }
 
+    public record CounterBookingRequest(
+            @Schema(example = "1") @NotNull Long pujaId,
+            @Schema(example = "Lakshmi Iyer") @NotBlank @Size(max = 120) String devoteeName,
+            @Schema(example = "Kashyap") @Size(max = 60) String gotra,
+            @Schema(example = "Rohini") @Size(max = 60) String nakshatra,
+            @Schema(example = "Vrishabha") @Size(max = 60) String rashi,
+            @Schema(example = "Ravi, Meena") @Size(max = 500) String familyNames,
+            @Schema(example = "2030-08-15") @NotNull LocalDate pujaDate,
+            @Schema(example = "98765 43210", description = "Optional for a walk-in") @Size(max = 30) String phone,
+            @Schema(example = "lakshmi@example.org") @Size(max = 254) String email,
+            @Schema(example = "CASH", description = "Required for a paid puja: CASH, UPI, CARD, CHEQUE or BANK_TRANSFER")
+            @Size(max = 20) String mode,
+            @Schema(example = "UTR 412345678901") @Size(max = 64) String reference) { }
+
     /** For a paid puja, the order to open Checkout with; confirm via /public/donations/confirm. */
     public record BookedResponse(String bookingCode, String status, String pujaName, LocalDate pujaDate, String amount,
                                  String orderId, String keyId, long amountPaise) { }
 
     public record BookingResponse(long id, String bookingCode, String pujaName, LocalDate pujaDate, String devoteeName,
                                   String gotra, String nakshatra, String rashi, String familyNames, String phone,
-                                  String email, String amount, String status) {
+                                  String email, String amount, String status, boolean counter, String counterMode) {
         static BookingResponse of(PujaBooking b, boolean contacts) {
             return new BookingResponse(b.getId(), b.getBookingCode(), b.getPujaName(), b.getPujaDate(), b.getDevoteeName(),
                     b.getGotra(), b.getNakshatra(), b.getRashi(), b.getFamilyNames(), contacts ? b.getPhone() : null,
-                    contacts ? b.getEmail() : null, Money.toRupees(b.getAmountPaise()), b.getStatus());
+                    contacts ? b.getEmail() : null, Money.toRupees(b.getAmountPaise()), b.getStatus(),
+                    b.getBookedBy() != null, contacts ? b.getCounterMode() : null);
         }
     }
 }

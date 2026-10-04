@@ -66,3 +66,22 @@ export function formatIst(iso: string): string {
 export function formatPassCode(code: string): string {
   return code.length === 10 ? `${code.slice(0, 5)}-${code.slice(5)}` : code;
 }
+
+/** An API instant as a <input type="datetime-local"> value in IST ("2030-08-15T22:00"), for editing. */
+export function localInputFromIst(iso: string): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date(iso));
+  const n = (t: string) => parts.find((p) => p.type === t)?.value ?? "00";
+  return `${n("year")}-${n("month")}-${n("day")}T${n("hour")}:${n("minute")}`;
+}
+
+/** Date-chip parts in IST: { day: "11", month: "Oct" }. */
+export function dateChip(iso: string): { day: string; month: string } {
+  const d = new Date(iso);
+  return {
+    day: new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", day: "numeric" }).format(d),
+    month: new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", month: "short" }).format(d),
+  };
+}

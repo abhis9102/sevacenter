@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { formatIst, formatPassCode, istFromLocalInput } from "../src/lib/events";
+import { dateChip, formatIst, formatPassCode, istFromLocalInput, localInputFromIst } from "../src/lib/events";
 
 describe("events helpers", () => {
   it("turns a datetime-local value into an IST instant, or nothing", () => {
@@ -15,5 +15,13 @@ describe("events helpers", () => {
   it("shows pass codes in two readable halves", () => {
     assert.equal(formatPassCode("ABCDE23456"), "ABCDE-23456");
     assert.equal(formatPassCode("short"), "short");
+  });
+});
+
+describe("event editing helpers", () => {
+  it("round-trips an IST instant through the datetime-local input", () => {
+    assert.equal(localInputFromIst("2030-08-15T16:30:00Z"), "2030-08-15T22:00");
+    assert.equal(istFromLocalInput(localInputFromIst("2030-08-15T22:00:00+05:30")), "2030-08-15T22:00:00+05:30");
+    assert.deepEqual(dateChip("2026-10-10T20:00:00Z"), { day: "11", month: "Oct" });
   });
 });

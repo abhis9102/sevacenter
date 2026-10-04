@@ -223,6 +223,42 @@ class PujaTest {
         book(puja, TOMORROW).andExpect(status().isTooManyRequests());
     }
 
+    // --- counter bookings (ADR 0026) ------------------------------------------------------------
+
+    @Test
+    void leadersBookAWalkInAtTheCounterAndItIsConfirmedAtOnce() throws Exception {
+        long paid = id(createPuja(leader, "Rudrabhishek", "1100", true));
+        long free = id(createPuja(leader, "Archana", "0", true));
+        counter(member, paid, "CASH").andExpect(status().isForbidden());
+        // No phone or email: a walk-in.
+        counter(leader, paid, "CASH").andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("CONFIRMED"))
+                .andExpect(jsonPath("$.counter").value(true))
+                .andExpect(jsonPath("$.counterMode").value("CASH"));
+        counter(leader, free, null).andExpect(status().isCreated()).andExpect(jsonPath("$.counterMode").doesNotExist());
+        assertThat(schedule(member)).hasSize(2);
+        // Counter dakshina is seva income too: never a ledger donation.
+        assertThat(pinned(() -> jdbc.queryForObject("select count(*) from donation", Integer.class))).isZero();
+        // ...and no payment order was opened for it.
+        assertThat(pinned(() -> jdbc.queryForObject("select count(*) from payment_intent", Integer.class))).isZero();
+    }
+
+    @Test
+    void aPaidCounterBookingMustSayHowItWasPaid() throws Exception {
+        long paid = id(createPuja(leader, "Rudrabhishek", "1100", true));
+        counter(leader, paid, null).andExpect(status().isBadRequest()).andExpect(jsonPath("$.fields.mode").exists());
+        counter(leader, paid, "BITCOIN").andExpect(status().isBadRequest());
+        long retired = id(createPuja(leader, "Retired seva", "501", false));
+        counter(leader, retired, "CASH").andExpect(status().isNotFound());
+        assertThat(schedule(leader)).isEmpty();
+    }
+
+    private ResultActions counter(MockHttpSession session, long pujaId, String mode) throws Exception {
+        return mvc.perform(on(a, post("/api/v1/puja-bookings")).session(session).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON).content(staff.body("pujaId", pujaId, "devoteeName", "Walk-in devotee",
+                        "gotra", "Atri", "pujaDate", TOMORROW.toString(), "mode", mode)));
+    }
+
     // --- helpers -----------------------------------------------------------------------------
 
     private ResultActions createPuja(MockHttpSession session, String name, String dakshina, boolean active) throws Exception {

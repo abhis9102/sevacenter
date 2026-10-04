@@ -129,6 +129,21 @@ public class EventService {
      */
     @Transactional
     public EventPass register(long eventId, String name, int count, String phone, String email) {
+        return issue(eventId, name, count, phone, email, null);
+    }
+
+    /**
+     * A pass issued by staff at the counter or gate (ADR 0026): contact optional for a walk-in,
+     * and possible until the event ends even after online registration closes. Seats still count.
+     */
+    @Transactional
+    public EventPass issueAtCounter(long eventId, String name, int count, String phone, String email, long staffId) {
+        EventPass pass = issue(eventId, name, count, phone, email, staffId);
+        auditTrail.record(AuditAction.PASS_ISSUED_AT_COUNTER, "event_pass", pass.getId(), String.valueOf(count));
+        return pass;
+    }
+
+    private EventPass issue(long eventId, String name, int count, String phone, String email, Long staffId) {
         String attendee = name == null ? "" : name.strip();
         if (attendee.isEmpty() || attendee.length() > 120 || attendee.indexOf('\0') >= 0) {
             throw new InvalidFieldException("name", "name is required");
@@ -138,7 +153,7 @@ public class EventService {
         }
         String cleanPhone = phone == null || phone.isBlank() ? null : DevoteeService.phone(phone);
         String cleanEmail = email == null || email.isBlank() ? null : email.strip().toLowerCase(Locale.ROOT);
-        if (cleanPhone == null && cleanEmail == null) {
+        if (staffId == null && cleanPhone == null && cleanEmail == null) {
             throw new InvalidFieldException("phone", "a phone number or an email is required");
         }
         if (cleanEmail != null && (cleanEmail.length() > 254 || !cleanEmail.matches("[^@\\s]+@[^@\\s]+\\.[^@\\s]+"))) {
@@ -146,14 +161,19 @@ public class EventService {
         }
         Event e = events.lockById(eventId).filter(ev -> ev.getStatus() == EventStatus.PUBLISHED)
                 .orElseThrow(EventNotFoundException::new);
-        if (!e.takesRegistrations(now())) {
+        if (staffId == null ? !e.takesRegistrations(now()) : !e.takesCounterPasses(now())) {
             throw new EventConflictException("registration_closed");
         }
         if (e.getCapacity() != null && passes.seatsTaken(eventId) + count > e.getCapacity()) {
             throw new EventConflictException("event_full");
         }
-        EventPass pass = passes.save(new EventPass(currentTenant(), eventId, newCode(), attendee, count, cleanPhone, cleanEmail));
-        audit.info("event=pass_registered tenant={} event={} pass={} count={}", currentTenant(), eventId, pass.getId(), count);
+        EventPass pass = new EventPass(currentTenant(), eventId, newCode(), attendee, count, cleanPhone, cleanEmail);
+        if (staffId != null) {
+            pass.issuedBy(staffId);
+        }
+        pass = passes.save(pass);
+        audit.info("event=pass_registered tenant={} event={} pass={} count={} counter={}", currentTenant(), eventId,
+                pass.getId(), count, staffId != null);
         return pass;
     }
 

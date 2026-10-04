@@ -83,6 +83,15 @@ public class EventController {
         return PassResponse.of(service.cancelPass(id, passId, staff.userId()));
     }
 
+    /** A walk-in pass issued at the counter or gate (ADR 0026); contact optional. */
+    @PostMapping("/{id:\\d+}/passes")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('MEMBER')")
+    public PassResponse issuePass(@PathVariable long id, @Valid @RequestBody CounterPassRequest r,
+                                  @AuthenticationPrincipal StaffUser staff) {
+        return PassResponse.of(service.issueAtCounter(id, r.name(), r.count(), r.phone(), r.email(), staff.userId()));
+    }
+
     /** At the gate. Volunteers (MEMBER) see only the name and head count. */
     @PostMapping("/{id:\\d+}/check-in")
     @PreAuthorize("hasRole('MEMBER')")
@@ -121,6 +130,12 @@ public class EventController {
                     p.getEmail(), p.getStatus(), p.getCheckedInAt(), p.getCreatedAt());
         }
     }
+
+    public record CounterPassRequest(
+            @Schema(example = "Lakshmi Iyer") @NotBlank @Size(max = 120) String name,
+            @Schema(example = "2") @Min(1) @Max(10) int count,
+            @Schema(example = "98765 43210") @Size(max = 30) String phone,
+            @Schema(example = "lakshmi@example.org") @Size(max = 254) String email) { }
 
     public record CheckInRequest(@Schema(example = "ABCD234567") @NotBlank @Size(max = 20) String passCode) { }
 
