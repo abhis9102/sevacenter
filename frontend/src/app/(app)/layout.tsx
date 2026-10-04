@@ -16,13 +16,12 @@ import { Alert, Spinner } from "@/components/ui";
 import { UserMenu } from "@/components/UserMenu";
 import { ApiError, describeError } from "@/lib/errors";
 import { MandirLogo } from "@/components/MandirLogo";
-import { isActive, moduleForPath, visibleModules } from "@/lib/apps";
+import { moduleForPath, visibleModules } from "@/lib/apps";
 import type { Me } from "@/lib/types";
 
 /**
- * Signed-in shell: loads the current user (401 -> login), then a two-tier header: the module
- * switcher, brand and account controls on top, every module this user can open below
- * (docs/design/navigation.md).
+ * Signed-in shell: loads the current user (401 -> login), then one header bar: the module switcher
+ * (the navigation), brand and account controls (docs/design/navigation.md).
  */
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const tenant = useTenant();
@@ -102,7 +101,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <SessionProvider value={me}>
       <div className="flex min-h-dvh flex-col">
         <header className="sticky top-0 z-40 border-b border-line bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/85">
-          <div className="mx-auto flex max-w-6xl items-center gap-2 border-b border-line/60 px-4 py-2.5 sm:gap-3">
+          <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-2.5 sm:gap-3">
             <AppSwitcher modules={modules} current={current} />
             <span className="hidden h-5 w-px shrink-0 bg-line sm:block" aria-hidden="true" />
             <Link href="/dashboard" className="hidden items-center gap-2 sm:flex" aria-label="SevaCenter home">
@@ -130,27 +129,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </span>
               <UserMenu me={me} onSignOut={signOut} signingOut={signingOut} />
             </div>
-          </div>
-          <div className="mx-auto max-w-6xl overflow-x-auto px-4">
-            <nav aria-label="Modules" className="flex min-w-max items-center gap-1 py-1.5">
-              {modules.map((m) => {
-                const active = isActive(pathname, m.href);
-                return (
-                  <Link
-                    key={m.id}
-                    href={m.href}
-                    aria-current={active ? "page" : undefined}
-                    className={`rounded-[8px] border px-3 py-1.5 text-sm font-semibold transition-colors ${
-                      active
-                        ? "border-primary/25 bg-primary/10 text-primary-strong shadow-xs"
-                        : "border-transparent text-muted hover:bg-surface-2 hover:text-fg"
-                    }`}
-                  >
-                    {t.nav[m.label]}
-                  </Link>
-                );
-              })}
-            </nav>
           </div>
         </header>
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
