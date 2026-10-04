@@ -189,7 +189,14 @@ public class PujaService implements PujaSettlement {
         Priest p = id == null ? new Priest(currentTenant()) : priests.findById(id).orElseThrow(PujaNotFoundException::new);
         p.edit(clean, phone == null || phone.isBlank() ? null : DevoteeService.phone(phone),
                 optional("specialties", specialties, 200), active, staffId, java.time.OffsetDateTime.now(clock));
-        Priest saved = priests.saveAndFlush(p);
+        Priest saved;
+        try {
+            saved = priests.saveAndFlush(p);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // Two saves of one name at once both pass the check above; the unique index lets one
+            // win, and the other gets the same answer as a plain duplicate (found by DAST).
+            throw new InvalidFieldException("name", "a priest with this name is already listed");
+        }
         auditTrail.record(AuditAction.PRIEST_SAVED, "priest", saved.getId(), active ? null : "inactive");
         return saved;
     }

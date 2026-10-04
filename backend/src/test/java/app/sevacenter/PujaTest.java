@@ -289,6 +289,32 @@ class PujaTest {
         assign(leader, booking, theirs).andExpect(status().isBadRequest());
     }
 
+    /** Found by DAST: parallel saves of one priest name raced past the check and surfaced a 500. */
+    @Test
+    void concurrentSavesOfOnePriestNameGiveOnePriestAndCleanErrors() throws Exception {
+        int n = 8;
+        java.util.concurrent.CountDownLatch go = new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.ExecutorService pool = java.util.concurrent.Executors.newFixedThreadPool(n);
+        try {
+            java.util.List<java.util.concurrent.Future<Integer>> results = new java.util.ArrayList<>();
+            for (int i = 0; i < n; i++) {
+                results.add(pool.submit(() -> {
+                    go.await();
+                    return priest(leader, "Pt. Race").andReturn().getResponse().getStatus();
+                }));
+            }
+            go.countDown();
+            java.util.List<Integer> codes = new java.util.ArrayList<>();
+            for (var r : results) {
+                codes.add(r.get());
+            }
+            assertThat(codes).containsOnly(201, 400);
+            assertThat(codes).filteredOn(c -> c == 201).hasSize(1);
+        } finally {
+            pool.shutdownNow();
+        }
+    }
+
     private ResultActions priest(MockHttpSession session, String name) throws Exception {
         return mvc.perform(on(a, post("/api/v1/priests")).session(session).with(csrf()).contentType(MediaType.APPLICATION_JSON)
                 .content(staff.body("name", name, "phone", "98765 43210", "specialties", "Rudrabhishek")));
