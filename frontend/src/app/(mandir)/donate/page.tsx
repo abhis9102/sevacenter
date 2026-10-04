@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { api } from "@/components/apiClient";
-import { Diya } from "@/components/Diya";
+import { MandirPageTitle } from "@/components/MandirShell";
 import { Alert, Button, Card, TextField } from "@/components/ui";
 import { describeError } from "@/lib/errors";
 import { loadCheckout, validAmount, type CheckoutSuccess } from "@/lib/razorpay";
@@ -26,7 +26,7 @@ interface Confirmed {
   receivedOn: string;
 }
 
-const PRESETS = ["101", "501", "1100", "2100"];
+const PRESETS = ["251", "501", "1100", "2100", "5100", "11000"];
 
 /**
  * Public donation page on the trust's own host (ADR 0013). No sign-in. The server creates the
@@ -109,15 +109,13 @@ export default function DonatePage() {
     }
   }
 
+  const chip = (active: boolean) => `rounded-[12px] border px-3 py-2.5 text-sm font-semibold transition-colors ${
+    active ? "border-primary bg-primary text-white shadow-xs" : "border-line bg-surface hover:border-primary/50"
+  }`;
+
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-6 px-4 py-10">
-      <header className="flex items-center gap-3">
-        <Diya className="size-9" />
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted">Donate to</p>
-          <h1 className="text-xl font-semibold">{info?.trustName ?? "…"}</h1>
-        </div>
-      </header>
+    <div className="flex flex-col gap-6">
+      <MandirPageTitle icon="donate" title="Seva & daan" subtitle={info?.trustName ? `Donate to ${info.trustName}` : undefined} />
 
       {loadError ? <Alert tone="danger">{loadError}</Alert> : null}
       {info && !info.onlineDonations ? (
@@ -125,8 +123,8 @@ export default function DonatePage() {
       ) : null}
 
       {done ? (
-        <Card className="flex flex-col gap-3">
-          <h2 className="text-lg font-medium">Thank you, {done.donorName}</h2>
+        <Card className="flex flex-col gap-3 border-primary/30 bg-gradient-to-br from-primary/10 to-surface">
+          <h2 className="text-lg font-medium">Thank you, {done.donorName} 🙏</h2>
           <p>
             Your donation of <strong>₹{done.amount}</strong> was received on {done.receivedOn}.
           </p>
@@ -136,48 +134,68 @@ export default function DonatePage() {
           </p>
         </Card>
       ) : info?.onlineDonations ? (
+        <div className="grid items-start gap-6 lg:grid-cols-[1fr_20rem]">
         <Card className="flex flex-col gap-4">
-          <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
+          <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
             <fieldset className="flex flex-col gap-2">
-              <legend className="text-sm font-medium">Amount (₹)</legend>
-              <div className="flex flex-wrap gap-2">
+              <legend className="mb-2 text-sm font-semibold">Choose an amount</legend>
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
                 {PRESETS.map((p) => (
-                  <Button key={p} type="button" variant={amount === p ? "primary" : "secondary"} onClick={() => setAmount(p)}>
-                    ₹{p}
-                  </Button>
+                  <button key={p} type="button" aria-pressed={amount === p} className={chip(amount === p)} onClick={() => setAmount(p)}>
+                    ₹{Number(p).toLocaleString("en-IN")}
+                  </button>
                 ))}
               </div>
-              <TextField label="Other amount" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
+              <TextField label="Or enter an amount (₹)" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
             </fieldset>
-            <TextField label="Your name" autoComplete="name" required value={name} onChange={(e) => setName(e.target.value)} />
             {funds.length > 0 ? (
-              <label className="flex flex-col gap-1 text-sm">
-                <span className="font-medium">Give to</span>
-                <select value={fundId} onChange={(e) => setFundId(e.target.value)}
-                        className="rounded-[10px] border border-line bg-surface px-3 py-2">
-                  <option value="">Where it&apos;s needed most</option>
-                  {funds.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
-                </select>
-              </label>
+              <fieldset className="flex flex-col gap-2">
+                <legend className="mb-2 text-sm font-semibold">Give to</legend>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {[{ id: "", name: "Where it's needed most" }, ...funds.map((f) => ({ id: String(f.id), name: f.name }))].map((f) => (
+                    <button key={f.id || "general"} type="button" aria-pressed={fundId === f.id} onClick={() => setFundId(f.id)}
+                            className={`${chip(fundId === f.id)} text-left`}>
+                      {f.name}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
             ) : null}
-            <TextField label="Purpose (optional)" placeholder="e.g. Annadanam" value={purpose}
+            <TextField label="Your name" autoComplete="name" required value={name} onChange={(e) => setName(e.target.value)} />
+            <TextField label="Purpose (optional)" placeholder="e.g. In memory of my grandmother" value={purpose}
                        onChange={(e) => setPurpose(e.target.value)} />
-            <TextField label="Mobile number (optional)" inputMode="tel" autoComplete="tel" value={phone}
-                       onChange={(e) => setPhone(e.target.value)} />
-            <TextField label="Email (optional)" type="email" autoComplete="email" value={email}
-                       onChange={(e) => setEmail(e.target.value)}
-                       hint="Leave a mobile or email to see this donation and its receipt later in My seva." />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TextField label="Mobile number (optional)" inputMode="tel" autoComplete="tel" value={phone}
+                         onChange={(e) => setPhone(e.target.value)} />
+              <TextField label="Email (optional)" type="email" autoComplete="email" value={email}
+                         onChange={(e) => setEmail(e.target.value)} />
+            </div>
+            <p className="-mt-2 text-xs text-muted">Leave a mobile or email to see this donation and its receipt later in My Mandir.</p>
             {error ? <Alert tone="danger">{error}</Alert> : null}
             <Button type="submit" busy={busy}>
-              Donate ₹{validAmount(amount) ? amount.trim() : "…"}
+              Donate ₹{validAmount(amount) ? Number(amount.trim()).toLocaleString("en-IN") : "…"}
             </Button>
-            <p className="text-xs text-muted">
-              Payments are processed by Razorpay into the trust&apos;s own account. Card and UPI details never reach
-              this site.
-            </p>
           </form>
         </Card>
+        <aside className="flex flex-col gap-3 text-sm">
+          <Card className="flex flex-col gap-2 bg-gradient-to-br from-haldi/15 to-surface">
+            <h2 className="text-base font-semibold">Where your daan goes</h2>
+            <p className="text-muted">
+              Every rupee goes into {info.trustName ?? "the trust"}&apos;s own account and its books, earmarked to the
+              fund you choose.
+            </p>
+          </Card>
+          <Card className="flex flex-col gap-2">
+            <h2 className="text-base font-semibold">80G tax receipt</h2>
+            <p className="text-muted">Ask the temple office with your PAN; they issue it from the trust&apos;s records.</p>
+          </Card>
+          <Card className="flex flex-col gap-2">
+            <h2 className="text-base font-semibold">Safe payment</h2>
+            <p className="text-muted">Processed by Razorpay. Card and UPI details never reach this site.</p>
+          </Card>
+        </aside>
+        </div>
       ) : null}
-    </main>
+    </div>
   );
 }

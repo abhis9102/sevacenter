@@ -384,6 +384,23 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
 - Rebuilt from a parallel-session version that bypassed module limits, showed money to members and
   counted reversed gifts. `DevoteeActivityTest` (4), **mutation-checked 10/10**; probe +4 rows.
 
+## App switcher + two-tier staff navigation ✅ (PR #47, docs/design/navigation.md)
+- Staff pages grouped into apps (Overview, People, Giving, Pujas & Events, Temple Site,
+  Administration). Top bar: app switcher; second bar: the current app's pages. Visibility = the
+  role and module rules the API enforces. Rebuilt from the prototype's shell, which the earlier
+  rebuilds had missed. Mutation-checked 8/8.
+
+## MandirCenter temple site ✅ (this PR, ADR 0024)
+- `V22`: structured darshan hours, same-day status override (`PUT /temple/status`), `temple_aarti`
+  (forced RLS), amanta/purnimanta. `TempleTest` +4, probe +5 rows.
+- Public pages share one frame (route group `(mandir)`): temple header with devotee sign-in, live
+  darshan strip, service tabs, footer; vibrant palette scoped to `.mandir`. Home: hero with
+  today's **calculated panchang** (`lib/panchang.ts`, Meeus + Lahiri), announcement, quick
+  actions, aarti timetable with the next one highlighted. Donate: amount chips, fund cards.
+  Bilingual (en/hi) frame and home.
+- Panchang + darshan unit tests (14), **mutation-checked 12/12**.
+- Not yet: the prototype's delete actions and staff-created volunteers (next PR).
+
 **All of the parallel session's MVP features are now rebuilt and reviewed.** Then: M5 containers →
 M6 AWS → M7 gates.
 

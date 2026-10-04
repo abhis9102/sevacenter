@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { api } from "@/components/apiClient";
-import { Diya } from "@/components/Diya";
+import { MandirPageTitle } from "@/components/MandirShell";
 import { Alert, Badge, Button, Card, TextField } from "@/components/ui";
 import { ApiError, describeError } from "@/lib/errors";
+import { DEVOTEE_CHANGED } from "@/lib/temple";
 import type { ReceiptDetail } from "@/lib/types";
 
 type Channel = "EMAIL" | "SMS";
@@ -32,7 +33,10 @@ export default function MySevaPage() {
 
   const load = useCallback(
     () => api.get<MySeva>("/portal/me", { allowUnauthorized: true }).then(setSeva, () => setSeva(null))
-      .finally(() => setLoading(false)),
+      .finally(() => {
+        setLoading(false);
+        window.dispatchEvent(new Event(DEVOTEE_CHANGED));
+      }),
     [],
   );
 
@@ -44,19 +48,16 @@ export default function MySevaPage() {
   async function signOut() {
     await api.request("/portal/logout", { method: "POST", allowUnauthorized: true }).catch(() => undefined);
     setSeva(null);
+    window.dispatchEvent(new Event(DEVOTEE_CHANGED));
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 px-4 py-10">
-      <header className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Diya className="size-9" />
-          <h1 className="text-xl font-semibold">My seva</h1>
-        </div>
-        {seva ? <Button variant="secondary" onClick={() => void signOut()}>Sign out</Button> : null}
-      </header>
-      {loading ? null : seva ? <SevaView seva={seva} /> : <SignIn onSignedIn={load} />}
-    </main>
+    <div className="flex flex-col gap-6">
+      <MandirPageTitle icon="user" title="My Mandir"
+                       subtitle={seva ? `Signed in as ${seva.contact}` : "Your donations, receipts, puja bookings, passes and seva in one place."}
+                       actions={seva ? <Button variant="secondary" onClick={() => void signOut()}>Sign out</Button> : null} />
+      {loading ? null : seva ? <SevaView seva={seva} /> : <div className="mx-auto w-full max-w-md"><SignIn onSignedIn={load} /></div>}
+    </div>
   );
 }
 
