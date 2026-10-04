@@ -32,3 +32,4 @@ change a decision, add a new ADR that supersedes the old one.
 | [0024](0024-mandircenter-temple-site.md) | MandirCenter temple site: structured darshan hours, same-day status override, aarti timetable, calculated panchang | Accepted |
 | [0025](0025-devotee-contacts-and-profile.md) | One devotee, several OTP-verified contacts (merge on link), the devotee's own profile, forms pre-filled | Accepted |
 | [0026](0026-counter-bookings.md) | Counter bookings and gate passes for walk-ins: staff-only, contact optional, paid dakshina records its mode | Accepted |
+| [0027](0027-priests.md) | Priests (pujaris): listed per temple, deactivated not deleted, assigned to sankalps (composite FK) | Accepted |

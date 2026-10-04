@@ -76,6 +76,9 @@ public class PujaBooking {
     @Column(name = "created_at", insertable = false, updatable = false)
     private OffsetDateTime createdAt;
 
+    @Column(name = "priest_id")
+    private Long priestId;
+
     @Column(name = "booked_by", updatable = false)
     private Long bookedBy;
 
@@ -116,6 +119,10 @@ public class PujaBooking {
         }
     }
 
+    void assignPriest(Long priestId) {
+        this.priestId = priestId;
+    }
+
     void confirmPaid(String paymentRef) {
         this.status = "CONFIRMED";
         this.paymentRef = paymentRef;
@@ -146,6 +153,7 @@ public class PujaBooking {
     public String getStatus() { return status; }
     public String getPaymentRef() { return paymentRef; }
     public Long getBookedBy() { return bookedBy; }
+    public Long getPriestId() { return priestId; }
     public String getCounterMode() { return counterMode; }
     public OffsetDateTime getPerformedAt() { return performedAt; }
 }

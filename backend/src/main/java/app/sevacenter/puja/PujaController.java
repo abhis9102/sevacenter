@@ -2,6 +2,7 @@ package app.sevacenter.puja;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import app.sevacenter.auth.StaffUser;
 import app.sevacenter.donation.Money;
@@ -75,7 +76,8 @@ public class PujaController {
     public List<BookingResponse> forDate(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
                                          @AuthenticationPrincipal StaffUser staff) {
         boolean contacts = staff.role() != Role.MEMBER;
-        return service.forDate(date).stream().map(b -> BookingResponse.of(b, contacts)).toList();
+        Map<Long, String> names = service.priestNames();
+        return service.forDate(date).stream().map(b -> BookingResponse.of(b, contacts, names)).toList();
     }
 
     /**
@@ -88,19 +90,50 @@ public class PujaController {
     public BookingResponse bookAtCounter(@Valid @RequestBody CounterBookingRequest r, @AuthenticationPrincipal StaffUser staff) {
         return BookingResponse.of(service.bookAtCounter(r.pujaId(), new PujaService.BookingDetails(r.devoteeName(),
                 r.gotra(), r.nakshatra(), r.rashi(), r.familyNames(), r.pujaDate(), r.phone(), r.email()),
-                r.mode(), r.reference(), staff.userId()), true);
+                r.mode(), r.reference(), staff.userId()), true, service.priestNames());
+    }
+
+    /** Assign (or clear, with null) the priest who performs this sankalp (ADR 0027). */
+    @PostMapping("/api/v1/puja-bookings/{id:\\d+}/priest")
+    @PreAuthorize("hasRole('LEADER')")
+    public BookingResponse assignPriest(@PathVariable long id, @RequestBody PriestAssignment r, @AuthenticationPrincipal StaffUser staff) {
+        return BookingResponse.of(service.assignPriest(id, r.priestId(), staff.userId()), true, service.priestNames());
+    }
+
+    // --- priests (ADR 0027) -----------------------------------------------------------------------
+
+    @GetMapping("/api/v1/priests")
+    @PreAuthorize("hasRole('MEMBER')")
+    public List<PriestResponse> priests(@AuthenticationPrincipal StaffUser staff) {
+        boolean contacts = staff.role() != Role.MEMBER;
+        return service.priests().stream().map(p -> PriestResponse.of(p, contacts)).toList();
+    }
+
+    @PostMapping("/api/v1/priests")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('LEADER')")
+    public PriestResponse addPriest(@Valid @RequestBody PriestRequest r, @AuthenticationPrincipal StaffUser staff) {
+        return PriestResponse.of(service.savePriest(null, r.name(), r.phone(), r.specialties(),
+                r.active() == null || r.active(), staff.userId()), true);
+    }
+
+    @PutMapping("/api/v1/priests/{id:\\d+}")
+    @PreAuthorize("hasRole('LEADER')")
+    public PriestResponse editPriest(@PathVariable long id, @Valid @RequestBody PriestRequest r, @AuthenticationPrincipal StaffUser staff) {
+        return PriestResponse.of(service.savePriest(id, r.name(), r.phone(), r.specialties(),
+                r.active() == null || r.active(), staff.userId()), true);
     }
 
     @PostMapping("/api/v1/puja-bookings/{id:\\d+}/performed")
     @PreAuthorize("hasRole('MEMBER')")
     public BookingResponse performed(@PathVariable long id, @AuthenticationPrincipal StaffUser staff) {
-        return BookingResponse.of(service.perform(id, staff.userId()), staff.role() != Role.MEMBER);
+        return BookingResponse.of(service.perform(id, staff.userId()), staff.role() != Role.MEMBER, service.priestNames());
     }
 
     @PostMapping("/api/v1/puja-bookings/{id:\\d+}/cancel")
     @PreAuthorize("hasRole('LEADER')")
     public BookingResponse cancel(@PathVariable long id, @AuthenticationPrincipal StaffUser staff) {
-        return BookingResponse.of(service.cancel(id, staff.userId()), true);
+        return BookingResponse.of(service.cancel(id, staff.userId()), true, service.priestNames());
     }
 
     // --- public -----------------------------------------------------------------------------------
@@ -164,6 +197,21 @@ public class PujaController {
             @Schema(example = "98765 43210") @Size(max = 30) String phone,
             @Schema(example = "lakshmi@example.org") @Size(max = 254) String email) { }
 
+    public record PriestAssignment(@Schema(example = "1", description = "null clears the assignment") Long priestId) { }
+
+    public record PriestRequest(
+            @Schema(example = "Pt. Shridhar Joshi") @NotBlank @Size(max = 120) String name,
+            @Schema(example = "98765 43210") @Size(max = 30) String phone,
+            @Schema(example = "Rudrabhishek, Navagraha homa") @Size(max = 200) String specialties,
+            @Schema(example = "true") Boolean active) { }
+
+    /** A priest's phone only for LEADER+, like devotee contacts. */
+    public record PriestResponse(long id, String name, String phone, String specialties, boolean active) {
+        static PriestResponse of(Priest p, boolean contacts) {
+            return new PriestResponse(p.getId(), p.getName(), contacts ? p.getPhone() : null, p.getSpecialties(), p.isActive());
+        }
+    }
+
     public record CounterBookingRequest(
             @Schema(example = "1") @NotNull Long pujaId,
             @Schema(example = "Lakshmi Iyer") @NotBlank @Size(max = 120) String devoteeName,
@@ -184,12 +232,14 @@ public class PujaController {
 
     public record BookingResponse(long id, String bookingCode, String pujaName, LocalDate pujaDate, String devoteeName,
                                   String gotra, String nakshatra, String rashi, String familyNames, String phone,
-                                  String email, String amount, String status, boolean counter, String counterMode) {
-        static BookingResponse of(PujaBooking b, boolean contacts) {
+                                  String email, String amount, String status, boolean counter, String counterMode,
+                                  Long priestId, String priestName) {
+        static BookingResponse of(PujaBooking b, boolean contacts, Map<Long, String> priests) {
             return new BookingResponse(b.getId(), b.getBookingCode(), b.getPujaName(), b.getPujaDate(), b.getDevoteeName(),
                     b.getGotra(), b.getNakshatra(), b.getRashi(), b.getFamilyNames(), contacts ? b.getPhone() : null,
                     contacts ? b.getEmail() : null, Money.toRupees(b.getAmountPaise()), b.getStatus(),
-                    b.getBookedBy() != null, contacts ? b.getCounterMode() : null);
+                    b.getBookedBy() != null, contacts ? b.getCounterMode() : null,
+                    b.getPriestId(), b.getPriestId() == null ? null : priests.get(b.getPriestId()));
         }
     }
 }

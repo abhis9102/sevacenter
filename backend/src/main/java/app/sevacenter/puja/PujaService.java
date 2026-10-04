@@ -33,15 +33,18 @@ public class PujaService implements PujaSettlement {
 
     private final PujaRepository pujas;
     private final PujaBookingRepository bookings;
+    private final PriestRepository priests;
     private final OnlineDonationService payments;
     private final AuditTrail auditTrail;
     private final Clock clock = Clock.system(DonationService.IST);
 
-    public PujaService(PujaRepository pujas, PujaBookingRepository bookings, OnlineDonationService payments,
+    public PujaService(PujaRepository pujas, PujaBookingRepository bookings, PriestRepository priests,
+                       OnlineDonationService payments,
                        AuditTrail auditTrail) {
         this.auditTrail = auditTrail;
         this.pujas = pujas;
         this.bookings = bookings;
+        this.priests = priests;
         this.payments = payments;
     }
 
@@ -168,6 +171,49 @@ public class PujaService implements PujaSettlement {
         audit.info("event=puja_cancelled tenant={} user={} booking={}", currentTenant(), staffId, bookingId);
         auditTrail.record(AuditAction.PUJA_BOOKING_CANCELLED, "puja_booking", bookingId, null);
         return b;
+    }
+
+    // --- priests (ADR 0027) -------------------------------------------------------------------------
+
+    @Transactional(readOnly = true)
+    public List<Priest> priests() {
+        return priests.listed();
+    }
+
+    @Transactional
+    public Priest savePriest(Long id, String name, String phone, String specialties, boolean active, long staffId) {
+        String clean = required("name", name, 120);
+        if (priests.nameTaken(clean, id)) {
+            throw new InvalidFieldException("name", "a priest with this name is already listed");
+        }
+        Priest p = id == null ? new Priest(currentTenant()) : priests.findById(id).orElseThrow(PujaNotFoundException::new);
+        p.edit(clean, phone == null || phone.isBlank() ? null : DevoteeService.phone(phone),
+                optional("specialties", specialties, 200), active, staffId, java.time.OffsetDateTime.now(clock));
+        Priest saved = priests.saveAndFlush(p);
+        auditTrail.record(AuditAction.PRIEST_SAVED, "priest", saved.getId(), active ? null : "inactive");
+        return saved;
+    }
+
+    /** Who performs this sankalp; null clears it. Only an active priest, only an open booking. */
+    @Transactional
+    public PujaBooking assignPriest(long bookingId, Long priestId, long staffId) {
+        PujaBooking b = bookings.lockById(bookingId).orElseThrow(PujaNotFoundException::new);
+        if ("CANCELLED".equals(b.getStatus()) || "PERFORMED".equals(b.getStatus())) {
+            throw new PujaConflictException("booking_closed");
+        }
+        if (priestId != null) {
+            priests.findById(priestId).filter(Priest::isActive)
+                    .orElseThrow(() -> new InvalidFieldException("priestId", "choose an active priest of this temple"));
+        }
+        b.assignPriest(priestId);
+        auditTrail.record(AuditAction.PRIEST_ASSIGNED, "puja_booking", bookingId, priestId == null ? null : priestId.toString());
+        return b;
+    }
+
+    /** Names for the roster, inactive priests included (past bookings keep their priest). */
+    @Transactional(readOnly = true)
+    public java.util.Map<Long, String> priestNames() {
+        return priests.findAll().stream().collect(java.util.stream.Collectors.toMap(Priest::getId, Priest::getName));
     }
 
     // --- helpers ----------------------------------------------------------------------------------

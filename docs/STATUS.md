@@ -417,6 +417,7 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
 - Pujas: Priest Sankalp Roster / Puja Catalog & Fees; add/edit/hide pujas; **counter booking**.
 - Utsavs: Gate Check-in / Festivals & Passes / Attendee Roster; **walk-in passes** at the gate.
 - `V24`: `booked_by`, `counter_mode`, `issued_by`; contact optional for staff-made records.
+- Priests & Pujaris view (ADR 0027, `V25`): priests per temple, assigned to each sankalp on the roster.
 
 **All of the parallel session's MVP features are now rebuilt and reviewed.** Then: M5 containers →
 M6 AWS → M7 gates.

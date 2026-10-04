@@ -253,6 +253,52 @@ class PujaTest {
         assertThat(schedule(leader)).isEmpty();
     }
 
+    // --- priests (ADR 0027) ---------------------------------------------------------------------
+
+    @Test
+    void leadersListPriestsAndMembersSeeThemWithoutPhones() throws Exception {
+        priest(member, "Pt. Shridhar Joshi").andExpect(status().isForbidden());
+        priest(leader, "Pt. Shridhar Joshi").andExpect(status().isCreated()).andExpect(jsonPath("$.phone").value("+919876543210"));
+        priest(leader, "pt. shridhar joshi").andExpect(status().isBadRequest()).andExpect(jsonPath("$.fields.name").exists());
+        mvc.perform(on(a, get("/api/v1/priests")).session(member)).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("Pt. Shridhar Joshi"))
+                .andExpect(jsonPath("$[0].phone").doesNotExist());
+    }
+
+    @Test
+    void aSankalpIsAssignedToAnActivePriestOfThisTempleOnly() throws Exception {
+        long puja = id(createPuja(leader, "Archana", "0", true));
+        long booking = id(counter(leader, puja, null));
+        long priest = id(priest(leader, "Pt. Shridhar Joshi"));
+        assign(member, booking, priest).andExpect(status().isForbidden());
+        assign(leader, booking, priest).andExpect(status().isOk()).andExpect(jsonPath("$.priestName").value("Pt. Shridhar Joshi"));
+        assertThat(schedule(member).get(0).at("/priestName").asString()).isEqualTo("Pt. Shridhar Joshi");
+        assign(leader, booking, null).andExpect(status().isOk()).andExpect(jsonPath("$.priestId").doesNotExist());
+
+        long retired = id(priest(leader, "Pt. Retired"));
+        mvc.perform(on(a, put("/api/v1/priests/" + retired)).session(leader).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                .content(staff.body("name", "Pt. Retired", "active", false))).andExpect(status().isOk());
+        assign(leader, booking, retired).andExpect(status().isBadRequest());
+
+        // Another temple's priest is invisible here (RLS), and the database refuses the link anyway.
+        String b = staff.tenant("pj-b");
+        MockHttpSession otherAdmin = staff.loginAdmin(b);
+        long theirs = json.readTree(mvc.perform(on(b, post("/api/v1/priests")).session(otherAdmin).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON).content(staff.body("name", "Pt. Elsewhere")))
+                .andReturn().getResponse().getContentAsString()).at("/id").asLong();
+        assign(leader, booking, theirs).andExpect(status().isBadRequest());
+    }
+
+    private ResultActions priest(MockHttpSession session, String name) throws Exception {
+        return mvc.perform(on(a, post("/api/v1/priests")).session(session).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                .content(staff.body("name", name, "phone", "98765 43210", "specialties", "Rudrabhishek")));
+    }
+
+    private ResultActions assign(MockHttpSession session, long booking, Long priest) throws Exception {
+        return mvc.perform(on(a, post("/api/v1/puja-bookings/" + booking + "/priest")).session(session).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON).content(staff.body("priestId", priest)));
+    }
+
     private ResultActions counter(MockHttpSession session, long pujaId, String mode) throws Exception {
         return mvc.perform(on(a, post("/api/v1/puja-bookings")).session(session).with(csrf())
                 .contentType(MediaType.APPLICATION_JSON).content(staff.body("pujaId", pujaId, "devoteeName", "Walk-in devotee",
