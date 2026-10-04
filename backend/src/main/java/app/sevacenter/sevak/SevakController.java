@@ -111,14 +111,14 @@ public class SevakController {
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('LEADER')")
     public TeamResponse createTeam(@Valid @RequestBody TeamRequest r, @AuthenticationPrincipal StaffUser staff) {
-        SevaTeam t = service.saveTeam(null, r.name(), r.description(), r.targetCount(), r.shiftDetails(), staff.userId());
+        SevaTeam t = service.saveTeam(null, r.name(), r.description(), r.targetCount(), r.icon(), r.shiftDetails(), staff.userId());
         return TeamResponse.of(t, r.shiftResponses());
     }
 
     @PutMapping("/api/v1/seva-teams/{id:\\d+}")
     @PreAuthorize("hasRole('LEADER')")
     public TeamResponse editTeam(@PathVariable long id, @Valid @RequestBody TeamRequest r, @AuthenticationPrincipal StaffUser staff) {
-        SevaTeam t = service.saveTeam(id, r.name(), r.description(), r.targetCount(), r.shiftDetails(), staff.userId());
+        SevaTeam t = service.saveTeam(id, r.name(), r.description(), r.targetCount(), r.icon(), r.shiftDetails(), staff.userId());
         return TeamResponse.of(t, r.shiftResponses());
     }
 
@@ -165,6 +165,7 @@ public class SevakController {
             @Schema(example = "Annadanam kitchen") @NotBlank @Size(max = 80) String name,
             @Schema(example = "Cooking and serving mahaprasad") @Size(max = 300) String description,
             @Schema(example = "15") @Min(1) @Max(1000) Integer targetCount,
+            @Schema(example = "kitchen", description = "One of the listed icon names") @Size(max = 24) String icon,
             @Size(max = SevakService.MAX_SHIFTS) List<@Valid ShiftRequest> shifts) {
         List<SevakService.ShiftDetails> shiftDetails() {
             return shifts == null ? List.of()
@@ -178,9 +179,10 @@ public class SevakController {
 
     public record ShiftResponse(String name, LocalTime startsAt, LocalTime endsAt) { }
 
-    public record TeamResponse(long id, String name, String description, Integer targetCount, List<ShiftResponse> shifts) {
+    public record TeamResponse(long id, String name, String description, Integer targetCount, String icon,
+                               List<ShiftResponse> shifts) {
         static TeamResponse of(SevaTeam t, List<ShiftResponse> shifts) {
-            return new TeamResponse(t.getId(), t.getName(), t.getDescription(), t.getTargetCount(), shifts);
+            return new TeamResponse(t.getId(), t.getName(), t.getDescription(), t.getTargetCount(), t.getIcon(), shifts);
         }
     }
 

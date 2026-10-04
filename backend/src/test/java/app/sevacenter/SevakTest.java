@@ -202,6 +202,17 @@ class SevakTest {
         mvc.perform(on(a, get("/api/v1/seva-teams")).session(leader)).andExpect(jsonPath("$.length()").value(0));
     }
 
+    @Test
+    void aTeamShowsAnIconFromTheListOnly() throws Exception {
+        mvc.perform(on(a, post("/api/v1/seva-teams")).session(leader).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                .content(staff.body("name", "Gau seva", "icon", "cow"))).andExpect(status().isCreated())
+                .andExpect(jsonPath("$.icon").value("cow"));
+        mvc.perform(on(a, post("/api/v1/seva-teams")).session(leader).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                .content(staff.body("name", "Odd team", "icon", "javascript-url"))).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fields.icon").exists());
+        mvc.perform(on(a, get("/api/v1/seva-teams")).session(leader)).andExpect(jsonPath("$[0].icon").value("cow"));
+    }
+
     private ResultActions team(MockHttpSession session, String name) throws Exception {
         return mvc.perform(on(a, post("/api/v1/seva-teams")).session(session).with(csrf()).contentType(MediaType.APPLICATION_JSON)
                 .content(staff.body("name", name, "description", "Cooking and serving mahaprasad", "targetCount", 15,

@@ -12,6 +12,9 @@
   replaced as a whole on save). A shift may run past midnight. LEADER+ create, edit and **delete**.
   Delete sets `deleted_at`, releases the team's volunteers and frees the name; the row stays for
   the audit trail.
+- **Each team shows an icon** chosen from a fixed set of 38 line icons (kitchen, darshan queue,
+  flowers, gau seva…). The API accepts only listed names (V27); a frontend test checks both lists
+  are identical.
 - **Staff register volunteers** (`POST /api/v1/sevaks`), approved by default and optionally placed
   in a team at once. A phone or email is still required: the temple needs to reach a sevak.
 - **Deploy / release** (`POST /api/v1/sevaks/{id}/assign`): a team (or null) and a duty / shift.
