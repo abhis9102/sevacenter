@@ -14,6 +14,7 @@ import { Alert } from "@/components/ui";
 import { clock, darshanState } from "@/lib/darshan";
 import { displayPhone, type MySeva } from "@/lib/devotee";
 import { describeError } from "@/lib/errors";
+import { MANDIR_TEXT } from "@/lib/i18n-mandir";
 import { DEVOTEE_CHANGED, type PublicTemple } from "@/lib/temple";
 
 const TempleContext = createContext<PublicTemple | null>(null);
@@ -21,6 +22,11 @@ const DevoteeContext = createContext<MySeva | null>(null);
 
 /** The temple's public data, loaded once by the shell (null while loading). */
 export const useTemple = () => useContext(TempleContext);
+
+/** The public pages' text in the visitor's language (lib/i18n-mandir.ts). */
+export function useMandirText() {
+  return MANDIR_TEXT[useLanguage().lang];
+}
 
 /** The signed-in devotee (null when signed out), so forms can start with their details. */
 export const useDevotee = () => useContext(DevoteeContext);

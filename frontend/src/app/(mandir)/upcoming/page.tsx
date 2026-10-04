@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { api } from "@/components/apiClient";
-import { MandirPageTitle, useDevotee } from "@/components/MandirShell";
+import { MandirPageTitle, useDevotee, useMandirText } from "@/components/MandirShell";
 import { prefill } from "@/lib/devotee";
 import { Alert, Button, Card, TextField } from "@/components/ui";
 import { ApiError, describeError } from "@/lib/errors";
@@ -14,6 +14,7 @@ import { formatIst, formatPassCode, type PassIssued, type PublicEvent } from "@/
  * code to show at the gate. Places are checked by the server under a lock.
  */
 export default function UpcomingPage() {
+  const tx = useMandirText();
   const [events, setEvents] = useState<PublicEvent[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [registering, setRegistering] = useState<PublicEvent | null>(null);
@@ -25,24 +26,24 @@ export default function UpcomingPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <MandirPageTitle icon="utsav" title="Utsavs & darshan passes" subtitle="Festivals at the temple. Register for a free pass where entry is limited." />
+      <MandirPageTitle icon="utsav" title={tx.utsav.title} subtitle={tx.utsav.subtitle} />
       {error ? <Alert tone="danger">{error}</Alert> : null}
 
       {issued ? (
         <Card className="mx-auto flex w-full max-w-md flex-col items-center gap-2 border-2 border-dashed border-primary/40 bg-gradient-to-br from-primary/10 via-surface to-haldi/10 text-center">
-          <p className="text-xs font-semibold uppercase tracking-wider text-primary-strong">Darshan pass</p>
-          <h2 className="text-lg font-medium">You&apos;re registered, {issued.name}</h2>
-          <p className="text-sm">{issued.eventTitle} · {formatIst(issued.startsAt)} · {issued.count} {issued.count === 1 ? "person" : "people"}</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary-strong">{tx.utsav.passLabel}</p>
+          <h2 className="text-lg font-medium">{tx.utsav.registered(issued.name)}</h2>
+          <p className="text-sm">{issued.eventTitle} · {formatIst(issued.startsAt)} · {tx.common.people(issued.count)}</p>
           <p className="font-mono text-3xl tracking-widest text-primary-strong" aria-label="Pass code">{formatPassCode(issued.passCode)}</p>
-          <p className="text-xs text-muted">Show this code at the gate. Keep it private: anyone with the code can use the pass.</p>
-          <div><Button variant="secondary" onClick={() => setIssued(null)}>Back to utsavs</Button></div>
+          <p className="text-xs text-muted">{tx.utsav.showCode}</p>
+          <div><Button variant="secondary" onClick={() => setIssued(null)}>{tx.utsav.backToList}</Button></div>
         </Card>
       ) : registering ? (
         <RegisterForm event={registering} onCancel={() => setRegistering(null)}
                       onDone={(p) => { setRegistering(null); setIssued(p); }} />
       ) : (
         <div className="flex flex-col gap-4">
-          {events?.length === 0 ? <Card><p className="text-muted">No upcoming utsavs right now.</p></Card> : null}
+          {events?.length === 0 ? <Card><p className="text-muted">{tx.utsav.none}</p></Card> : null}
           {events?.map((e) => {
             const d = new Date(e.startsAt);
             const day = d.toLocaleDateString("en-IN", { day: "numeric", timeZone: "Asia/Kolkata" });
@@ -60,12 +61,12 @@ export default function UpcomingPage() {
                   <div className="flex flex-wrap items-center gap-3 pt-1">
                     <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                       e.placesLeft === 0 ? "bg-kumkum/12 text-kumkum" : "bg-success/12 text-success"}`}>
-                      {e.placesLeft === null ? "Open to all" : e.placesLeft === 0 ? "Full" : `${e.placesLeft} places left`}
+                      {e.placesLeft === null ? tx.utsav.openToAll : e.placesLeft === 0 ? tx.utsav.full : tx.utsav.placesLeft(e.placesLeft)}
                     </span>
                     {e.registrationOpen && e.placesLeft !== 0 ? (
-                      <Button onClick={() => setRegistering(e)}>Get a pass</Button>
+                      <Button onClick={() => setRegistering(e)}>{tx.utsav.getPass}</Button>
                     ) : (
-                      <span className="text-xs text-muted">Registration closed.</span>
+                      <span className="text-xs text-muted">{tx.utsav.closed}</span>
                     )}
                   </div>
                 </div>
@@ -79,6 +80,7 @@ export default function UpcomingPage() {
 }
 
 function RegisterForm({ event, onCancel, onDone }: { event: PublicEvent; onCancel: () => void; onDone: (p: PassIssued) => void }) {
+  const tx = useMandirText();
   const pre = prefill(useDevotee());
   const [name, setName] = useState(pre.name);
   const [count, setCount] = useState("1");
@@ -100,7 +102,7 @@ function RegisterForm({ event, onCancel, onDone }: { event: PublicEvent; onCance
       }));
     } catch (err) {
       if (err instanceof ApiError) setFields(err.fields);
-      setError(err instanceof ApiError && err.code === "event_full" ? "Sorry, there aren't enough places left." : describeError(err));
+      setError(err instanceof ApiError && err.code === "event_full" ? tx.utsav.notEnough : describeError(err));
     } finally {
       setBusy(false);
     }
@@ -108,20 +110,20 @@ function RegisterForm({ event, onCancel, onDone }: { event: PublicEvent; onCance
 
   return (
     <Card className="mx-auto flex w-full max-w-xl flex-col gap-3">
-      <h2 className="text-lg font-semibold">Register · {event.title}</h2>
+      <h2 className="text-lg font-semibold">{tx.utsav.register(event.title)}</h2>
       <form onSubmit={onSubmit} className="flex flex-col gap-3" noValidate>
-        <TextField label="Your name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} error={fields.name} />
-        <TextField label="Number of people (1–10)" inputMode="numeric" value={count}
+        <TextField label={tx.common.yourName} autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} error={fields.name} />
+        <TextField label={tx.utsav.count} inputMode="numeric" value={count}
                    onChange={(e) => setCount(e.target.value.replace(/\D/g, "").slice(0, 2))} error={fields.count} />
-        <TextField label="Mobile number" inputMode="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
+        <TextField label={tx.common.mobile} inputMode="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
                    error={fields.phone} />
-        <TextField label="Email (if no mobile)" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)}
+        <TextField label={tx.common.emailIfNoMobile} type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)}
                    error={fields.email} />
-        <p className="text-xs text-muted">Your contact details are used by the temple only for this event.</p>
+        <p className="text-xs text-muted">{tx.utsav.usedOnly}</p>
         {error ? <Alert tone="danger">{error}</Alert> : null}
         <div className="flex gap-2">
-          <Button type="submit" busy={busy}>Get my pass</Button>
-          <Button type="button" variant="secondary" onClick={onCancel}>Back</Button>
+          <Button type="submit" busy={busy}>{tx.utsav.submit}</Button>
+          <Button type="button" variant="secondary" onClick={onCancel}>{tx.common.back}</Button>
         </div>
       </form>
     </Card>
