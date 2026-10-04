@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { api } from "@/components/apiClient";
-import { MandirPageTitle, useDevotee } from "@/components/MandirShell";
+import { MandirPageTitle, useDevotee, useMandirText } from "@/components/MandirShell";
 import { prefill } from "@/lib/devotee";
 import { Alert, Button, Card, TextField } from "@/components/ui";
 import { ApiError, describeError } from "@/lib/errors";
@@ -16,6 +16,7 @@ import { loadCheckout } from "@/lib/razorpay";
  * server confirms the booking only after verifying the payment with Razorpay.
  */
 export default function BookPujaPage() {
+  const tx = useMandirText();
   const [pujas, setPujas] = useState<Puja[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [chosen, setChosen] = useState<Puja | null>(null);
@@ -27,33 +28,33 @@ export default function BookPujaPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <MandirPageTitle icon="puja" title="Pujas & sankalp" subtitle="Book a puja in your family's name; the priest performs it on the day you choose." />
+      <MandirPageTitle icon="puja" title={tx.puja.title} subtitle={tx.puja.subtitle} />
       {error ? <Alert tone="danger">{error}</Alert> : null}
       {done ? (
         <Card className="mx-auto flex w-full max-w-md flex-col items-center gap-2 border-primary/30 bg-gradient-to-br from-primary/10 via-surface to-haldi/10 text-center">
-          <p className="text-xs font-semibold uppercase tracking-wider text-primary-strong">Sankalp booked</p>
-          <h2 className="text-lg font-medium">Your {done.puja} is booked for {done.date}</h2>
-          <p className="text-sm text-muted">Booking code</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary-strong">{tx.puja.bookedLabel}</p>
+          <h2 className="text-lg font-medium">{tx.puja.booked(done.puja, done.date)}</h2>
+          <p className="text-sm text-muted">{tx.puja.code}</p>
           <p className="font-mono text-3xl tracking-widest text-primary-strong">{formatPassCode(done.code)}</p>
-          <p className="text-xs text-muted">Puja dakshina is a seva fee, not an 80G-eligible donation.</p>
+          <p className="text-xs text-muted">{tx.puja.notDonation}</p>
         </Card>
       ) : chosen ? (
         <BookingForm puja={chosen} onBack={() => setChosen(null)} onDone={setDone} />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
-          {pujas?.length === 0 ? <Card><p className="text-muted">No pujas are open for booking right now.</p></Card> : null}
+          {pujas?.length === 0 ? <Card><p className="text-muted">{tx.puja.none}</p></Card> : null}
           {pujas?.map((p) => (
             <Card key={p.id} className="flex flex-col gap-2 transition-colors hover:border-primary/40">
               <div className="flex items-start justify-between gap-3">
                 <h2 className="text-lg font-semibold">{p.name}</h2>
                 <span className={`shrink-0 rounded-full px-2.5 py-0.5 font-mono text-xs font-semibold ${
                   isFree(p.dakshina) ? "bg-success/12 text-success" : "bg-primary/12 text-primary-strong"}`}>
-                  {isFree(p.dakshina) ? "No dakshina" : `₹${Number(p.dakshina).toLocaleString("en-IN")}`}
+                  {isFree(p.dakshina) ? tx.puja.noDakshina : `₹${Number(p.dakshina).toLocaleString("en-IN")}`}
                 </span>
               </div>
               {p.deity ? <p className="text-xs font-semibold uppercase tracking-wide text-maroon">{p.deity}</p> : null}
               {p.description ? <p className="flex-1 text-sm text-muted">{p.description}</p> : <span className="flex-1" />}
-              <div className="pt-1"><Button onClick={() => setChosen(p)}>Book this puja</Button></div>
+              <div className="pt-1"><Button onClick={() => setChosen(p)}>{tx.puja.book}</Button></div>
             </Card>
           ))}
         </div>
@@ -65,6 +66,7 @@ export default function BookPujaPage() {
 function BookingForm({ puja, onBack, onDone }: {
   puja: Puja; onBack: () => void; onDone: (d: { code: string; puja: string; date: string }) => void;
 }) {
+  const tx = useMandirText();
   const devotee = useDevotee();
   const [f, setF] = useState(() => {
     const pre = prefill(devotee), p = devotee?.profile;
@@ -104,7 +106,7 @@ function BookingForm({ puja, onBack, onDone }: {
             method: "POST",
             json: { orderId: paid.razorpay_order_id, paymentId: paid.razorpay_payment_id, signature: paid.razorpay_signature },
           }).then((r) => onDone({ code: r.bookingCode, puja: booked.pujaName, date: booked.pujaDate }))
-            .catch((err) => setError(`${describeError(err)} If money was taken, the temple's records will pick it up; keep reference ${paid.razorpay_payment_id}.`))
+            .catch((err) => setError(`${describeError(err)} ${tx.puja.takenNote(paid.razorpay_payment_id)}`))
             .finally(() => setBusy(false));
         },
         modal: { ondismiss: () => setBusy(false) },
@@ -119,23 +121,23 @@ function BookingForm({ puja, onBack, onDone }: {
   return (
     <Card className="mx-auto flex w-full max-w-2xl flex-col gap-4">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-maroon">Sankalp details</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-maroon">{tx.puja.details}</p>
         <h2 className="text-lg font-semibold">{puja.name}{isFree(puja.dakshina) ? "" : ` · ₹${puja.dakshina}`}</h2>
       </div>
       <form onSubmit={onSubmit} className="grid gap-3 sm:grid-cols-2" noValidate>
-        <TextField label="Name for the sankalp" value={f.devoteeName} onChange={set("devoteeName")} error={fields.devoteeName} />
-        <TextField label="Gotra (optional)" value={f.gotra} onChange={set("gotra")} />
-        <TextField label="Nakshatra (optional)" value={f.nakshatra} onChange={set("nakshatra")} />
-        <TextField label="Rashi (optional)" value={f.rashi} onChange={set("rashi")} />
-        <TextField label="Family members (optional)" value={f.familyNames} onChange={set("familyNames")} />
-        <TextField label="Date" type="date" value={f.pujaDate} onChange={set("pujaDate")} error={fields.pujaDate} />
-        <TextField label="Mobile number" inputMode="tel" value={f.phone} onChange={set("phone")} error={fields.phone} />
-        <TextField label="Email (if no mobile)" type="email" value={f.email} onChange={set("email")} error={fields.email} />
+        <TextField label={tx.puja.nameForSankalp} value={f.devoteeName} onChange={set("devoteeName")} error={fields.devoteeName} />
+        <TextField label={tx.puja.gotra} value={f.gotra} onChange={set("gotra")} />
+        <TextField label={tx.puja.nakshatra} value={f.nakshatra} onChange={set("nakshatra")} />
+        <TextField label={tx.puja.rashi} value={f.rashi} onChange={set("rashi")} />
+        <TextField label={tx.puja.family} value={f.familyNames} onChange={set("familyNames")} />
+        <TextField label={tx.puja.date} type="date" value={f.pujaDate} onChange={set("pujaDate")} error={fields.pujaDate} />
+        <TextField label={tx.common.mobile} inputMode="tel" value={f.phone} onChange={set("phone")} error={fields.phone} />
+        <TextField label={tx.common.emailIfNoMobile} type="email" value={f.email} onChange={set("email")} error={fields.email} />
         <div className="flex flex-col gap-3 sm:col-span-2">
         {error ? <Alert tone="danger">{error}</Alert> : null}
         <div className="flex gap-2">
-          <Button type="submit" busy={busy}>{isFree(puja.dakshina) ? "Book" : `Pay ₹${puja.dakshina} & book`}</Button>
-          <Button type="button" variant="secondary" onClick={onBack}>Back</Button>
+          <Button type="submit" busy={busy}>{isFree(puja.dakshina) ? tx.puja.submitFree : tx.puja.submitPaid(puja.dakshina)}</Button>
+          <Button type="button" variant="secondary" onClick={onBack}>{tx.common.back}</Button>
         </div>
         </div>
       </form>

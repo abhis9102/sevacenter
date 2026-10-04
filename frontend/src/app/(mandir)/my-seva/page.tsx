@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { api } from "@/components/apiClient";
-import { MandirPageTitle } from "@/components/MandirShell";
+import { MandirPageTitle, useMandirText } from "@/components/MandirShell";
 import { Alert, Badge, Button, Card, TextField } from "@/components/ui";
 import { displayPhone, type Channel, type DevoteeProfile, type MySeva } from "@/lib/devotee";
 import { ApiError, describeError } from "@/lib/errors";
@@ -18,6 +18,7 @@ const changed = () => window.dispatchEvent(new Event(DEVOTEE_CHANGED));
  * scoped to /api/v1/portal; this page never sees it. 401 here just means "not signed in".
  */
 export default function MySevaPage() {
+  const tx = useMandirText();
   const [seva, setSeva] = useState<MySeva | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -48,10 +49,9 @@ export default function MySevaPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <MandirPageTitle icon="user" title={seva?.profile.fullName ? `Namaste, ${seva.profile.fullName}` : "My Mandir"}
-                       subtitle={seva ? "Everything you've done with the temple, from any of your linked contacts."
-                         : "Your donations, receipts, puja bookings, passes and seva in one place."}
-                       actions={seva ? <Button variant="secondary" onClick={() => void signOut()}>Sign out</Button> : null} />
+      <MandirPageTitle icon="user" title={seva?.profile.fullName ? tx.my.namaste(seva.profile.fullName) : tx.my.title}
+                       subtitle={seva ? tx.my.subtitleIn : tx.my.subtitleOut}
+                       actions={seva ? <Button variant="secondary" onClick={() => void signOut()}>{tx.my.signOut}</Button> : null} />
       {loading ? null : seva ? (
         <div className="grid items-start gap-6 lg:grid-cols-[1fr_22rem]">
           <div className="flex flex-col gap-4"><SevaView seva={seva} /></div>
@@ -74,6 +74,7 @@ export default function MySevaPage() {
 function Verifier({ mode, onDone, onCancel }: {
   mode: "login" | "link"; onDone: (seva?: MySeva) => void; onCancel?: () => void;
 }) {
+  const tx = useMandirText();
   const [channels, setChannels] = useState<{ email: boolean; sms: boolean } | null>(null);
   const [channel, setChannel] = useState<Channel>("SMS");
   const [contact, setContact] = useState("");
@@ -99,7 +100,7 @@ function Verifier({ mode, onDone, onCancel }: {
     } catch (err) {
       if (err instanceof ApiError) setFields(err.fields);
       setError(err instanceof ApiError && err.code === "too_many_contacts"
-        ? "You can link up to 6 mobile numbers and emails." : describeError(err));
+        ? tx.my.tooMany : describeError(err));
     } finally {
       setBusy(false);
     }
@@ -128,46 +129,44 @@ function Verifier({ mode, onDone, onCancel }: {
 
   if (channels === null) return null;
   if (!channels.email && !channels.sms) {
-    return <Card><p>Signing in isn&apos;t available at this temple yet.</p></Card>;
+    return <Card><p>{tx.my.notAvailable}</p></Card>;
   }
 
   const body = !sent ? (
     <form onSubmit={sendCode} className="flex flex-col gap-3" noValidate>
       <p className="text-sm text-muted">
-        {mode === "login"
-          ? "See your donations, receipts, puja bookings, passes and seva. We'll send a 6-digit code to confirm it's you."
-          : "Add another mobile number or email you use with the temple. We'll send it a code to confirm it's yours."}
+        {mode === "login" ? tx.my.loginIntro : tx.my.linkIntro}
       </p>
       {channels.email && channels.sms ? (
-        <div className="flex gap-2" role="group" aria-label="Send the code by">
-          <Button type="button" variant={channel === "SMS" ? "primary" : "secondary"} onClick={() => setChannel("SMS")}>Mobile</Button>
-          <Button type="button" variant={channel === "EMAIL" ? "primary" : "secondary"} onClick={() => setChannel("EMAIL")}>Email</Button>
+        <div className="flex gap-2" role="group" aria-label={tx.my.sendBy}>
+          <Button type="button" variant={channel === "SMS" ? "primary" : "secondary"} onClick={() => setChannel("SMS")}>{tx.my.mobileTab}</Button>
+          <Button type="button" variant={channel === "EMAIL" ? "primary" : "secondary"} onClick={() => setChannel("EMAIL")}>{tx.my.emailTab}</Button>
         </div>
       ) : null}
       {channel === "SMS" ? (
-        <TextField label="Mobile number" inputMode="tel" autoComplete="tel" value={contact}
+        <TextField label={tx.common.mobile} inputMode="tel" autoComplete="tel" value={contact}
                    onChange={(e) => setContact(e.target.value)} error={fields.contact} />
       ) : (
-        <TextField label="Email" type="email" autoComplete="email" value={contact}
+        <TextField label={tx.my.emailLabel} type="email" autoComplete="email" value={contact}
                    onChange={(e) => setContact(e.target.value)} error={fields.contact} />
       )}
-      {mode === "login" ? <p className="text-xs text-muted">Use a mobile or email you gave when donating or booking.</p> : null}
+      {mode === "login" ? <p className="text-xs text-muted">{tx.my.useSame}</p> : null}
       {error ? <Alert tone="danger">{error}</Alert> : null}
       <div className="flex gap-2">
-        <Button type="submit" busy={busy}>Send code</Button>
-        {onCancel ? <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button> : null}
+        <Button type="submit" busy={busy}>{tx.my.sendCode}</Button>
+        {onCancel ? <Button type="button" variant="secondary" onClick={onCancel}>{tx.common.cancel}</Button> : null}
       </div>
     </form>
   ) : (
     <form onSubmit={verify} className="flex flex-col gap-3" noValidate>
-      <p className="text-sm">We sent a code to <strong>{contact}</strong>. It expires in 10 minutes.</p>
-      <TextField label="6-digit code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code}
+      <p className="text-sm">{tx.my.sentTo(contact)}</p>
+      <TextField label={tx.my.codeLabel} inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code}
                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} />
-      <p className="text-xs text-muted">Nobody from the temple will ever ask you for this code.</p>
+      <p className="text-xs text-muted">{tx.my.neverAsk}</p>
       {error ? <Alert tone="danger">{error}</Alert> : null}
       <div className="flex gap-2">
-        <Button type="submit" busy={busy}>{mode === "login" ? "Sign in" : "Link it"}</Button>
-        <Button type="button" variant="secondary" onClick={() => { setSent(false); setCode(""); setError(null); }}>Change</Button>
+        <Button type="submit" busy={busy}>{mode === "login" ? tx.my.signIn : tx.my.linkIt}</Button>
+        <Button type="button" variant="secondary" onClick={() => { setSent(false); setCode(""); setError(null); }}>{tx.my.change}</Button>
       </div>
     </form>
   );
@@ -175,18 +174,19 @@ function Verifier({ mode, onDone, onCancel }: {
 }
 
 function ContactsCard({ seva, onLinked }: { seva: MySeva; onLinked: (s: MySeva) => void }) {
+  const tx = useMandirText();
   const [adding, setAdding] = useState(false);
   return (
     <Card className="flex flex-col gap-3">
       <div>
-        <h2 className="text-base font-semibold">Your mobile numbers &amp; emails</h2>
-        <p className="text-xs text-muted">Anything you did with any of these shows up here, and any of them signs you in.</p>
+        <h2 className="text-base font-semibold">{tx.my.contactsTitle}</h2>
+        <p className="text-xs text-muted">{tx.my.contactsNote}</p>
       </div>
       <ul className="flex flex-col gap-1.5 text-sm">
         {seva.contacts.map((c) => (
           <li key={c.channel + c.contact} className="flex items-center justify-between gap-2">
             <span className="truncate">{c.channel === "SMS" ? displayPhone(c.contact) : c.contact}</span>
-            <Badge tone="success">Verified</Badge>
+            <Badge tone="success">{tx.my.verified}</Badge>
           </li>
         ))}
       </ul>
@@ -194,19 +194,19 @@ function ContactsCard({ seva, onLinked }: { seva: MySeva; onLinked: (s: MySeva) 
         <Verifier mode="link" onCancel={() => setAdding(false)}
                   onDone={(s) => { if (s) onLinked(s); setAdding(false); }} />
       ) : seva.contacts.length < 6 ? (
-        <div><Button variant="secondary" onClick={() => setAdding(true)}>Add mobile or email</Button></div>
+        <div><Button variant="secondary" onClick={() => setAdding(true)}>{tx.my.addContact}</Button></div>
       ) : null}
     </Card>
   );
 }
 
-const PROFILE_FIELDS: Array<[keyof DevoteeProfile, string, string?]> = [
-  ["fullName", "Full name"], ["gotra", "Gotra"], ["nakshatra", "Nakshatra"], ["rashi", "Rashi"],
-  ["dateOfBirth", "Date of birth", "date"], ["familyNames", "Family members (for sankalp)"],
-  ["addressLine", "Address"], ["city", "City"], ["state", "State"], ["pincode", "Pincode"],
+const PROFILE_FIELDS: Array<[keyof DevoteeProfile, string?]> = [
+  ["fullName"], ["gotra"], ["nakshatra"], ["rashi"], ["dateOfBirth", "date"], ["familyNames"],
+  ["addressLine"], ["city"], ["state"], ["pincode"],
 ];
 
 function ProfileCard({ profile, onSaved }: { profile: DevoteeProfile; onSaved: (s: MySeva) => void }) {
+  const tx = useMandirText();
   const [editing, setEditing] = useState(false);
   const [f, setF] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -243,37 +243,38 @@ function ProfileCard({ profile, onSaved }: { profile: DevoteeProfile; onSaved: (
     <Card className="flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <h2 className="text-base font-semibold">Your profile</h2>
-          <p className="text-xs text-muted">Used to fill in your sankalp and donations. Only the temple sees it.</p>
+          <h2 className="text-base font-semibold">{tx.my.profileTitle}</h2>
+          <p className="text-xs text-muted">{tx.my.profileNote}</p>
         </div>
-        {!editing ? <Button variant="secondary" onClick={start}>{filled.length ? "Edit" : "Add"}</Button> : null}
+        {!editing ? <Button variant="secondary" onClick={start}>{filled.length ? tx.my.edit : tx.my.add}</Button> : null}
       </div>
       {editing ? (
         <form onSubmit={save} className="flex flex-col gap-3" noValidate>
-          {PROFILE_FIELDS.map(([k, label, type]) => (
-            <TextField key={k} label={label} type={type ?? "text"} value={f[k] ?? ""} error={fields[k]}
+          {PROFILE_FIELDS.map(([k, type]) => (
+            <TextField key={k} label={tx.my.fields[k]} type={type ?? "text"} value={f[k] ?? ""} error={fields[k]}
                        onChange={(e) => setF({ ...f, [k]: e.target.value })} />
           ))}
           {error ? <Alert tone="danger">{error}</Alert> : null}
           <div className="flex gap-2">
-            <Button type="submit" busy={busy}>Save</Button>
-            <Button type="button" variant="secondary" onClick={() => setEditing(false)}>Cancel</Button>
+            <Button type="submit" busy={busy}>{tx.my.save}</Button>
+            <Button type="button" variant="secondary" onClick={() => setEditing(false)}>{tx.common.cancel}</Button>
           </div>
         </form>
       ) : filled.length ? (
         <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
-          {filled.map(([k, label]) => (
-            <div key={k} className="contents"><dt className="text-muted">{label}</dt><dd>{profile[k]}</dd></div>
+          {filled.map(([k]) => (
+            <div key={k} className="contents"><dt className="text-muted">{tx.my.fields[k]}</dt><dd>{profile[k]}</dd></div>
           ))}
         </dl>
       ) : (
-        <p className="text-sm text-muted">Add your name, gotra and family so the priest has them for your sankalp.</p>
+        <p className="text-sm text-muted">{tx.my.profileEmpty}</p>
       )}
     </Card>
   );
 }
 
 function SevaView({ seva }: { seva: MySeva }) {
+  const tx = useMandirText();
   const [receipt, setReceipt] = useState<ReceiptDetail | null>(null);
   const [receiptError, setReceiptError] = useState<string | null>(null);
   const empty = seva.donations.length + seva.pujaBookings.length + seva.eventPasses.length + seva.sevakSignups.length === 0;
@@ -294,21 +295,21 @@ function SevaView({ seva }: { seva: MySeva }) {
   return (
     <>
       {empty ? (
-        <Card><p>Nothing here yet. Donations, bookings, passes and seva made with any of your linked mobile numbers or emails will show up here.</p></Card>
+        <Card><p>{tx.my.nothing}</p></Card>
       ) : null}
       {seva.donations.length > 0 ? (
         <Card>
-          <h2 className="mb-3 font-semibold">Donations &amp; receipts</h2>
+          <h2 className="mb-3 font-semibold">{tx.my.donations}</h2>
           {receiptError ? <Alert tone="danger">{receiptError}</Alert> : null}
           <ul className="flex flex-col gap-2">
             {seva.donations.map((d) => (
               <li key={d.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
                 <span>{d.receivedOn} · ₹{d.amount}{d.purpose ? ` · ${d.purpose}` : ""}</span>
                 <span className="flex items-center gap-2">
-                  {d.reversed ? <Badge tone="warning">Reversed</Badge> : null}
+                  {d.reversed ? <Badge tone="warning">{tx.my.reversed}</Badge> : null}
                   {d.receiptNumber && d.receiptValid ? (
-                    <Button variant="secondary" onClick={() => void openReceipt(d.id)}>Receipt {d.receiptNumber}</Button>
-                  ) : d.receiptNumber ? <Badge tone="danger">Receipt cancelled</Badge> : <Badge>No 80G receipt yet</Badge>}
+                    <Button variant="secondary" onClick={() => void openReceipt(d.id)}>{tx.my.receipt(d.receiptNumber)}</Button>
+                  ) : d.receiptNumber ? <Badge tone="danger">{tx.my.receiptCancelled}</Badge> : <Badge>{tx.my.noReceipt}</Badge>}
                 </span>
               </li>
             ))}
@@ -317,7 +318,7 @@ function SevaView({ seva }: { seva: MySeva }) {
       ) : null}
       {seva.pujaBookings.length > 0 ? (
         <Card>
-          <h2 className="mb-3 font-semibold">Puja bookings</h2>
+          <h2 className="mb-3 font-semibold">{tx.my.bookings}</h2>
           <ul className="flex flex-col gap-2">
             {seva.pujaBookings.map((b) => (
               <li key={b.bookingCode} className="flex flex-wrap items-center justify-between gap-2 text-sm">
@@ -330,11 +331,11 @@ function SevaView({ seva }: { seva: MySeva }) {
       ) : null}
       {seva.eventPasses.length > 0 ? (
         <Card>
-          <h2 className="mb-3 font-semibold">Event passes</h2>
+          <h2 className="mb-3 font-semibold">{tx.my.passes}</h2>
           <ul className="flex flex-col gap-2">
             {seva.eventPasses.map((p) => (
               <li key={p.passCode} className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                <span>{p.eventTitle ?? "Event"}{p.startsAt ? ` · ${new Date(p.startsAt).toLocaleString("en-IN")}` : ""} · {p.attendeeCount} people</span>
+                <span>{p.eventTitle ?? tx.my.event}{p.startsAt ? ` · ${new Date(p.startsAt).toLocaleString("en-IN")}` : ""} · {tx.common.people(p.attendeeCount)}</span>
                 <span className="flex items-center gap-2"><code>{p.passCode}</code><Badge>{p.status}</Badge></span>
               </li>
             ))}
@@ -343,7 +344,7 @@ function SevaView({ seva }: { seva: MySeva }) {
       ) : null}
       {seva.sevakSignups.length > 0 ? (
         <Card>
-          <h2 className="mb-3 font-semibold">Seva offered</h2>
+          <h2 className="mb-3 font-semibold">{tx.my.seva}</h2>
           <ul className="flex flex-col gap-2">
             {seva.sevakSignups.map((s) => (
               <li key={s.createdAt} className="flex flex-wrap items-center justify-between gap-2 text-sm">
@@ -359,6 +360,7 @@ function SevaView({ seva }: { seva: MySeva }) {
 
 /** A copy of the 80G receipt for the devotee's records. The PAN is masked; the trust holds the original. */
 function ReceiptCopy({ receipt, onClose }: { receipt: ReceiptDetail; onClose: () => void }) {
+  const tx = useMandirText();
   return (
     <Card className="print:border-none">
       <div className="flex flex-col gap-3 text-sm">
@@ -368,22 +370,20 @@ function ReceiptCopy({ receipt, onClose }: { receipt: ReceiptDetail; onClose: ()
             <p className="text-muted">{receipt.trustAddress}</p>
             <p className="text-muted">PAN {receipt.trustPan} · 80G {receipt.trustRegistration80g}</p>
           </div>
-          <Button variant="secondary" onClick={onClose} className="print:hidden">Back</Button>
+          <Button variant="secondary" onClick={onClose} className="print:hidden">{tx.common.back}</Button>
         </div>
-        <p className="font-semibold">Receipt {receipt.number} · issued {receipt.issuedOn}</p>
-        {receipt.cancelled ? <Alert tone="danger">This receipt was cancelled.</Alert> : null}
+        <p className="font-semibold">{tx.my.receiptIssued(receipt.number, receipt.issuedOn)}</p>
+        {receipt.cancelled ? <Alert tone="danger">{tx.my.receiptWasCancelled}</Alert> : null}
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
-          <dt className="text-muted">Received from</dt><dd>{receipt.donorName}</dd>
-          <dt className="text-muted">Address</dt><dd>{receipt.donorAddress}</dd>
-          <dt className="text-muted">Donor PAN</dt><dd>{receipt.donorPan}</dd>
-          <dt className="text-muted">Amount</dt><dd>₹{receipt.amount}</dd>
-          <dt className="text-muted">Mode</dt><dd>{receipt.mode}</dd>
-          <dt className="text-muted">Received on</dt><dd>{receipt.receivedOn}</dd>
+          <dt className="text-muted">{tx.my.receivedFrom}</dt><dd>{receipt.donorName}</dd>
+          <dt className="text-muted">{tx.my.address}</dt><dd>{receipt.donorAddress}</dd>
+          <dt className="text-muted">{tx.my.donorPan}</dt><dd>{receipt.donorPan}</dd>
+          <dt className="text-muted">{tx.my.amount}</dt><dd>₹{receipt.amount}</dd>
+          <dt className="text-muted">{tx.my.mode}</dt><dd>{receipt.mode}</dd>
+          <dt className="text-muted">{tx.my.receivedOn}</dt><dd>{receipt.receivedOn}</dd>
         </dl>
-        <p className="text-xs text-muted">
-          Copy for your records, with your PAN masked. For the original receipt, please contact the temple office.
-        </p>
-        <div className="print:hidden"><Button onClick={() => window.print()}>Print</Button></div>
+        <p className="text-xs text-muted">{tx.my.copyNote}</p>
+        <div className="print:hidden"><Button onClick={() => window.print()}>{tx.my.print}</Button></div>
       </div>
     </Card>
   );

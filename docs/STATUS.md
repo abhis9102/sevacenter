@@ -433,6 +433,12 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
   the user's role and module limits. Counter-booking, pass and sevak dialogs shared with the module
   screens (`components/StaffDialogs.tsx`). No backend changes.
 
+## MandirCenter in Hindi ✅ (this PR)
+- Every public page (pujas, donate, utsavs, sevak, My Mandir incl. sign-in, contacts, profile and the
+  receipt copy) now follows the English/हिंदी switch. Text lives in `lib/i18n-mandir.ts`; the Hindi
+  object is typed against the English one, so a missing translation fails the build. Temple-entered
+  content (trust, fund, puja names) is shown as the temple wrote it.
+
 **All of the parallel session's MVP features are now rebuilt and reviewed.** Then: M5 containers →
 M6 AWS → M7 gates.
 
