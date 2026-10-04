@@ -33,6 +33,7 @@ export default function EventsPage() {
   const [editing, setEditing] = useState<StaffEvent | "new" | null>(null);
   const [issuing, setIssuing] = useState(false);
   const [cancelling, setCancelling] = useState<StaffEvent | null>(null);
+  const [checkIns, setCheckIns] = useState(0);
   // Fixed per visit: what counts as "live" shouldn't shift while staff are working the gate.
   const [now] = useState(() => Date.now());
 
@@ -95,7 +96,7 @@ export default function EventsPage() {
           <EmptyState title="No utsav is open at the gate right now.">Publish an utsav under Festivals &amp; Passes.</EmptyState>
         ) : (
           <div className="grid items-start gap-6 lg:grid-cols-[22rem_1fr]">
-            <GateCard event={current} onCheckedIn={() => void load()} />
+            <GateCard event={current} onCheckedIn={() => setCheckIns((n) => n + 1)} />
             <div className="flex flex-col gap-4">
               <Card className="flex flex-wrap items-center justify-between gap-3 py-3">
                 {picker}
@@ -109,7 +110,7 @@ export default function EventsPage() {
                 <StatCard label="Registration" tone={current.registrationOpen ? "success" : "warning"}
                           value={current.registrationOpen ? "Open" : "Closed"} note="Gate passes still allowed" />
               </div>
-              {isLeader ? <PassList event={current} compact onChanged={() => void load()} /> : null}
+              {isLeader ? <PassList event={current} compact refresh={checkIns} onChanged={() => void load()} /> : null}
             </div>
           </div>
         )
@@ -123,9 +124,10 @@ export default function EventsPage() {
             <div className="grid gap-4 md:grid-cols-2">
               {[...events].sort((a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt)).map((e) => {
                 const chip = dateChip(e.startsAt);
+                const ended = Date.parse(e.endsAt) <= now;
                 const full = e.capacity !== null ? Math.min(100, Math.round((e.seatsTaken / e.capacity) * 100)) : null;
                 return (
-                  <Card key={e.id} className={`flex flex-col gap-3 ${e.status === "CANCELLED" ? "opacity-60" : ""}`}>
+                  <Card key={e.id} className={`flex flex-col gap-3 ${e.status === "CANCELLED" || ended ? "opacity-70" : ""}`}>
                     <div className="flex items-start gap-4">
                       <div className="flex size-14 shrink-0 flex-col items-center justify-center rounded-[12px] border border-primary/25 bg-primary/10 text-primary-strong">
                         <span className="text-xl font-semibold leading-none">{chip.day}</span>
@@ -134,7 +136,8 @@ export default function EventsPage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
                           <h2 className="text-lg font-semibold">{e.title}</h2>
-                          <Pill tone={STATUS[e.status].tone}>{STATUS[e.status].label}</Pill>
+                          {ended && e.status === "PUBLISHED" ? <Pill>Ended</Pill>
+                            : <Pill tone={STATUS[e.status].tone}>{STATUS[e.status].label}</Pill>}
                         </div>
                         <p className="font-mono text-xs text-muted">{formatIst(e.startsAt)} – {formatIst(e.endsAt).split(", ").pop()}</p>
                       </div>
@@ -151,7 +154,7 @@ export default function EventsPage() {
                         </div>
                       ) : null}
                     </div>
-                    {isLeader && e.status !== "CANCELLED" ? (
+                    {isLeader && e.status !== "CANCELLED" && !ended ? (
                       <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3">
                         <Button variant="secondary" onClick={() => setEditing(e)}>Edit</Button>
                         {e.status === "DRAFT" ? <Button onClick={() => void changeStatus(e, "publish")}>Publish</Button> : null}
@@ -253,7 +256,9 @@ function GateCard({ event, onCheckedIn }: { event: StaffEvent; onCheckedIn: () =
   );
 }
 
-function PassList({ event, compact, onChanged }: { event: StaffEvent; compact?: boolean; onChanged: () => void }) {
+function PassList({ event, compact, refresh = 0, onChanged }: {
+  event: StaffEvent; compact?: boolean; refresh?: number; onChanged: () => void;
+}) {
   const [passes, setPasses] = useState<EventPass[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState<EventPass | null>(null);
@@ -269,7 +274,7 @@ function PassList({ event, compact, onChanged }: { event: StaffEvent; compact?: 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- load on open / utsav change
     void load();
-  }, [load, event.seatsTaken]);
+  }, [load, event.seatsTaken, refresh]);
 
   async function cancel(p: EventPass) {
     try {
