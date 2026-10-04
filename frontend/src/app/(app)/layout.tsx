@@ -88,6 +88,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   const navItems: { href: string; label: string; min: Role; module?: StaffModule }[] = [
+    { href: "/dashboard", label: t.nav.dashboard, min: "MEMBER" },
     { href: "/devotees", label: t.nav.devotees, min: "MEMBER", module: "DEVOTEES" },
     { href: "/donations", label: t.nav.donations, min: "LEADER", module: "DONATIONS" },
     { href: "/staff", label: t.nav.staff, min: "LEADER" },
@@ -104,7 +105,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="flex min-h-dvh flex-col">
         <header className="border-b border-line bg-surface">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
-            <Link href="/devotees" className="flex items-center gap-2" aria-label="SevaCenter home">
+            <Link href="/dashboard" className="flex items-center gap-2" aria-label="SevaCenter home">
               <Diya className="size-8" />
               <Wordmark />
             </Link>

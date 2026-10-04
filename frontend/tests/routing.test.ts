@@ -25,11 +25,11 @@ describe("safeReturnTo (no open redirects)", () => {
     "/api/v1/me",
   ]) {
     it(`rejects ${JSON.stringify(evil)}`, () => {
-      assert.equal(safeReturnTo(evil), "/devotees");
+      assert.equal(safeReturnTo(evil), "/dashboard");
     });
   }
   it("rejects null", () => {
-    assert.equal(safeReturnTo(null), "/devotees");
+    assert.equal(safeReturnTo(null), "/dashboard");
   });
 });
 

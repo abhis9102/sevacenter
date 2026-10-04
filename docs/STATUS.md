@@ -362,7 +362,14 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
 - **DAST found a race:** parallel saves of one fund name both passed the name check and the unique
   index turned the loser into a 500. Now the same 400 as a plain duplicate; concurrent test (8 threads).
 
-Next (user decisions 2026-10-04): staff dashboard → dark mode + logo.
+## Staff dashboard ✅ (this PR)
+- `/dashboard` is now where staff land after login: pujas today (IST), upcoming events, devotee count,
+  FY donations (with funds), new volunteer offers. Built on existing APIs only, no new endpoints.
+- Each card loads independently and shows only when the role and module limits allow it (a member
+  without Devotees no longer lands on a page they can't open). Pure helpers unit-tested (IST date,
+  upcoming filter).
+
+Next (user decisions 2026-10-04): dark mode + logo.
 
 **MVP features are now complete.** Then: M5 containers → M6 AWS → M7 gates.
 
