@@ -43,6 +43,13 @@ ignoreUntil = 2026-12-31
 reason = "Abhi (AppSec): not injection. Fund names are unique per trust (uq_donation_fund_name); ZAP's earlier requests had already created funds named with its payloads, so creating or renaming to one of those gives 400 (duplicate) and to a fresh one 201/200, which ZAP reads as boolean manipulation. app.log shows the uniqueness collisions in the same window. All fund queries are bound JPQL parameters (DonationFundRepository); no SQL is built from input."
 
 [[accepted]]
+pluginId = "40018" # SQL Injection (boolean-based heuristic)
+param = "name"
+uri = '/api/v1/(priests|seva-teams)(/[0-9]+)?$' # create and rename
+ignoreUntil = 2026-12-31
+reason = "Claude (2026-10-05), applying Abhi's donation-funds decision above; for Abhi's review. Same mechanism, not injection: priest and seva team names are unique per trust (uq_priest_name, uq_seva_team_name); ZAP's parallel requests had already created rows named with its payloads, so renaming to one gives 400 (duplicate) and to a fresh one 200, which ZAP reads as boolean manipulation. app.log shows uq_priest_name collisions in the same window. Queries are bound JPQL parameters (PriestRepository, SevaTeamRepository); the duplicate-name race itself was fixed and is pinned by PujaTest/SevakTest concurrent tests."
+
+[[accepted]]
 pluginId = "6" # Path Traversal (heuristic): the whole JSON API, guarded by a test
 uri = '/api/v1/'
 ignoreUntil = 2026-12-31
