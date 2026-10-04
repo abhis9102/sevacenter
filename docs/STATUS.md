@@ -426,6 +426,13 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
 - Dashboard: greeting with today's panchang, KPI cards, quick operations, today's sankalp roster
   with priests, upcoming utsavs, recent donations. Every card still gated by role + module.
 
+## Devotee 360 ✅ (this PR)
+- The devotee page on the prototype layout: header actions (record donation, book puja, issue pass,
+  enrol as sevak, edit, erase), lifetime-giving / pujas / passes / sevak cards, and tabs (overview,
+  giving with 80G receipt issuing, pujas, passes, sevak hub). Each action and section still follows
+  the user's role and module limits. Counter-booking, pass and sevak dialogs shared with the module
+  screens (`components/StaffDialogs.tsx`). No backend changes.
+
 **All of the parallel session's MVP features are now rebuilt and reviewed.** Then: M5 containers →
 M6 AWS → M7 gates.
 

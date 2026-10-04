@@ -4,8 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 
 import { api } from "@/components/apiClient";
 import { useMe } from "@/components/Session";
+import { CounterBookingDialog } from "@/components/StaffDialogs";
 import { ConfirmDialog, EmptyState, Pill, StaffTitle, useView, ViewSwitcher } from "@/components/staff";
-import { Alert, Button, Card, Dialog, SelectField, TextField } from "@/components/ui";
+import { Alert, Button, Card, Dialog, TextField } from "@/components/ui";
 import { ApiError, describeError } from "@/lib/errors";
 import { isFree, todayIst, type Priest, type Puja, type PujaBooking } from "@/lib/pujas";
 import { hasRole } from "@/lib/types";
@@ -16,10 +17,6 @@ const STATUS = {
   PERFORMED: { tone: "success", label: "Performed" },
   CANCELLED: { tone: "neutral", label: "Cancelled" },
 } as const;
-const MODES = [
-  { value: "CASH", label: "Cash" }, { value: "UPI", label: "UPI" }, { value: "CARD", label: "Card" },
-  { value: "CHEQUE", label: "Cheque" }, { value: "BANK_TRANSFER", label: "Bank transfer" },
-];
 const VIEWS = ["roster", "catalog", "priests"] as const;
 const rupees = (r: string) => `₹${Number(r).toLocaleString("en-IN")}`;
 
@@ -333,74 +330,6 @@ function PujaDialog({ puja, onClose, onSaved }: { puja: Puja | null; onClose: ()
           <Button type="submit" busy={busy}>Save</Button>
         </div>
       </form>
-    </Dialog>
-  );
-}
-
-function CounterBookingDialog({ catalog, date, onClose, onBooked }: {
-  catalog: Puja[]; date: string; onClose: () => void; onBooked: (b: PujaBooking) => void;
-}) {
-  const [f, setF] = useState({ pujaId: String(catalog[0]?.id ?? ""), pujaDate: date < todayIst() ? todayIst() : date,
-    devoteeName: "", gotra: "", nakshatra: "", rashi: "", familyNames: "", phone: "", email: "", mode: "CASH", reference: "" });
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [fields, setFields] = useState<Readonly<Record<string, string>>>({});
-  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
-  const puja = catalog.find((p) => String(p.id) === f.pujaId);
-  const paid = puja ? !isFree(puja.dakshina) : false;
-
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setError(null);
-    setFields({});
-    try {
-      const trimmed = Object.fromEntries(Object.entries(f).map(([k, v]) => [k, v.trim() || null]));
-      onBooked(await api.request<PujaBooking>("/puja-bookings", { method: "POST", json: {
-        ...trimmed, pujaId: Number(f.pujaId), mode: paid ? f.mode : null, reference: paid ? trimmed.reference : null } }));
-    } catch (err) {
-      if (err instanceof ApiError) setFields(err.fields);
-      setError(describeError(err));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <Dialog open onClose={onClose} title="Book a puja for a devotee">
-      {catalog.length === 0 ? <p className="text-sm">Add a puja to the catalog first.</p> : (
-        <form onSubmit={onSubmit} className="flex flex-col gap-3">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <SelectField label="Puja" value={f.pujaId} onChange={set("pujaId")}
-                         options={catalog.map((p) => ({ value: String(p.id), label: `${p.name} · ${isFree(p.dakshina) ? "no dakshina" : rupees(p.dakshina)}` }))} />
-            <TextField label="Date" type="date" value={f.pujaDate} onChange={set("pujaDate")} error={fields.pujaDate} />
-          </div>
-          <TextField label="Name for the sankalp" value={f.devoteeName} onChange={set("devoteeName")} error={fields.devoteeName} />
-          <div className="grid gap-3 sm:grid-cols-3">
-            <TextField label="Gotra" value={f.gotra} onChange={set("gotra")} />
-            <TextField label="Nakshatra" value={f.nakshatra} onChange={set("nakshatra")} />
-            <TextField label="Rashi" value={f.rashi} onChange={set("rashi")} />
-          </div>
-          <TextField label="Family members (optional)" value={f.familyNames} onChange={set("familyNames")} />
-          <div className="grid gap-3 sm:grid-cols-2">
-            <TextField label="Mobile (optional)" inputMode="tel" value={f.phone} onChange={set("phone")} error={fields.phone}
-                       hint="Lets them see it in My Mandir" />
-            <TextField label="Email (optional)" type="email" value={f.email} onChange={set("email")} error={fields.email} />
-          </div>
-          {paid ? (
-            <div className="grid gap-3 rounded-[10px] border border-line bg-surface-2 p-3 sm:grid-cols-2">
-              <SelectField label={`Dakshina ${puja ? rupees(puja.dakshina) : ""} paid by`} value={f.mode} onChange={set("mode")}
-                           options={MODES} error={fields.mode} />
-              <TextField label="Reference (optional)" placeholder="UTR / cheque no." value={f.reference} onChange={set("reference")} />
-            </div>
-          ) : null}
-          {error ? <Alert tone="danger">{error}</Alert> : null}
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
-            <Button type="submit" busy={busy}>Book puja</Button>
-          </div>
-        </form>
-      )}
     </Dialog>
   );
 }
