@@ -33,15 +33,18 @@ public class PujaService implements PujaSettlement {
 
     private final PujaRepository pujas;
     private final PujaBookingRepository bookings;
+    private final PriestRepository priests;
     private final OnlineDonationService payments;
     private final AuditTrail auditTrail;
     private final Clock clock = Clock.system(DonationService.IST);
 
-    public PujaService(PujaRepository pujas, PujaBookingRepository bookings, OnlineDonationService payments,
+    public PujaService(PujaRepository pujas, PujaBookingRepository bookings, PriestRepository priests,
+                       OnlineDonationService payments,
                        AuditTrail auditTrail) {
         this.auditTrail = auditTrail;
         this.pujas = pujas;
         this.bookings = bookings;
+        this.priests = priests;
         this.payments = payments;
     }
 
@@ -71,6 +74,34 @@ public class PujaService implements PujaSettlement {
 
     @Transactional
     public Booked book(long pujaId, BookingDetails d) {
+        PujaBooking booking = bookings.saveAndFlush(newBooking(pujaId, d, true));
+        audit.info("event=puja_booked tenant={} booking={} puja={} paise={}", currentTenant(), booking.getId(),
+                pujaId, booking.getAmountPaise());
+        CreatedOrder order = booking.getAmountPaise() == 0 ? null
+                : payments.createPujaOrder(booking.getId(), booking.getAmountPaise(), booking.getDevoteeName(),
+                        "Puja: " + booking.getPujaName());
+        return new Booked(booking, order);
+    }
+
+    /**
+     * Booked by staff for a walk-in devotee (ADR 0026): confirmed at once. A paid puja records how
+     * the dakshina was taken; like online dakshina it is a seva fee, not an 80G donation.
+     */
+    @Transactional
+    public PujaBooking bookAtCounter(long pujaId, BookingDetails d, String mode, String reference, long staffId) {
+        PujaBooking booking = newBooking(pujaId, d, false);
+        if (booking.getAmountPaise() > 0 && (mode == null || !COUNTER_MODES.contains(mode))) {
+            throw new InvalidFieldException("mode", "say how the dakshina was paid");
+        }
+        String ref = booking.getAmountPaise() == 0 ? null : optional("reference", reference, 64);
+        booking.bookedAtCounter(staffId, booking.getAmountPaise() == 0 ? null : mode, ref);
+        booking = bookings.saveAndFlush(booking);
+        auditTrail.record(AuditAction.PUJA_BOOKED_AT_COUNTER, "puja_booking", booking.getId(),
+                booking.getAmountPaise() == 0 ? null : mode);
+        return booking;
+    }
+
+    private PujaBooking newBooking(long pujaId, BookingDetails d, boolean contactRequired) {
         Puja puja = pujas.findById(pujaId).filter(Puja::isActive).orElseThrow(PujaNotFoundException::new);
         LocalDate today = LocalDate.now(clock);
         if (d.pujaDate() == null || d.pujaDate().isBefore(today) || d.pujaDate().isAfter(today.plusDays(MAX_DAYS_AHEAD))) {
@@ -79,22 +110,18 @@ public class PujaService implements PujaSettlement {
         String name = required("devoteeName", d.devoteeName(), 120);
         String phone = d.phone() == null || d.phone().isBlank() ? null : DevoteeService.phone(d.phone());
         String email = d.email() == null || d.email().isBlank() ? null : d.email().strip().toLowerCase(Locale.ROOT);
-        if (phone == null && email == null) {
+        if (contactRequired && phone == null && email == null) {
             throw new InvalidFieldException("phone", "a phone number or an email is required");
         }
         if (email != null && (email.length() > 254 || !email.matches("[^@\\s]+@[^@\\s]+\\.[^@\\s]+"))) {
             throw new InvalidFieldException("email", "email is not valid");
         }
-        PujaBooking booking = bookings.saveAndFlush(new PujaBooking(currentTenant(), puja,
-                Codes.fresh(bookings::existsByBookingCode), name, optional("gotra", d.gotra(), 60),
-                optional("nakshatra", d.nakshatra(), 60), optional("rashi", d.rashi(), 60),
-                optional("familyNames", d.familyNames(), 500), d.pujaDate(), phone, email));
-        audit.info("event=puja_booked tenant={} booking={} puja={} paise={}", currentTenant(), booking.getId(),
-                pujaId, booking.getAmountPaise());
-        CreatedOrder order = booking.getAmountPaise() == 0 ? null
-                : payments.createPujaOrder(booking.getId(), booking.getAmountPaise(), name, "Puja: " + puja.getName());
-        return new Booked(booking, order);
+        return new PujaBooking(currentTenant(), puja, Codes.fresh(bookings::existsByBookingCode), name,
+                optional("gotra", d.gotra(), 60), optional("nakshatra", d.nakshatra(), 60), optional("rashi", d.rashi(), 60),
+                optional("familyNames", d.familyNames(), 500), d.pujaDate(), phone, email);
     }
+
+    private static final java.util.Set<String> COUNTER_MODES = java.util.Set.of("CASH", "UPI", "CARD", "CHEQUE", "BANK_TRANSFER");
 
     // --- settlement (called by the payment flow, inside its transaction) --------------------------
 
@@ -144,6 +171,56 @@ public class PujaService implements PujaSettlement {
         audit.info("event=puja_cancelled tenant={} user={} booking={}", currentTenant(), staffId, bookingId);
         auditTrail.record(AuditAction.PUJA_BOOKING_CANCELLED, "puja_booking", bookingId, null);
         return b;
+    }
+
+    // --- priests (ADR 0027) -------------------------------------------------------------------------
+
+    @Transactional(readOnly = true)
+    public List<Priest> priests() {
+        return priests.listed();
+    }
+
+    @Transactional
+    public Priest savePriest(Long id, String name, String phone, String specialties, boolean active, long staffId) {
+        String clean = required("name", name, 120);
+        if (priests.nameTaken(clean, id)) {
+            throw new InvalidFieldException("name", "a priest with this name is already listed");
+        }
+        Priest p = id == null ? new Priest(currentTenant()) : priests.findById(id).orElseThrow(PujaNotFoundException::new);
+        p.edit(clean, phone == null || phone.isBlank() ? null : DevoteeService.phone(phone),
+                optional("specialties", specialties, 200), active, staffId, java.time.OffsetDateTime.now(clock));
+        Priest saved;
+        try {
+            saved = priests.saveAndFlush(p);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // Two saves of one name at once both pass the check above; the unique index lets one
+            // win, and the other gets the same answer as a plain duplicate (found by DAST).
+            throw new InvalidFieldException("name", "a priest with this name is already listed");
+        }
+        auditTrail.record(AuditAction.PRIEST_SAVED, "priest", saved.getId(), active ? null : "inactive");
+        return saved;
+    }
+
+    /** Who performs this sankalp; null clears it. Only an active priest, only an open booking. */
+    @Transactional
+    public PujaBooking assignPriest(long bookingId, Long priestId, long staffId) {
+        PujaBooking b = bookings.lockById(bookingId).orElseThrow(PujaNotFoundException::new);
+        if ("CANCELLED".equals(b.getStatus()) || "PERFORMED".equals(b.getStatus())) {
+            throw new PujaConflictException("booking_closed");
+        }
+        if (priestId != null) {
+            priests.findById(priestId).filter(Priest::isActive)
+                    .orElseThrow(() -> new InvalidFieldException("priestId", "choose an active priest of this temple"));
+        }
+        b.assignPriest(priestId);
+        auditTrail.record(AuditAction.PRIEST_ASSIGNED, "puja_booking", bookingId, priestId == null ? null : priestId.toString());
+        return b;
+    }
+
+    /** Names for the roster, inactive priests included (past bookings keep their priest). */
+    @Transactional(readOnly = true)
+    public java.util.Map<Long, String> priestNames() {
+        return priests.findAll().stream().collect(java.util.stream.Collectors.toMap(Priest::getId, Priest::getName));
     }
 
     // --- helpers ----------------------------------------------------------------------------------

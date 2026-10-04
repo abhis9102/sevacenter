@@ -82,6 +82,11 @@ public class Event {
     }
 
     /** Public registration is possible: published, open, and not yet started. */
+    /** Staff can still issue a pass at the gate after online registration closes, until it ends (ADR 0026). */
+    boolean takesCounterPasses(OffsetDateTime now) {
+        return status == EventStatus.PUBLISHED && now.isBefore(endsAt);
+    }
+
     boolean takesRegistrations(OffsetDateTime now) {
         return status == EventStatus.PUBLISHED && registrationOpen && now.isBefore(startsAt);
     }

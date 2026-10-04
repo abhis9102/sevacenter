@@ -54,6 +54,9 @@ public class EventPass {
     @Column(name = "created_at", insertable = false, updatable = false)
     private OffsetDateTime createdAt;
 
+    @Column(name = "issued_by", updatable = false)
+    private Long issuedBy;
+
     protected EventPass() { }
 
     EventPass(long tenantId, long eventId, String passCode, String attendeeName, int attendeeCount, String phone,
@@ -65,6 +68,10 @@ public class EventPass {
         this.attendeeCount = attendeeCount;
         this.phone = phone;
         this.email = email;
+    }
+
+    void issuedBy(long staffId) {
+        this.issuedBy = staffId;
     }
 
     void checkIn(long staffId, OffsetDateTime now) {

@@ -380,6 +380,12 @@ class Probe:
                     self.client(b).request("POST", f"/api/v1/public/pujas/{puja_id}/book",
                                            body={"devoteeName": "X", "pujaDate": puja_day, "phone": "9876543210"}))
 
+        print("\npriests (ADR 0027)")
+        self.expect("member cannot add a priest", 403, member.request("POST", "/api/v1/priests", body={"name": "Probe priest"}))
+        self.expect("leader adds a priest", 201, leader.request("POST", "/api/v1/priests", body={"name": "Probe priest A"}))
+        _, theirs = admin_b.request("GET", "/api/v1/priests")
+        self.check("B never sees A's priests", "Probe priest A" not in json.dumps(theirs), str(theirs)[:120])
+
         print("\npublic temple page (ADR 0017)")
         page = {"timings": "5 am - 9 pm", "announcement": "Probe announcement for A"}
         self.expect("member cannot edit the temple page", 403, member.request("PUT", "/api/v1/temple", body=page))

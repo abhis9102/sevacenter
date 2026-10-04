@@ -76,6 +76,18 @@ public class PujaBooking {
     @Column(name = "created_at", insertable = false, updatable = false)
     private OffsetDateTime createdAt;
 
+    @Column(name = "priest_id")
+    private Long priestId;
+
+    @Column(name = "booked_by", updatable = false)
+    private Long bookedBy;
+
+    @Column(name = "counter_mode", updatable = false)
+    private String counterMode;
+
+    @Column(name = "counter_reference", updatable = false)
+    private String counterReference;
+
     protected PujaBooking() { }
 
     PujaBooking(long tenantId, Puja puja, String code, String devoteeName, String gotra, String nakshatra, String rashi,
@@ -94,6 +106,21 @@ public class PujaBooking {
         this.phone = phone;
         this.email = email;
         this.status = amountPaise == 0 ? "CONFIRMED" : "AWAITING_PAYMENT";
+    }
+
+    /** Booked by staff at the counter (ADR 0026): confirmed at once, the dakshina taken in person. */
+    void bookedAtCounter(long staffId, String mode, String reference) {
+        this.bookedBy = staffId;
+        this.status = "CONFIRMED";
+        if (getAmountPaise() > 0) {
+            this.counterMode = mode;
+            this.counterReference = reference;
+            this.paymentRef = "COUNTER-" + bookingCode;
+        }
+    }
+
+    void assignPriest(Long priestId) {
+        this.priestId = priestId;
     }
 
     void confirmPaid(String paymentRef) {
@@ -125,5 +152,8 @@ public class PujaBooking {
     public long getAmountPaise() { return amountPaise; }
     public String getStatus() { return status; }
     public String getPaymentRef() { return paymentRef; }
+    public Long getBookedBy() { return bookedBy; }
+    public Long getPriestId() { return priestId; }
+    public String getCounterMode() { return counterMode; }
     public OffsetDateTime getPerformedAt() { return performedAt; }
 }

@@ -24,6 +24,20 @@ export interface PujaBooking {
   email: string | null;
   amount: string;
   status: "AWAITING_PAYMENT" | "CONFIRMED" | "PERFORMED" | "CANCELLED";
+  /** Booked by staff at the counter (ADR 0026), and how a paid one was paid. */
+  counter: boolean;
+  counterMode: string | null;
+  /** Who performs it (ADR 0027). */
+  priestId: number | null;
+  priestName: string | null;
+}
+
+export interface Priest {
+  id: number;
+  name: string;
+  phone: string | null;
+  specialties: string | null;
+  active: boolean;
 }
 
 export interface Booked {
