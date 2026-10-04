@@ -142,7 +142,13 @@ public class SevakService {
         }
         SevaTeam t = id == null ? new SevaTeam(currentTenant()) : liveTeam(id);
         t.edit(clean, optional("description", description, 300), targetCount, icon, staffId, OffsetDateTime.now(clock));
-        t = teams.saveAndFlush(t);
+        try {
+            t = teams.saveAndFlush(t);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // Two saves of one team name at once both pass the check above; the unique index lets
+            // one win, and the other gets the same answer as a plain duplicate (as for priests).
+            throw new InvalidFieldException("name", "a team with this name already exists");
+        }
         teams.deleteShifts(t.getId(), currentTenant());
         for (ShiftDetails sh : list) {
             shifts.save(new SevaShift(currentTenant(), t.getId(), sh.name().strip(), sh.startsAt(), sh.endsAt()));
