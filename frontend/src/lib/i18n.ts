@@ -34,6 +34,13 @@ export interface Translations {
     home: string;
     profile: string;
   };
+  apps: {
+    switcher: string;
+    menuTitle: string;
+    templeSite: string;
+    newTab: string;
+    names: Record<"home" | "people" | "giving" | "worship" | "site" | "admin", { name: string; description: string }>;
+  };
   roles: {
     TRUST_ADMIN: string;
     LEADER: string;
@@ -317,6 +324,20 @@ export const DICTIONARIES: Record<Language, Translations> = {
       temple: "Temple page",
       home: "Home",
       profile: "Profile",
+    },
+    apps: {
+      switcher: "Switch app",
+      menuTitle: "SevaCenter apps",
+      templeSite: "Temple site",
+      newTab: "opens in a new tab",
+      names: {
+        home: { name: "Overview", description: "Today at the temple, at a glance" },
+        people: { name: "People", description: "Devotee records and volunteer offers" },
+        giving: { name: "Giving", description: "Donations, 80G receipts, funds and online payments" },
+        worship: { name: "Pujas & Events", description: "Puja bookings, festivals, passes and check-in" },
+        site: { name: "Temple Site", description: "What devotees see on your public page" },
+        admin: { name: "Administration", description: "Staff, access and the audit log" },
+      },
     },
     roles: {
       TRUST_ADMIN: "Trust admin",
@@ -618,6 +639,20 @@ export const DICTIONARIES: Record<Language, Translations> = {
       temple: "मंदिर पृष्ठ (Temple page)",
       home: "मुख्य पृष्ठ",
       profile: "प्रोफ़ाइल (Profile)",
+    },
+    apps: {
+      switcher: "ऐप बदलें",
+      menuTitle: "सेवासेंटर ऐप्स",
+      templeSite: "मंदिर साइट",
+      newTab: "नए टैब में खुलता है",
+      names: {
+        home: { name: "सारांश (Overview)", description: "आज मंदिर में क्या हो रहा है, एक नज़र में" },
+        people: { name: "भक्त व सेवक (People)", description: "भक्तों का विवरण और सेवा प्रस्ताव" },
+        giving: { name: "दान (Giving)", description: "दान, 80G रसीदें, निधियाँ और ऑनलाइन भुगतान" },
+        worship: { name: "पूजा व उत्सव (Pujas & Events)", description: "पूजा बुकिंग, उत्सव, पास और प्रवेश जाँच" },
+        site: { name: "मंदिर पृष्ठ (Temple Site)", description: "भक्तों को दिखने वाला आपका सार्वजनिक पृष्ठ" },
+        admin: { name: "प्रशासन (Administration)", description: "कर्मचारी, अनुमतियाँ और ऑडिट लॉग" },
+      },
     },
     roles: {
       TRUST_ADMIN: "ट्रस्ट प्रबंधक (Admin)",
