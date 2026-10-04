@@ -437,6 +437,21 @@ class Probe:
         _, public_b = self.client(b).request("GET", "/api/v1/public/donation-funds")
         self.check("B's donate page never lists A's funds", "Probe fund A" not in json.dumps(public_b), str(public_b)[:120])
 
+        print("\ndevotee activity (ADR 0023)")
+        _, devs = admin_a.request("GET", "/api/v1/devotees?size=1")
+        dev_id = devs["items"][0]["id"] if isinstance(devs, dict) and devs.get("items") else 0
+        status, act = member.request("GET", f"/api/v1/devotees/{dev_id}/activity")
+        self.check("a member sees no donations or seva contacts in activity",
+                   status == 200 and isinstance(act, dict) and act.get("donations") is None and act.get("sevaOffers") is None,
+                   f"{status} {str(act)[:120]}")
+        status, act = admin_a.request("GET", f"/api/v1/devotees/{dev_id}/activity")
+        self.check("an admin sees the donations section", status == 200 and isinstance(act, dict)
+                   and act.get("donations") is not None, f"{status}")
+        self.expect("B's admin cannot read A's devotee activity", 404,
+                    admin_b.request("GET", f"/api/v1/devotees/{dev_id}/activity"))
+        self.expect("a limited member (no Devotees) cannot read activity", 403,
+                    limited.request("GET", f"/api/v1/devotees/{dev_id}/activity"))
+
         print("\nCSRF")
         self.expect("state change without the CSRF header", 403,
                     admin_a.request("POST", "/api/v1/users", body=new_user, csrf=False))
