@@ -12,13 +12,18 @@ import { MandirLogo } from "@/components/MandirLogo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Alert } from "@/components/ui";
 import { clock, darshanState } from "@/lib/darshan";
+import { displayPhone, type MySeva } from "@/lib/devotee";
 import { describeError } from "@/lib/errors";
 import { DEVOTEE_CHANGED, type PublicTemple } from "@/lib/temple";
 
 const TempleContext = createContext<PublicTemple | null>(null);
+const DevoteeContext = createContext<MySeva | null>(null);
 
 /** The temple's public data, loaded once by the shell (null while loading). */
 export const useTemple = () => useContext(TempleContext);
+
+/** The signed-in devotee (null when signed out), so forms can start with their details. */
+export const useDevotee = () => useContext(DevoteeContext);
 
 function subscribeMinute(onChange: () => void) {
   const id = setInterval(onChange, 20_000);
@@ -44,7 +49,7 @@ export function MandirShell({ children }: { children: React.ReactNode }) {
   const phrase = (word: string, time: string) => (lang === "hi" ? `${time} ${word}` : `${word} ${time}`);
   const [temple, setTemple] = useState<PublicTemple | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [devotee, setDevotee] = useState<string | null>(null);
+  const [devotee, setDevotee] = useState<MySeva | null>(null);
 
   useEffect(() => {
     api.get<PublicTemple>("/public/temple").then(setTemple).catch((err) => setError(describeError(err)));
@@ -52,8 +57,7 @@ export function MandirShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     function load() {
-      api.get<{ contact: string }>("/portal/me", { allowUnauthorized: true })
-        .then((m) => setDevotee(m.contact), () => setDevotee(null));
+      api.get<MySeva>("/portal/me", { allowUnauthorized: true }).then(setDevotee, () => setDevotee(null));
     }
     load();
     window.addEventListener(DEVOTEE_CHANGED, load);
@@ -69,10 +73,14 @@ export function MandirShell({ children }: { children: React.ReactNode }) {
     { href: "/my-seva", label: t.mandir.tabs.myMandir, icon: "user", show: true },
   ];
 
+  const who = devotee
+    ? devotee.profile.fullName ?? (devotee.channel === "SMS" ? displayPhone(devotee.contact) : devotee.contact)
+    : null;
   const state = temple && now ? darshanState(temple.hours, temple.status, temple.statusNote, now) : null;
 
   return (
     <TempleContext.Provider value={temple}>
+    <DevoteeContext.Provider value={devotee}>
       <div className="mandir flex min-h-dvh flex-col">
         <header className="sticky top-0 z-30 border-b border-line bg-surface/95 shadow-xs backdrop-blur supports-[backdrop-filter]:bg-surface/85">
           <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
@@ -93,8 +101,8 @@ export function MandirShell({ children }: { children: React.ReactNode }) {
                 className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary-strong hover:bg-primary/15 sm:px-3"
               >
                 <MandirIcon name="user" className="size-4" />
-                <span className="hidden max-w-[10rem] truncate sm:inline">{devotee ?? t.mandir.signIn}</span>
-                <span className="sr-only sm:hidden">{devotee ?? t.mandir.signIn}</span>
+                <span className="hidden max-w-[10rem] truncate sm:inline">{who ?? t.mandir.signIn}</span>
+                <span className="sr-only sm:hidden">{who ?? t.mandir.signIn}</span>
               </Link>
             </div>
           </div>
@@ -162,6 +170,7 @@ export function MandirShell({ children }: { children: React.ReactNode }) {
           </div>
         </footer>
       </div>
+    </DevoteeContext.Provider>
     </TempleContext.Provider>
   );
 }

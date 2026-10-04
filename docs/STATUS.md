@@ -401,6 +401,15 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
 - Panchang + darshan unit tests (14), **mutation-checked 12/12**.
 - Not yet: the prototype's delete actions and staff-created volunteers (next PR).
 
+## Devotee contacts + profile ✅ (this PR, ADR 0025)
+- `V23`: `devotee_contact` (forced RLS), `devotee_account.merged_into` and profile columns. Link a
+  phone/email with its own OTP (`POST /portal/contacts`); any linked contact signs in to the same
+  account; "my seva" spans all of them. Linking a contact with its own account merges it and
+  revokes that account's sessions. Staff-entered contacts are never trusted.
+- Devotee profile (`PUT /portal/profile`) pre-fills sankalp, donation, pass and seva forms.
+- Local-only SMS stand-in to Mailpit, so phone login works with `make run`.
+- `DevoteeContactsTest` (6); probe +3 rows. Verified end to end in a browser.
+
 **All of the parallel session's MVP features are now rebuilt and reviewed.** Then: M5 containers →
 M6 AWS → M7 gates.
 

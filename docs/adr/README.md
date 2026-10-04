@@ -30,3 +30,4 @@ change a decision, add a new ADR that supersedes the old one.
 | [0022](0022-donation-funds.md) | Earmarked funds: managed per-trust list, active-only for new gifts, reversals net out per fund, online earmarking | Accepted |
 | [0023](0023-devotee-activity.md) | Devotee activity on the record: one read, each section gated by its own module and role, net donations count reversals | Accepted |
 | [0024](0024-mandircenter-temple-site.md) | MandirCenter temple site: structured darshan hours, same-day status override, aarti timetable, calculated panchang | Accepted |
+| [0025](0025-devotee-contacts-and-profile.md) | One devotee, several OTP-verified contacts (merge on link), the devotee's own profile, forms pre-filled | Accepted |

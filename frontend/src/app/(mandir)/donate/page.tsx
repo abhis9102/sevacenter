@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 
 import { api } from "@/components/apiClient";
-import { MandirPageTitle } from "@/components/MandirShell";
+import { MandirPageTitle, useDevotee } from "@/components/MandirShell";
+import { prefill } from "@/lib/devotee";
 import { Alert, Button, Card, TextField } from "@/components/ui";
 import { describeError } from "@/lib/errors";
 import { loadCheckout, validAmount, type CheckoutSuccess } from "@/lib/razorpay";
@@ -36,10 +37,13 @@ export default function DonatePage() {
   const [info, setInfo] = useState<Info | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [amount, setAmount] = useState("501");
-  const [name, setName] = useState("");
+  // null = not typed in yet: a signed-in devotee's own details fill it (ADR 0025).
+  const pre = prefill(useDevotee());
+  const [nameIn, setName] = useState<string | null>(null);
   const [purpose, setPurpose] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
+  const [phoneIn, setPhone] = useState<string | null>(null);
+  const [emailIn, setEmail] = useState<string | null>(null);
+  const name = nameIn ?? pre.name, phone = phoneIn ?? pre.phone, email = emailIn ?? pre.email;
   const [funds, setFunds] = useState<{ id: number; name: string }[]>([]);
   const [fundId, setFundId] = useState("");
   const [busy, setBusy] = useState(false);

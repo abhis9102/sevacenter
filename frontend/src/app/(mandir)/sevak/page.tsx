@@ -3,13 +3,17 @@
 import { useState } from "react";
 
 import { api } from "@/components/apiClient";
-import { MandirPageTitle } from "@/components/MandirShell";
+import { MandirPageTitle, useDevotee } from "@/components/MandirShell";
+import { prefill } from "@/lib/devotee";
 import { Alert, Button, Card, TextField } from "@/components/ui";
 import { ApiError, describeError } from "@/lib/errors";
 
 /** Public volunteer signup on the trust's own host (ADR 0015). No sign-in. */
 export default function SevakPage() {
-  const [form, setForm] = useState({ fullName: "", phone: "", email: "", sevaAreas: "", availability: "", notes: "" });
+  // null = untouched: a signed-in devotee's own details fill it (ADR 0025).
+  const pre = prefill(useDevotee());
+  const [formIn, setForm] = useState<Record<"fullName" | "phone" | "email" | "sevaAreas" | "availability" | "notes", string> | null>(null);
+  const form = formIn ?? { fullName: pre.name, phone: pre.phone, email: pre.email, sevaAreas: "", availability: "", notes: "" };
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
