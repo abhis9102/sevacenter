@@ -419,6 +419,13 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
 - `V24`: `booked_by`, `counter_mode`, `issued_by`; contact optional for staff-made records.
 - Priests & Pujaris view (ADR 0027, `V25`): priests per temple, assigned to each sankalp on the roster.
 
+## Sevak Hub + Dashboard on the prototype layout ✅ (this PR, ADR 0028)
+- Sevak Hub: counts strip; Teams & Shifts Roster (teams with shifts and targets, create/edit/delete,
+  deploy/release); Volunteer Directory (approve/decline, team picker, remove); Register Volunteer.
+  `V26`: `seva_team`, `seva_shift`, `sevak_signup.team_id/duty/registered_by/removed_at`.
+- Dashboard: greeting with today's panchang, KPI cards, quick operations, today's sankalp roster
+  with priests, upcoming utsavs, recent donations. Every card still gated by role + module.
+
 **All of the parallel session's MVP features are now rebuilt and reviewed.** Then: M5 containers →
 M6 AWS → M7 gates.
 

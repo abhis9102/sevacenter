@@ -1,5 +1,14 @@
 package app.sevacenter.sevak;
 
+import java.time.LocalTime;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import java.time.OffsetDateTime;
 import java.util.List;
 
@@ -67,6 +76,59 @@ public class SevakController {
         return SignupResponse.of(service.review(id, false, staff.userId()));
     }
 
+    // --- staff: register, assign, remove; teams (ADR 0028) -------------------------------------------
+
+    @PostMapping("/api/v1/sevaks")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('LEADER')")
+    public SignupResponse register(@Valid @RequestBody RegisterRequest r, @AuthenticationPrincipal StaffUser staff) {
+        return SignupResponse.of(service.register(r.fullName(), r.phone(), r.email(), r.sevaAreas(), r.availability(),
+                r.notes(), r.approved() == null || r.approved(), r.teamId(), r.duty(), staff.userId()));
+    }
+
+    @PostMapping("/api/v1/sevaks/{id:\\d+}/assign")
+    @PreAuthorize("hasRole('LEADER')")
+    public SignupResponse assign(@PathVariable long id, @Valid @RequestBody AssignRequest r, @AuthenticationPrincipal StaffUser staff) {
+        return SignupResponse.of(service.assign(id, r.teamId(), r.duty(), staff.userId()));
+    }
+
+    @DeleteMapping("/api/v1/sevaks/{id:\\d+}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('LEADER')")
+    public void remove(@PathVariable long id, @AuthenticationPrincipal StaffUser staff) {
+        service.remove(id, staff.userId());
+    }
+
+    @GetMapping("/api/v1/seva-teams")
+    @PreAuthorize("hasRole('LEADER')")
+    public List<TeamResponse> teams() {
+        Map<Long, List<ShiftResponse>> byTeam = service.allShifts().stream().collect(Collectors.groupingBy(SevaShift::getTeamId,
+                Collectors.mapping(sh -> new ShiftResponse(sh.getName(), sh.getStartsAt(), sh.getEndsAt()), Collectors.toList())));
+        return service.teams().stream().map(t -> TeamResponse.of(t, byTeam.getOrDefault(t.getId(), List.of()))).toList();
+    }
+
+    @PostMapping("/api/v1/seva-teams")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('LEADER')")
+    public TeamResponse createTeam(@Valid @RequestBody TeamRequest r, @AuthenticationPrincipal StaffUser staff) {
+        SevaTeam t = service.saveTeam(null, r.name(), r.description(), r.targetCount(), r.icon(), r.shiftDetails(), staff.userId());
+        return TeamResponse.of(t, r.shiftResponses());
+    }
+
+    @PutMapping("/api/v1/seva-teams/{id:\\d+}")
+    @PreAuthorize("hasRole('LEADER')")
+    public TeamResponse editTeam(@PathVariable long id, @Valid @RequestBody TeamRequest r, @AuthenticationPrincipal StaffUser staff) {
+        SevaTeam t = service.saveTeam(id, r.name(), r.description(), r.targetCount(), r.icon(), r.shiftDetails(), staff.userId());
+        return TeamResponse.of(t, r.shiftResponses());
+    }
+
+    @DeleteMapping("/api/v1/seva-teams/{id:\\d+}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('LEADER')")
+    public void deleteTeam(@PathVariable long id, @AuthenticationPrincipal StaffUser staff) {
+        service.deleteTeam(id, staff.userId());
+    }
+
     /** Examples are valid on purpose, so DAST attacks reach the database. */
     public record SignupRequest(
             @Schema(example = "Ravi Kumar") @NotBlank @Size(max = 120) String fullName,
@@ -79,11 +141,58 @@ public class SevakController {
     /** The public only learns that it worked. */
     public record Thanks(String name) { }
 
+    public record RegisterRequest(
+            @Schema(example = "Ravi Kumar") @NotBlank @Size(max = 120) String fullName,
+            @Schema(example = "98765 43210") @Size(max = 30) String phone,
+            @Schema(example = "ravi@example.org") @Size(max = 254) String email,
+            @Schema(example = "Annadanam kitchen") @NotBlank @Size(max = 300) String sevaAreas,
+            @Schema(example = "Weekends") @Size(max = 300) String availability,
+            @Schema(example = "Cooked for 500 at earlier bhandaras") @Size(max = 1000) String notes,
+            @Schema(example = "true", description = "Default true: staff registering someone approves them") Boolean approved,
+            @Schema(example = "1") Long teamId,
+            @Schema(example = "Navratri morning kitchen") @Size(max = 120) String duty) { }
+
+    public record AssignRequest(
+            @Schema(example = "1", description = "null releases them from their team") Long teamId,
+            @Schema(example = "Navratri morning kitchen") @Size(max = 120) String duty) { }
+
+    public record ShiftRequest(
+            @Schema(example = "Pratah preparation") @NotBlank @Size(max = 60) String name,
+            @Schema(example = "06:00") @NotNull LocalTime startsAt,
+            @Schema(example = "12:00") @NotNull LocalTime endsAt) { }
+
+    public record TeamRequest(
+            @Schema(example = "Annadanam kitchen") @NotBlank @Size(max = 80) String name,
+            @Schema(example = "Cooking and serving mahaprasad") @Size(max = 300) String description,
+            @Schema(example = "15") @Min(1) @Max(1000) Integer targetCount,
+            @Schema(example = "kitchen", description = "One of the listed icon names") @Size(max = 24) String icon,
+            @Size(max = SevakService.MAX_SHIFTS) List<@Valid ShiftRequest> shifts) {
+        List<SevakService.ShiftDetails> shiftDetails() {
+            return shifts == null ? List.of()
+                    : shifts.stream().map(s -> new SevakService.ShiftDetails(s.name(), s.startsAt(), s.endsAt())).toList();
+        }
+
+        List<ShiftResponse> shiftResponses() {
+            return shifts == null ? List.of() : shifts.stream().map(s -> new ShiftResponse(s.name().strip(), s.startsAt(), s.endsAt())).toList();
+        }
+    }
+
+    public record ShiftResponse(String name, LocalTime startsAt, LocalTime endsAt) { }
+
+    public record TeamResponse(long id, String name, String description, Integer targetCount, String icon,
+                               List<ShiftResponse> shifts) {
+        static TeamResponse of(SevaTeam t, List<ShiftResponse> shifts) {
+            return new TeamResponse(t.getId(), t.getName(), t.getDescription(), t.getTargetCount(), t.getIcon(), shifts);
+        }
+    }
+
     public record SignupResponse(long id, String fullName, String phone, String email, String sevaAreas,
-                                 String availability, String notes, String status, OffsetDateTime createdAt) {
+                                 String availability, String notes, String status, OffsetDateTime createdAt,
+                                 Long teamId, String duty, boolean registeredByStaff) {
         static SignupResponse of(SevakSignup s) {
             return new SignupResponse(s.getId(), s.getFullName(), s.getPhone(), s.getEmail(), s.getSevaAreas(),
-                    s.getAvailability(), s.getNotes(), s.getStatus(), s.getCreatedAt());
+                    s.getAvailability(), s.getNotes(), s.getStatus(), s.getCreatedAt(), s.getTeamId(), s.getDuty(),
+                    s.isRegisteredByStaff());
         }
     }
 }
