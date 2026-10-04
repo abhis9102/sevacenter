@@ -69,3 +69,13 @@ export function sectionsOf(modules: NavModule[]): SectionGroup[] {
   return SECTIONS.map((section) => ({ section, modules: modules.filter((m) => m.section === section) }))
     .filter((g) => g.modules.length > 0);
 }
+
+/** Signed-in pages that aren't modules, named in the switcher button when you're on them. */
+export const OTHER_PAGES: ReadonlyArray<{ href: string; label: keyof Translations["nav"] }> = [
+  { href: "/profile", label: "profile" },
+];
+
+/** What the switcher button says on this path when it isn't a module page (null: the menu title). */
+export function otherPageFor(pathname: string): keyof Translations["nav"] | null {
+  return OTHER_PAGES.find((p) => isActive(pathname, p.href))?.label ?? null;
+}
