@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { api } from "@/components/apiClient";
-import { Diya } from "@/components/Diya";
+import { MandirLogo } from "@/components/MandirLogo";
 import { Alert, Card } from "@/components/ui";
 import { describeError } from "@/lib/errors";
 
@@ -45,7 +45,7 @@ export function TemplePublicPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 px-4 py-10">
       <header className="flex items-center gap-3">
-        <Diya className="size-10" />
+        <MandirLogo className="size-10" />
         <div>
           <h1 className="text-2xl font-semibold">{temple?.trustName ?? "…"}</h1>
           {temple?.deity ? <p className="text-muted">{temple.deity}</p> : null}

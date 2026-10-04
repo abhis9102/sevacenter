@@ -369,7 +369,16 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
   without Devotees no longer lands on a page they can't open). Pure helpers unit-tested (IST date,
   upcoming filter).
 
-Next (user decisions 2026-10-04): dark mode + logo.
+## Theme switch + MandirCenter mark ✅ (this PR)
+- Dark mode already followed the device; staff can now pick device / dark / light. The choice is an
+  `sc_theme` cookie (two literal values only) that the server applies as `<html data-theme>`: no flash
+  and no inline script under the nonce CSP. Hydration-safe toggle (useSyncExternalStore).
+- Donations screen moved from hardcoded light colours (176 classes) to theme tokens, so it works dark.
+- MandirCenter mark on the public temple page (gradient ids per instance via useId). Staff app keeps
+  the diya. Theme helpers unit-tested.
+
+**All of the parallel session's MVP features are now rebuilt and reviewed.** Then: M5 containers →
+M6 AWS → M7 gates.
 
 **MVP features are now complete.** Then: M5 containers → M6 AWS → M7 gates.
 

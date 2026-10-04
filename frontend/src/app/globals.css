@@ -32,8 +32,38 @@
   color-scheme: light;
 }
 
+/*
+ * Dark theme: follows the device unless the user picked one (the sc_theme cookie, applied as
+ * <html data-theme> by the server, so there's no flash and no inline script under our strict CSP).
+ */
+:root[data-theme="dark"] {
+    --sc-primary: #e6903f;
+    --sc-primary-strong: #f3ac68;
+    --sc-on-primary: #191410;
+    --sc-maroon: #d6788a;
+    --sc-gold: #e0bc6a;
+
+    --bg: #191410;
+    --surface: #221b14;
+    --surface-2: #2c241b;
+    --fg: #f4eadd;
+    --muted: #b2a595;
+    --border: #3a2f24;
+
+    --success: #5cb487;
+    --warning: #e4b04a;
+    --danger: #e8766b;
+    --info: #6fb6ce;
+
+    --mark-flame: #fb8521;
+    --mark-core: #f3bc4e;
+    --mark-bowl: #e0808c;
+
+    color-scheme: dark;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --sc-primary: #e6903f;
     --sc-primary-strong: #f3ac68;
     --sc-on-primary: #191410;
