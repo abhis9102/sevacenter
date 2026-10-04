@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
 
-import { MODULES, isActive, moduleForPath, visibleModules } from "../src/lib/apps.js";
+import { MODULES, isActive, moduleForPath, sectionsOf, visibleModules } from "../src/lib/apps.js";
 
 const ids = (me: Parameters<typeof visibleModules>[0]) => visibleModules(me).map((m) => m.id);
 
@@ -36,5 +36,17 @@ describe("modules", () => {
     assert.equal(moduleForPath(all, "/temple")?.id, "mandir");
     assert.equal(moduleForPath(all, "/profile"), null);
     assert.equal(isActive("/devoteesx", "/devotees"), false);
+  });
+
+  it("keeps related modules together: finance, administration, people, pujas and utsavs", () => {
+    const groups = sectionsOf(visibleModules({ role: "TRUST_ADMIN" })).map((g) => [g.section, g.modules.map((m) => m.id)]);
+    assert.deepEqual(groups, [
+      ["dashboard", ["dashboard"]], ["people", ["devotees", "volunteers"]], ["finance", ["donations", "payments"]],
+      ["worship", ["pujas", "events"]], ["mandir", ["mandir"]], ["admin", ["staff", "audit"]],
+    ]);
+    // A leader's finance section has the ledger but no payment setup; members have no finance at all.
+    assert.deepEqual(sectionsOf(visibleModules({ role: "LEADER" })).find((g) => g.section === "finance")?.modules.map((m) => m.id),
+      ["donations"]);
+    assert.ok(!sectionsOf(visibleModules({ role: "MEMBER" })).some((g) => g.section === "finance" || g.section === "admin"));
   });
 });

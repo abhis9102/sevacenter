@@ -41,7 +41,7 @@ export interface Translations {
     newTab: string;
     describe: Record<"dashboard" | "devotees" | "donations" | "payments" | "pujas" | "events" | "volunteers" | "mandir"
       | "staff" | "audit", string>;
-    categories: Record<"operations" | "people" | "giving" | "worship" | "mandir" | "admin", string>;
+    sections: Record<"dashboard" | "people" | "finance" | "worship" | "mandir" | "admin", { name: string; description: string }>;
   };
   mandir: {
     tagline: string;
@@ -335,9 +335,9 @@ export const DICTIONARIES: Record<Language, Translations> = {
     },
     nav: {
       devotees: "Devotees",
-      staff: "Staff",
+      staff: "Staff & permissions",
       donations: "Donations",
-      payments: "Payments",
+      payments: "Payment setup",
       dashboard: "Dashboard",
       audit: "Audit Trail",
       events: "Utsavs & Passes",
@@ -364,8 +364,14 @@ export const DICTIONARIES: Record<Language, Translations> = {
         staff: "Staff, roles and module access",
         audit: "Every staff action, as it happened",
       },
-      categories: { operations: "Operations", people: "People", giving: "Finance & 80G", worship: "Pujas & Utsavs",
-        mandir: "Public portal", admin: "Administration" },
+      sections: {
+        dashboard: { name: "Dashboard", description: "Today's pujas, utsavs, giving and seva at a glance" },
+        people: { name: "People", description: "Devotees and the sevak hub" },
+        finance: { name: "Finance & 80G", description: "Donation ledger, 80G receipts and payment setup" },
+        worship: { name: "Pujas & Utsavs", description: "Sankalp roster, puja catalog, utsavs and gate passes" },
+        mandir: { name: "Mandir Center", description: "Your public temple site: darshan, aartis, notices" },
+        admin: { name: "Administration", description: "Staff, permissions and the audit trail" },
+      },
     },
 
     mandir: {
@@ -682,9 +688,9 @@ export const DICTIONARIES: Record<Language, Translations> = {
     },
     nav: {
       devotees: "भक्त (Devotees)",
-      staff: "कर्मचारी (Staff)",
+      staff: "कर्मचारी एवं अनुमतियाँ (Staff)",
       donations: "दान (Donations)",
-      payments: "भुगतान (Payments)",
+      payments: "भुगतान व्यवस्था (Payment setup)",
       dashboard: "डैशबोर्ड (Dashboard)",
       audit: "ऑडिट लॉग (Audit Trail)",
       events: "उत्सव एवं पास (Utsavs)",
@@ -711,8 +717,14 @@ export const DICTIONARIES: Record<Language, Translations> = {
         staff: "कर्मचारी, भूमिकाएँ और अनुमतियाँ",
         audit: "कर्मचारियों की हर कार्रवाई का रिकॉर्ड",
       },
-      categories: { operations: "संचालन", people: "भक्तजन", giving: "दान एवं 80G", worship: "पूजा एवं उत्सव",
-        mandir: "सार्वजनिक पोर्टल", admin: "प्रशासन" },
+      sections: {
+        dashboard: { name: "डैशबोर्ड", description: "आज की पूजा, उत्सव, दान और सेवा एक नज़र में" },
+        people: { name: "भक्तजन", description: "भक्त और सेवक केंद्र" },
+        finance: { name: "दान एवं 80G", description: "दान बहीखाता, 80G रसीदें और भुगतान व्यवस्था" },
+        worship: { name: "पूजा एवं उत्सव", description: "संकल्प सूची, पूजा सूची, उत्सव और पास" },
+        mandir: { name: "मंदिर सेंटर", description: "आपका सार्वजनिक मंदिर पृष्ठ: दर्शन, आरती, सूचना" },
+        admin: { name: "प्रशासन", description: "कर्मचारी, अनुमतियाँ और ऑडिट लॉग" },
+      },
     },
 
     mandir: {

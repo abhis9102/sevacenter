@@ -16,7 +16,7 @@ import { Alert, Spinner } from "@/components/ui";
 import { UserMenu } from "@/components/UserMenu";
 import { ApiError, describeError } from "@/lib/errors";
 import { MandirLogo } from "@/components/MandirLogo";
-import { moduleForPath, visibleModules } from "@/lib/apps";
+import { isActive, moduleForPath, sectionsOf, visibleModules } from "@/lib/apps";
 import type { Me } from "@/lib/types";
 
 /**
@@ -96,13 +96,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const modules = visibleModules(me);
   const current = moduleForPath(modules, pathname);
+  const sections = sectionsOf(modules);
+  const siblings = current ? sections.find((g) => g.section === current.section)?.modules ?? [] : [];
 
   return (
     <SessionProvider value={me}>
       <div className="flex min-h-dvh flex-col">
         <header className="sticky top-0 z-40 border-b border-line bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/85">
           <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-2.5 sm:gap-3">
-            <AppSwitcher modules={modules} current={current} />
+            <AppSwitcher sections={sections} current={current} />
             <span className="hidden h-5 w-px shrink-0 bg-line sm:block" aria-hidden="true" />
             <Link href="/dashboard" className="hidden items-center gap-2 sm:flex" aria-label="SevaCenter home">
               <Diya className="size-7" />
@@ -131,7 +133,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
+          {current && siblings.length > 1 ? (
+            // A section's pages (e.g. Finance: Donations, Payment setup) switch here, at the top of the page.
+            <nav aria-label={t.apps.sections[current.section].name}
+                 className="mb-6 inline-flex flex-wrap items-center gap-1 rounded-[12px] border border-line bg-surface p-1 shadow-xs">
+              <span className="px-2 text-xs font-semibold uppercase tracking-wider text-muted">{t.apps.sections[current.section].name}</span>
+              {siblings.map((m) => (
+                <Link key={m.id} href={m.href} aria-current={isActive(pathname, m.href) ? "page" : undefined}
+                      className={`rounded-[9px] px-3 py-1.5 text-sm font-semibold transition-colors ${
+                        isActive(pathname, m.href) ? "bg-primary/12 text-primary-strong" : "text-muted hover:bg-surface-2 hover:text-fg"}`}>
+                  {t.nav[m.label]}
+                </Link>
+              ))}
+            </nav>
+          ) : null}
+          {children}
+        </main>
       </div>
     </SessionProvider>
   );

@@ -10,10 +10,21 @@ switcher already lists every module. The bar holds the **module switcher** (bord
 icon + the current module's name), the diya and SevaCenter wordmark, the trust's slug with a live
 dot, a **Mandir Center ↗** link to the temple's public site, theme, language and the user menu.
 
-The switcher panel shows the same modules as tiles: icon on a category tint, name, category badge
-(Operations, People, Finance & 80G, Pujas & Utsavs, Public portal, Administration) and a one-line
-description, in English and Hindi. Inside a module, its own views (e.g. Sankalp roster / Puja
-catalog) are a segmented switcher on the page, not more nav tiers.
+**Related modules live together** (decided in review): the switcher lists six sections, not ten
+modules, and a section's pages switch from a small control at the top of the page.
+
+| Section | Pages |
+|---|---|
+| Dashboard | — |
+| People | Devotees · Sevak Hub |
+| Finance & 80G | Donations · Payment setup |
+| Pujas & Utsavs | Pujas & Sankalp · Utsavs & Passes |
+| Mandir Center | — |
+| Administration | Staff & permissions · Audit Trail |
+
+Each switcher tile has the section's icon on its tint, name, a one-line description and its pages
+as chips (en/hi). The header button names the current section. Inside a page, its own views (e.g.
+Sankalp roster / Puja catalog) are a segmented switcher beside the title.
 
 "Temple site/page" is called **Mandir Center** everywhere on the staff side: it is the product name
 of the public temple site.
