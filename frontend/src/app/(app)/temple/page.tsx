@@ -82,7 +82,7 @@ export default function TempleSettingsPage() {
         },
       });
       apply(saved);
-      setNotice({ tone: "success", text: "Saved. It's live on your temple's public page." });
+      setNotice({ tone: "success", text: "Saved. It's live on your Mandir Center." });
     } catch (err) {
       if (err instanceof ApiError) setFields(err.fields);
       setNotice({ tone: "danger", text: describeError(err) });
@@ -110,9 +110,9 @@ export default function TempleSettingsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Temple page"
-        description="What devotees see on your temple's own address. Leave anything blank to hide it."
-        actions={<a href="/" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary-strong">View temple site ↗</a>}
+        title="Mandir Center"
+        description="Your temple's public Mandir Center: what devotees see at its own address. Leave anything blank to hide it."
+        actions={<a href="/" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary-strong">Open Mandir Center ↗</a>}
       />
       {notice ? <Alert tone={notice.tone}>{notice.text}</Alert> : null}
 
@@ -213,8 +213,8 @@ export default function TempleSettingsPage() {
           </ol>
         </Card>
 
-        {canEdit ? <div><Button type="submit" busy={busy}>Save temple page</Button></div>
-          : <p className="text-sm text-muted">Only leaders can edit this page.</p>}
+        {canEdit ? <div><Button type="submit" busy={busy}>Save Mandir Center</Button></div>
+          : <p className="text-sm text-muted">Only leaders can edit the Mandir Center.</p>}
       </form>
     </div>
   );
