@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
 import { api } from "@/components/apiClient";
+import { DevoteeActivity } from "@/components/DevoteeActivity";
 import { DevoteeForm } from "@/components/DevoteeForm";
 import { MaskedNote } from "@/components/MaskedNote";
 import { useLanguage } from "@/components/LanguageProvider";
@@ -160,6 +161,9 @@ function DevoteeDetail() {
               <Field label={t.devotees.detail.updatedAt} value={formatDateTime(devotee.updatedAt)} />
             </dl>
           </Card>
+          <div className="lg:col-span-3">
+            <DevoteeActivity devoteeId={devotee.id} />
+          </div>
         </div>
       )}
 

@@ -18,6 +18,10 @@ public interface DonationRepository extends JpaRepository<Donation, Long> {
 
     boolean existsByDevoteeId(Long devoteeId);
 
+    /** Every ledger entry linked to a devotee, reversals included (they net the total). */
+    @Query("select d from Donation d where d.devoteeId = ?1 order by d.receivedOn desc, d.id desc")
+    List<Donation> forDevotee(Long devoteeId, Pageable page);
+
     /** Net totals per mode for a date range: reversals are negative, so they net out. */
     @Query("select d.mode as mode, sum(d.amountPaise) as netPaise, "
             + "sum(case when d.reversesId is null then 1 else 0 end) as donations, "

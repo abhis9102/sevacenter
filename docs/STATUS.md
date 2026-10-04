@@ -377,6 +377,13 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
 - MandirCenter mark on the public temple page (gradient ids per instance via useId). Staff app keeps
   the diya. Theme helpers unit-tested.
 
+## Devotee activity on the record ✅ (this PR, ADR 0023)
+- `GET /devotees/{id}/activity`: donations (ledger link, net counts reversals, receipt number),
+  puja bookings, event passes, seva offers (phone/email match). **Each section gated by its own role
+  and module** (null = not allowed, [] = none). Shown on the devotee page.
+- Rebuilt from a parallel-session version that bypassed module limits, showed money to members and
+  counted reversed gifts. `DevoteeActivityTest` (4), **mutation-checked 10/10**; probe +4 rows.
+
 **All of the parallel session's MVP features are now rebuilt and reviewed.** Then: M5 containers →
 M6 AWS → M7 gates.
 
