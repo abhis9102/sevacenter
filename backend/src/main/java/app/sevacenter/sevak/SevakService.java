@@ -25,6 +25,10 @@ public class SevakService {
     /** Plenty for a temple; keeps a team's card readable. */
     static final int MAX_SHIFTS = 8;
 
+    /** The icons a team can show; the frontend draws exactly these (lib/sevak.ts SEVA_ICON_KEYS). */
+    static final java.util.Set<String> ICONS = java.util.Set.of(
+            "hands", "kitchen", "meal", "prasad", "cow", "queue", "crowd", "elder", "wheelchair", "child", "flower", "garland", "rangoli", "lamp", "bell", "flag", "temple", "music", "mic", "footwear", "broom", "water", "first-aid", "shield", "parking", "transport", "tent", "light", "tools", "camera", "book", "info", "phone", "clipboard", "rupee", "gift", "leaf", "star");
+
     private final SevakSignupRepository signups;
     private final SevaTeamRepository teams;
     private final SevaShiftRepository shifts;
@@ -114,14 +118,17 @@ public class SevakService {
     public record ShiftDetails(String name, java.time.LocalTime startsAt, java.time.LocalTime endsAt) { }
 
     @Transactional
-    public SevaTeam saveTeam(Long id, String name, String description, Integer targetCount, List<ShiftDetails> shiftList,
-                             long staffId) {
+    public SevaTeam saveTeam(Long id, String name, String description, Integer targetCount, String icon,
+                             List<ShiftDetails> shiftList, long staffId) {
         String clean = required("name", name, 80);
         if (teams.nameTaken(clean, id)) {
             throw new InvalidFieldException("name", "a team with this name already exists");
         }
         if (targetCount != null && (targetCount < 1 || targetCount > 1000)) {
             throw new InvalidFieldException("targetCount", "target must be between 1 and 1000");
+        }
+        if (icon != null && !ICONS.contains(icon)) {
+            throw new InvalidFieldException("icon", "choose one of the listed icons");
         }
         List<ShiftDetails> list = shiftList == null ? List.of() : shiftList;
         if (list.size() > MAX_SHIFTS) {
@@ -134,7 +141,7 @@ public class SevakService {
             }
         }
         SevaTeam t = id == null ? new SevaTeam(currentTenant()) : liveTeam(id);
-        t.edit(clean, optional("description", description, 300), targetCount, staffId, OffsetDateTime.now(clock));
+        t.edit(clean, optional("description", description, 300), targetCount, icon, staffId, OffsetDateTime.now(clock));
         t = teams.saveAndFlush(t);
         teams.deleteShifts(t.getId(), currentTenant());
         for (ShiftDetails sh : list) {

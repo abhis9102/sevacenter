@@ -3,12 +3,12 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { api } from "@/components/apiClient";
-import { MandirIcon } from "@/components/MandirIcons";
+import { SevaIcon, SevaIconPicker } from "@/components/SevaIcons";
 import { ConfirmDialog, EmptyState, Pill, StaffTitle, StatCard, useView, ViewSwitcher } from "@/components/staff";
 import { Alert, Button, Card, Dialog, SelectField, TextField } from "@/components/ui";
 import { ApiError, describeError } from "@/lib/errors";
 import { formatDate } from "@/lib/format";
-import { hhmm, hubStats, type Signup, type Team } from "@/lib/sevak";
+import { hhmm, hubStats, sevaIcon, type SevaIconKey, type Signup, type Team } from "@/lib/sevak";
 
 const STATUS = {
   NEW: { tone: "warning", label: "Pending review" },
@@ -105,8 +105,8 @@ export default function VolunteersPage() {
                 return (
                   <Card key={t.id} className="flex flex-col gap-3">
                     <div className="flex items-start gap-3">
-                      <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-gold/25 text-primary-strong">
-                        <MandirIcon name="sevak" className="size-5" />
+                      <span className="flex size-11 shrink-0 items-center justify-center rounded-[12px] bg-gradient-to-br from-primary/20 to-gold/25 text-primary-strong">
+                        <SevaIcon icon={t.icon} className="size-6" />
                       </span>
                       <div className="min-w-0 flex-1">
                         <h2 className="text-lg font-semibold leading-tight">{t.name}</h2>
@@ -249,6 +249,7 @@ export default function VolunteersPage() {
 function TeamDialog({ team, onClose, onSaved }: { team: Team | null; onClose: () => void; onSaved: (name: string) => void }) {
   const [f, setF] = useState({ name: team?.name ?? "", description: team?.description ?? "",
                                targetCount: team?.targetCount ? String(team.targetCount) : "" });
+  const [icon, setIcon] = useState<SevaIconKey>(sevaIcon(team?.icon));
   const [shifts, setShifts] = useState(team?.shifts.map((s) => ({ name: s.name, startsAt: hhmm(s.startsAt), endsAt: hhmm(s.endsAt) }))
     ?? [{ name: "", startsAt: "", endsAt: "" }]);
   const [busy, setBusy] = useState(false);
@@ -265,7 +266,7 @@ function TeamDialog({ team, onClose, onSaved }: { team: Team | null; onClose: ()
     try {
       await api.request(team ? `/seva-teams/${team.id}` : "/seva-teams", {
         method: team ? "PUT" : "POST",
-        json: { name: f.name.trim(), description: f.description.trim() || null,
+        json: { name: f.name.trim(), description: f.description.trim() || null, icon,
                 targetCount: f.targetCount ? Number(f.targetCount) : null,
                 shifts: shifts.filter((s) => s.name.trim() || s.startsAt || s.endsAt)
                   .map((s) => ({ name: s.name.trim(), startsAt: s.startsAt || null, endsAt: s.endsAt || null })) },
@@ -289,6 +290,8 @@ function TeamDialog({ team, onClose, onSaved }: { team: Team | null; onClose: ()
                      onChange={(e) => setF({ ...f, targetCount: e.target.value.replace(/\D/g, "") })} error={fields.targetCount} />
         </div>
         <TextField label="What they do (optional)" value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />
+        <SevaIconPicker value={icon} onChange={setIcon} />
+        {fields.icon ? <Alert tone="danger">{fields.icon}</Alert> : null}
         <fieldset className="flex flex-col gap-2">
           <legend className="mb-1 text-sm font-medium">Shifts</legend>
           {fields.shifts ? <Alert tone="danger">{fields.shifts}</Alert> : null}

@@ -29,6 +29,8 @@ public class SevaTeam {
     @Column(name = "target_count")
     private Integer targetCount;
 
+    private String icon;
+
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;
 
@@ -44,8 +46,9 @@ public class SevaTeam {
         this.tenantId = tenantId;
     }
 
-    void edit(String name, String description, Integer targetCount, long staffId, OffsetDateTime now) {
+    void edit(String name, String description, Integer targetCount, String icon, long staffId, OffsetDateTime now) {
         this.name = name;
+        this.icon = icon;
         this.description = description;
         this.targetCount = targetCount;
         this.updatedBy = staffId;
@@ -63,5 +66,6 @@ public class SevaTeam {
     public String getName() { return name; }
     public String getDescription() { return description; }
     public Integer getTargetCount() { return targetCount; }
+    public String getIcon() { return icon; }
     public boolean isDeleted() { return deletedAt != null; }
 }
