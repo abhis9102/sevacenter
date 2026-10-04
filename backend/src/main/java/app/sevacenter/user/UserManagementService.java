@@ -20,6 +20,7 @@ import app.sevacenter.tenant.TenantRepository;
 import app.sevacenter.web.InvalidFieldException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -145,7 +146,13 @@ public class UserManagementService {
         if (users.existsByEmail(normalized)) {
             throw new UserConflictException("email_taken");
         }
-        AppUser user = users.saveAndFlush(AppUser.pending(tenantId, normalized, displayName.trim(), role));
+        AppUser user;
+        try {
+            user = users.saveAndFlush(AppUser.pending(tenantId, normalized, displayName.trim(), role));
+        } catch (DataIntegrityViolationException e) {
+            // Two invites of one email at once both pass the check; the unique index lets one win.
+            throw new UserConflictException("email_taken");
+        }
         auditTrail.record(AuditAction.USER_INVITED, "user", user.getId(), role.name());
         return new CreatedUser(user, issueSetupLink(user));
     }
