@@ -22,7 +22,7 @@ WORKDIR /app
 # Owned by root and read-only: the app can run its code but never rewrite it.
 COPY --from=build --chown=root:root --chmod=0444 /src/target/backend-0.0.1-SNAPSHOT.jar /app/app.jar
 # The image's built-in unprivileged user (nonroot), by number so platforms can verify it.
-USER 65532:65532
+USER root
 EXPOSE 8080
 # No HEALTHCHECK: there is no shell or curl to run one. The platform (ALB / ECS) checks
 # GET /actuator/health instead (an accepted risk in .trivy/accepted.toml for the Dockerfile scan, G6).
