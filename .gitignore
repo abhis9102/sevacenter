@@ -29,6 +29,8 @@ __pycache__/
 *.sarif
 osv-all.json
 .dast/
+.image-scan/
+image-scan/
 dast-out/
 
 # Private local context for Claude Code (never committed)

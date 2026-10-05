@@ -25,7 +25,7 @@ COPY --from=build --chown=root:root --chmod=0444 /src/target/backend-0.0.1-SNAPS
 USER 65532:65532
 EXPOSE 8080
 # No HEALTHCHECK: there is no shell or curl to run one. The platform (ALB / ECS) checks
-# GET /actuator/health instead.
+# GET /actuator/health instead (an accepted risk in .trivy/accepted.toml for the Dockerfile scan, G6).
 # Exec form: java is PID 1 and gets SIGTERM, so shutdown is graceful.
 # MaxRAMPercentage: size the heap from the container's memory limit, not the host's.
 # ExitOnOutOfMemoryError: die and get replaced, rather than limp on in a broken state.
