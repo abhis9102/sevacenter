@@ -7,8 +7,8 @@ seeds two tenants with admins, a leader and a member, then runs a matrix of
 identity x endpoint x host and fails on any status other than the expected one. Every new
 endpoint gets rows here (users: M1; devotees + CSV: M2; donations, receipts, online payments: M3; events: M4).
 
-Tenants are resolved from the real Host header (<slug>.sevacenter.app), as in production, not
-from the dev-only X-Tenant-Slug override.
+Tenants are resolved from the real Host header (<slug>.<staff domain>, --base-domain, matching the
+app's SEVACENTER_STAFF_URL, ADR 0030), as in production, not from the dev-only X-Tenant-Slug override.
 
   authz_probe.py http://127.0.0.1:18080 [--out probe.json]
 
@@ -27,7 +27,7 @@ import sys
 import uuid
 from urllib.parse import urlencode, urlsplit
 
-BASE_DOMAIN = "sevacenter.app"
+BASE_DOMAIN = ""  # set from --base-domain: the staff domain the app under test is configured with
 PASSWORD = "correct-horse-battery-staple"
 
 
@@ -507,8 +507,12 @@ def admin(slug: str) -> str:
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("target", help="base URL of the app under test, e.g. http://127.0.0.1:18080")
+    p.add_argument("--base-domain", required=True,
+                   help="the staff domain the app is configured with (SEVACENTER_STAFF_URL), e.g. sc.dast.test")
     p.add_argument("--out", help="write the results (JSON)")
     args = p.parse_args()
+    global BASE_DOMAIN
+    BASE_DOMAIN = args.base_domain.strip().lower()
     probe = Probe(args.target)
     ok = probe.run()
     if args.out:
