@@ -1,44 +1,42 @@
 # Dev Status — resume point
 
-_Last updated: 2026-10-03 (M2 in progress)._
+_Last updated: 2026-10-05. Read this section first; everything below it is the dev log, oldest first._
 
 ## Where we are
 
-**M0 — foundation: ✅ complete.** Spring Boot 3.5.3 skeleton, secure-by-default Spring Security,
-Flyway (V1 baseline), 12-factor config, hermetic Testcontainers tests, docker-compose Postgres,
-Makefile, pre-commit guardrails, GitHub Actions CI, PR template + AI-declaration, CODEOWNERS,
-CONTRIBUTING, SECURITY, ADRs 0001–0006, design system + styleguide. springdoc/OpenAPI wired up.
+- **MVP: built.** M0 foundation, M1 auth/tenancy/RLS, M2 devotees, M3 donations + 80G + Razorpay,
+  M4 MandirCenter operations (temple site, utsavs + gate passes, pujas + priests, Sevak Hub,
+  dashboard, Devotee 360, Hindi). ADRs 0001–0029. Every parallel-session prototype feature has been
+  rebuilt as a reviewed PR (last: ADR 0029, deleting events and pujas).
+- **Security gates G1–G5: live and required on `main`** (hardened CI, SAST, SCA, SBOM + signed
+  attestations, DAST). Each one was proven by making it fail on purpose; see the track below.
+- **Stack:** Spring Boot 4.1 / Java 21, Postgres with forced RLS and a least-privilege app role,
+  Next.js staff app + MandirCenter public site behind a same-origin `/api` proxy.
 
-**M1 — auth, tenancy, RLS: ✅ complete (2026-10-03).**
+## Next
 
-### M1 slice 1 — done and verified running
-- `V2__tenancy_and_users.sql`: `tenant` (registry, no RLS) + `app_user` (RLS **enabled + forced**,
-  fails closed when `app.tenant_id` unset). Entities/repos, `TenantContext`, `TenantResolutionFilter`,
-  `RlsTenantAspect`, `POST /api/v1/register`, `GlobalExceptionHandler`, bcrypt `PasswordEncoder`.
-- Two-role DB: Flyway as owner, app as least-privilege `sevacenter_app` (`docker/db-init/`).
-- **First run found two bugs, both fixed:**
-  1. CSRF (Spring default) blocked `/register`. Decision → **ADR 0007: session cookies + CSRF on**,
-     SPA double-submit (`XSRF-TOKEN` cookie → `X-XSRF-TOKEN` header); new `GET /api/v1/csrf`.
-  2. `/error` wasn't public, so every 403/400 surfaced as a misleading **401**. Now permitted.
-- `make run` now loads `.env` (Spring doesn't read it on its own).
-- **Verified manually:** no token → 403; wrong token → 403; valid → 201; duplicate slug → 409;
-  bad body → 400. In the DB: hash stored as `{bcrypt}`; as `sevacenter_app` — no tenant → 0 rows,
-  tenant 1 → 1 row, tenant 2 → 0 rows. App role is `NOSUPERUSER`, `NOBYPASSRLS`. `make test` green.
+1. **M5 containers** (Abhi drives, hands-on): Dockerfiles for backend and frontend, compose parity,
+   then **G6** image scan (Trivy), proven by failing it on purpose.
+2. M6 Terraform → AWS (ECS Fargate, RDS, ALB, wildcard ACM, Secrets Manager; G7 Checkov + OIDC),
+   then M7 consolidation (AI-code provenance, package-reputation check, DAST on staging).
 
-Register locally (tenant via `X-Tenant-Slug` header since localhost has no subdomain):
+## Open items
+
+- **AppSec review pending:** `.zap/accepted.toml` entry for rule 40018 on `/priests|/seva-teams`
+  (`name` param), added on the donation-funds precedent while the UI stack was merged. Confirm or
+  replace it.
+- Known limitations, not blocking: secret-ticket dedup can duplicate on a rebase (G2); a registered
+  malicious look-alike package would pass SCA until M7's reputation check (G3); sevak erasure on
+  request is still to be added (ADR 0028); counter cash isn't reconciled against a till (ADR 0026).
+
+## Run it locally
+
 ```bash
-make db-reset && make run
-curl -s -c /tmp/jar localhost:8080/api/v1/csrf          # -> {"token": "..."} + XSRF-TOKEN cookie
-curl -s -b /tmp/jar -X POST localhost:8080/api/v1/register -H 'Content-Type: application/json' \
-  -H "X-XSRF-TOKEN: <token>" \
-  -d '{"slug":"siddheshwar","trustName":"Shri Siddheshwar Seva Trust",
-       "adminEmail":"priya@example.org","adminPassword":"change-this-please-123","adminName":"Priya"}'
+make db-up && make run         # backend on :8080 (local profile; Mailpit stands in for email/SMS on :8025)
+make fe-dev                    # staff app + temple site on http://<slug>.localhost:3000
 ```
-
-### ⚠️ Next — do first
-1. **`TenantIsolationTest`** (AppSec deliverable) — automate the manual RLS check above. Testcontainers'
-   default user is a **superuser and bypasses RLS**, so the test must connect as a non-superuser role.
-   Also add CSRF tests (no token / bad token → 403).
+`PORT=3001 npm run dev` in `frontend/` if :3000 is taken. Register a trust with `make run` up:
+see "M1 slice 1" below for the curl flow.
 
 ## Security-gate track
 **G1 — harden CI: ✅ (PR #1).** Repo is public at github.com/abhis9102/sevacenter.
@@ -128,6 +126,30 @@ curl -s -b /tmp/jar -X POST localhost:8080/api/v1/register -H 'Content-Type: app
   Policy (48 vs 23 active rules; `.zap/rules.tsv`), which found the Whitelabel page (→ JSON-only
   `ApiErrorController`) and `/error` direct = 500 (→ 404). One scoped/expiring accepted risk (Tomcat's
   bare 400 for malformed request lines).
+
+## M1 slice 1 — first run (2026-10-03)
+- `V2__tenancy_and_users.sql`: `tenant` (registry, no RLS) + `app_user` (RLS **enabled + forced**,
+  fails closed when `app.tenant_id` unset). Entities/repos, `TenantContext`, `TenantResolutionFilter`,
+  `RlsTenantAspect`, `POST /api/v1/register`, `GlobalExceptionHandler`, bcrypt `PasswordEncoder`.
+- Two-role DB: Flyway as owner, app as least-privilege `sevacenter_app` (`docker/db-init/`).
+- **First run found two bugs, both fixed:**
+  1. CSRF (Spring default) blocked `/register`. Decision → **ADR 0007: session cookies + CSRF on**,
+     SPA double-submit (`XSRF-TOKEN` cookie → `X-XSRF-TOKEN` header); new `GET /api/v1/csrf`.
+  2. `/error` wasn't public, so every 403/400 surfaced as a misleading **401**. Now permitted.
+- `make run` now loads `.env` (Spring doesn't read it on its own).
+- **Verified manually:** no token → 403; wrong token → 403; valid → 201; duplicate slug → 409;
+  bad body → 400. In the DB: hash stored as `{bcrypt}`; as `sevacenter_app` — no tenant → 0 rows,
+  tenant 1 → 1 row, tenant 2 → 0 rows. App role is `NOSUPERUSER`, `NOBYPASSRLS`. `make test` green.
+
+Register locally (tenant via `X-Tenant-Slug` header since localhost has no subdomain):
+```bash
+make db-reset && make run
+curl -s -c /tmp/jar localhost:8080/api/v1/csrf          # -> {"token": "..."} + XSRF-TOKEN cookie
+curl -s -b /tmp/jar -X POST localhost:8080/api/v1/register -H 'Content-Type: application/json' \
+  -H "X-XSRF-TOKEN: <token>" \
+  -d '{"slug":"siddheshwar","trustName":"Shri Siddheshwar Seva Trust",
+       "adminEmail":"priya@example.org","adminPassword":"change-this-please-123","adminName":"Priya"}'
+```
 
 ## M1 slice 1 — tenant isolation proven ✅ (this PR)
 - Tests now run like production: Flyway as owner, app as `sevacenter_app` (connection-details beans;
@@ -454,22 +476,6 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
 - 8 new backend tests, **mutation-checked 10/11**. The one survivor is an equivalent mutant: the
   public-list filter can't see a deleted event, because only published events are public and those
   can't be deleted.
-
-**All of the parallel session's MVP features are now rebuilt and reviewed.** Then: M5 containers →
-M6 AWS → M7 gates.
-
-**MVP features are now complete.** Then: M5 containers → M6 AWS → M7 gates.
-
-## Next up — M1 slice 2
-- Login + sessions (cookie session per ADR 0007; set cookie flags HttpOnly/Secure/SameSite); tenant-aware `UserDetailsService` (scope lookup by `TenantContext`).
-- `@PreAuthorize` role enforcement (TRUST_ADMIN/LEADER/MEMBER); method security.
-- `GET /api/v1/me`; user management endpoints (list users — also proves RLS end to end).
-- Resolve tenant from the authenticated user on the admin host (not only from subdomain).
-- Update `docs/security/threat-model-tenancy.md` invariants into real tests.
-
-## Then
-M2 Devotees → M3 Donations+80G → M4 Events → M5 containerize → M6 Terraform/AWS → M7 full CI
-security gates. See `docs/roadmap.md`.
 
 ## Open product questions (non-blocking)
 - Diya vs lotus logo mark. Any MandirCenter colour too strong (see styleguide artifact).
