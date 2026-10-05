@@ -31,7 +31,8 @@ policy ignores "$ROOT/.trivy/accepted.toml" --write "$OUT/trivyignore.yaml"
 
 echo "--- 2/4 Dockerfile and IaC misconfigurations (Medium+ blocks)"
 trivy config --ignorefile /out/trivyignore.yaml --skip-dirs frontend/node_modules --skip-dirs backend/target \
-  --exit-code 1 --severity MEDIUM,HIGH,CRITICAL .
+  --format json --output /out/trivy-config.json .
+policy misconfig "$OUT/trivy-config.json" --fail-at MEDIUM
 
 echo "--- 3/4 build $IMAGE"
 docker build -q -t "$IMAGE" "$ROOT/backend" >/dev/null

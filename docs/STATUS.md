@@ -525,7 +525,9 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
   (`image_policy.py`), rendered into Trivy's ignore file. First entry: no HEALTHCHECK by design
   (distroless).
 - **Made to fail on purpose:** `USER root` blocked (DS-0002 HIGH); the stale Debian 12 base
-  blocked (8 fixable High); bad accepted risks rejected and suppressed nothing.
+  blocked (8 fixable High); bad accepted risks rejected and suppressed nothing. **In CI** (#64,
+  closed): required check failed and the ruleset refused the merge even for the owner. Findings
+  now annotate the Dockerfile line on the PR.
 
 ## Open product questions (non-blocking)
 - Diya vs lotus logo mark. Any MandirCenter colour too strong (see styleguide artifact).
