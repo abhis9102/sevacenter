@@ -35,3 +35,4 @@ change a decision, add a new ADR that supersedes the old one.
 | [0027](0027-priests.md) | Priests (pujaris): listed per temple, deactivated not deleted, assigned to sankalps (composite FK) | Accepted |
 | [0028](0028-sevak-hub.md) | Sevak Hub: seva teams with shifts (create/edit/delete), staff-registered volunteers, deploy/release, remove keeps the row | Accepted |
 | [0029](0029-deleting-events-and-pujas.md) | Deleting events (draft/cancelled only) and pujas (no open bookings): soft delete, row and history kept, DB-enforced | Accepted |
+| [0030](0030-configured-public-urls.md) | Public URLs per environment: one template per brand, never from the request, required + validated at startup, frontend fails closed | Accepted |

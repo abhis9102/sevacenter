@@ -24,6 +24,10 @@ spring:
 sevacenter:
   tenant:
     allow-header-override: true
+  # The Next.js app on <slug>.localhost:3000 (set SEVACENTER_STAFF_URL if you run it on another port).
+  public:
+    staff-url: ${SEVACENTER_STAFF_URL:http://{slug}.localhost:3000}
+    temple-url: ${SEVACENTER_TEMPLE_URL:http://{slug}.localhost:3000}
   mail:
     from: ${SEVACENTER_MAIL_FROM:no-reply@sevacenter.local}
 

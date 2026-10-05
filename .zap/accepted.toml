@@ -54,3 +54,10 @@ pluginId = "6" # Path Traversal (heuristic): the whole JSON API, guarded by a te
 uri = '/api/v1/'
 ignoreUntil = 2026-12-31
 reason = "Abhi (AppSec), 2026-10-04: the backend makes no filesystem calls at all, so no input can reach a path. ZAP's rule-6 heuristic sends the URL's own last segment ('10', '/receipt', 'donation-funds') as the value of any free-text field; that's valid text, so the request succeeds while ZAP's random comparison value fails validation, and ZAP reports a difference. It flagged a different field each run (title, name, capacity, dakshina, donorAddress...). One entry replaces the per-field ones, and its premise is enforced: NoFilesystemAccessTest fails the build if main code ever uses File/Path/Files/resource loaders, which forces this to be re-reviewed. The startsAt bug this rule found earlier was a validation bug, now covered by EventTest."
+
+[[accepted]]
+pluginId = "40018" # SQL Injection (boolean-based heuristic)
+param = "deity"
+uri = '/api/v1/temple$' # the temple page save only
+ignoreUntil = 2026-12-31
+reason = "Abhi (AppSec), 2026-10-05: not injection. Reproduced by hand, one request at a time: the original, AND 1=1, OR 1=1 and AND 1=2 all give 200 with identical responses apart from the echoed text, and the payload is stored literally. The save binds every value through JPA (no SQL built from input). ZAP's baseline was a differing response ('Data was NOT returned for the original parameter') while parallel scan threads rewrote this temple's aarti timetable, which the response includes. Pinned by TempleTest.sqlLookingTextIsStoredAsTextAndChangesNothingElse (mutation-checked)."

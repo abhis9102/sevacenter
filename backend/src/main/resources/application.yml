@@ -62,6 +62,13 @@ springdoc:
 # from the environment only (KMS in M6). Empty default on purpose: the app refuses to start with
 # a clear message (PanProtection) instead of running without protection.
 sevacenter:
+  # Where each trust lives (ADR 0030): one template per brand, {slug} as the first label, e.g.
+  # https://{slug}.sevacenter.app. Setup / reset / registration links are built from these (never
+  # from the request's Host), and tenant hosts are resolved against them. Required, no default: a
+  # deploy that forgets them refuses to start rather than send tokens to a domain it doesn't own.
+  public:
+    staff-url: ${SEVACENTER_STAFF_URL:}
+    temple-url: ${SEVACENTER_TEMPLE_URL:}
   # Encrypts credentials trusts give us, e.g. their Razorpay key secret (ADR 0013). Own key,
   # separate from the PAN key; empty default so the app refuses to start without it.
   secrets:

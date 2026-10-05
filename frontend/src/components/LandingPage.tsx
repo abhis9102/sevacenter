@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Diya, Wordmark } from "@/components/Diya";
 import { LanguageToggle } from "@/components/LanguageToggle";
-import { portalLoginUrl } from "@/lib/tenant";
+import { portalBase, portalLoginUrl } from "@/lib/tenant";
 import { useLanguage } from "@/components/LanguageProvider";
 import { Button, Card } from "@/components/ui";
 
@@ -13,6 +13,12 @@ export function LandingPage() {
   const { lang } = useLanguage();
   const [subdomain, setSubdomain] = useState("");
   const [slugError, setSlugError] = useState(false);
+  const [base, setBase] = useState("");
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the host is only known in the browser
+    setBase(portalBase(window.location));
+  }, []);
 
   const isHindi = lang === "hi";
 
@@ -94,7 +100,7 @@ export function LandingPage() {
                     <h2 className="text-base font-semibold">
                       {isHindi ? "अपने मंदिर के पोर्टल पर जाएं" : "Go to Your Temple Portal"}
                     </h2>
-                    <span className="text-xs font-mono text-muted">.sevacenter.app</span>
+                    <span className="text-xs font-mono text-muted">{base ? `.${base}` : null}</span>
                   </div>
 
                   <form onSubmit={handleGoToSubdomain} className="flex flex-col sm:flex-row gap-2">

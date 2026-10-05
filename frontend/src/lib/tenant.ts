@@ -1,6 +1,6 @@
 /**
- * Tenant = the subdomain (ADR 0009): staff use `<slug>.sevacenter.app`; locally
- * `<slug>.localhost:3000` (browsers resolve *.localhost to loopback).
+ * Tenant = the subdomain (ADR 0009): staff use `<slug>.<staff domain>` (SC_TENANT_BASE_DOMAINS,
+ * ADR 0030); locally `<slug>.localhost:3000` (browsers resolve *.localhost to loopback).
  *
  * Mirrors the backend's rule: only a host of exactly `<slug>.<base-domain>` with a known base
  * domain names a tenant. Anything else (extra labels, a bare base domain, another domain)
@@ -10,7 +10,8 @@
 /** Same shape the backend accepts for a slug: DNS label, lowercase. */
 const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 
-export const DEFAULT_BASE_DOMAINS: readonly string[] = ["localhost", "sevacenter.app"];
+/** Unset means local development only: a deploy names its own domains, or no host resolves a tenant. */
+export const DEFAULT_BASE_DOMAINS: readonly string[] = ["localhost"];
 
 export function parseBaseDomains(raw: string | undefined): readonly string[] {
   if (!raw || !raw.trim()) {
@@ -66,8 +67,15 @@ export function portalLoginUrl(
   if (!REGISTERED_SLUG_RE.test(slug)) {
     return null;
   }
+  return `${location.protocol}//${slug}.${portalBase(location)}/login`;
+}
+
+/**
+ * The domain trusts live under, read from the page we are on (the bare staff domain, where the
+ * landing and register pages are served), with its port: e.g. `sevacenter.app`, `localhost:3000`.
+ */
+export function portalBase(location: { hostname: string; port: string }): string {
   const port = location.port ? `:${location.port}` : "";
   const local = location.hostname === "localhost" || location.hostname === "127.0.0.1";
-  const base = local ? "localhost" : location.hostname.replace(/^www\./, "");
-  return `${location.protocol}//${slug}.${base}${port}/login`;
+  return (local ? "localhost" : location.hostname.replace(/^www\./, "")) + port;
 }

@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import app.sevacenter.tenant.ReservedSlugs;
 import app.sevacenter.tenant.Tenant;
+import app.sevacenter.tenant.PublicUrls;
 import app.sevacenter.tenant.TenantRepository;
 import app.sevacenter.user.AppUser;
 import app.sevacenter.user.AppUserRepository;
@@ -29,12 +30,14 @@ public class RegistrationService {
     private final TenantRepository tenants;
     private final AppUserRepository users;
     private final PasswordEncoder passwordEncoder;
+    private final PublicUrls publicUrls;
 
     @PersistenceContext
     private EntityManager entityManager;
 
     public RegistrationService(TenantRepository tenants, AppUserRepository users,
-                               PasswordEncoder passwordEncoder) {
+                               PasswordEncoder passwordEncoder, PublicUrls publicUrls) {
+        this.publicUrls = publicUrls;
         this.tenants = tenants;
         this.users = users;
         this.passwordEncoder = passwordEncoder;
@@ -75,7 +78,7 @@ public class RegistrationService {
         return new RegistrationResponse(
                 slug,
                 tenant.getId(),
-                "https://" + slug + ".sevacenter.app",
-                "https://" + slug + ".mandircenter.app");
+                publicUrls.staff(slug),
+                publicUrls.temple(slug));
     }
 }

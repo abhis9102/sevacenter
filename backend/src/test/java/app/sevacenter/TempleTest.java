@@ -171,6 +171,36 @@ class TempleTest {
         setStatus(leader, null, null).andExpect(status().isOk()).andExpect(jsonPath("$.status").doesNotExist());
     }
 
+    /**
+     * Pins the premise of the DAST accepted risk for rule 40018 on PUT /temple (deity): text that
+     * looks like SQL is stored and returned as text, and never changes what else comes back. ZAP's
+     * boolean heuristic saw responses differ while parallel scan threads rewrote the timetable.
+     */
+    @Test
+    void sqlLookingTextIsStoredAsTextAndChangesNothingElse() throws Exception {
+        java.util.Set<String> rest = new java.util.HashSet<>();
+        for (String deity : List.of("Shri Siddheshwar", "Shri Siddheshwar AND 1=1", "Shri Siddheshwar OR 1=1",
+                "Shri Siddheshwar AND 1=2", "Shri Siddheshwar' OR '1'='1' --", "x'); drop table temple_profile; --")) {
+            String body = mvc.perform(on(a, put("/api/v1/temple")).session(leader).with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(staff.body("deity", deity, "address", "1 Temple Road", "aartis",
+                                    List.of(aarti("Kakad Aarti", "05:30")))))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.deity").value(deity))
+                    .andReturn().getResponse().getContentAsString();
+            var node = (tools.jackson.databind.node.ObjectNode) json.readTree(body);
+            node.remove("deity");
+            rest.add(node.toString());
+            String stored = tx.execute(st -> {
+                jdbc.queryForObject("select set_config('app.tenant_id', ?, true)", String.class,
+                        Long.toString(jdbc.queryForObject("select id from tenant where slug = ?", Long.class, a)));
+                return jdbc.queryForObject("select deity from temple_profile", String.class);
+            });
+            assertThat(stored).isEqualTo(deity);
+        }
+        assertThat(rest).as("everything but the echoed deity is identical").hasSize(1);
+        mvc.perform(on(a, get("/api/v1/public/temple"))).andExpect(jsonPath("$.deity").value("x'); drop table temple_profile; --"));
+    }
+
     @Test
     void anotherTrustNeverSeesThisTimetableOrStatus() throws Exception {
         schedule(leader, hours("05:30", "12:30", null, null), List.of(aarti("Kakad Aarti", "05:30")));

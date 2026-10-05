@@ -1,5 +1,5 @@
 /**
- * One-time setup links look like `https://<slug>.sevacenter.app/setup#token=...`.
+ * One-time setup links look like `https://<slug>.<staff domain>/setup#token=...`.
  *
  * The token lives in the URL fragment, which browsers never send to any server (not in the
  * request line, not in Referer). We read it once, keep it only in memory and send it only in
