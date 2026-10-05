@@ -3,7 +3,7 @@
 # Update them on purpose (Dependabot, docker ecosystem) and let the image scan judge the result.
 
 # --- stage 1: build the jar from clean source (JDK + Maven live only here) ---
-FROM eclipse-temurin:21-jdk@sha256:3e3c176ffed168beb42c607be9bc1639b466cf00261a0fb04425562c9d0c5c2b AS build
+FROM eclipse-temurin:25-jdk@sha256:8c0a84ea11c8f6ed52600fc19f1040121f2a162998e9f50a5faebbbad9172dcc AS build
 WORKDIR /src
 # Dependencies first: this layer is reused until pom.xml changes.
 COPY .mvn/ .mvn/
