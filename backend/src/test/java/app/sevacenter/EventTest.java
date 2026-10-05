@@ -4,8 +4,10 @@ import static app.sevacenter.TestStaff.on;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -259,6 +261,71 @@ class EventTest {
             pin(tenantA);
             jdbc.update("delete from event_pass where event_id = ?", id);
         })).isInstanceOf(DataAccessException.class).rootCause().hasMessageContaining("permission denied");
+    }
+
+    // --- deleting an event (ADR 0029) --------------------------------------------------------------
+
+    @Test
+    void leadersDeleteADraftAndItIsGoneButTheRowStays() throws Exception {
+        long draft = id(create(leader, NEXT_WEEK, 100));
+        deleteEvent(member, draft).andExpect(status().isForbidden());
+        deleteEvent(leader, draft).andExpect(status().isNoContent());
+        mvc.perform(on(a, get("/api/v1/events")).session(member)).andExpect(jsonPath("$.length()").value(0));
+        mvc.perform(on(a, post("/api/v1/events/" + draft + "/publish")).session(leader).with(csrf())).andExpect(status().isNotFound());
+        mvc.perform(on(a, put("/api/v1/events/" + draft)).session(leader).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                .content(eventBody(NEXT_WEEK, 100, true))).andExpect(status().isNotFound());
+        mvc.perform(on(a, get("/api/v1/events/" + draft + "/passes")).session(leader)).andExpect(status().isNotFound());
+        deleteEvent(leader, draft).andExpect(status().isNotFound());
+        assertThat(count("select count(*) from event where id = ? and deleted_by is not null", draft)).isOne();
+    }
+
+    /** Devotees with passes hear "cancelled" first; their passes stay in My Mandir after the delete. */
+    @Test
+    void aPublishedEventIsCancelledBeforeItCanBeDeleted() throws Exception {
+        long id = publish(id(create(leader, NEXT_WEEK, 100)));
+        String code = code(register(id, "Lakshmi", 2));
+        deleteEvent(leader, id).andExpect(status().isConflict()).andExpect(jsonPath("$.error").value("cancel_first"));
+        mvc.perform(on(a, post("/api/v1/events/" + id + "/cancel")).session(leader).with(csrf())).andExpect(status().isOk());
+        deleteEvent(leader, id).andExpect(status().isNoContent());
+        mvc.perform(on(a, get("/api/v1/public/events"))).andExpect(jsonPath("$.length()").value(0));
+        checkIn(member, id, code).andExpect(status().isNotFound());
+        register(id, "Late devotee", 1).andExpect(status().isNotFound());
+        issue(member, id, "Walk-in", 1).andExpect(status().isNotFound());
+        assertThat(count("select count(*) from event_pass where event_id = ?", id)).isOne();
+    }
+
+    /** Even a direct write can't hide an event devotees still hold live passes for. */
+    @Test
+    void theDatabaseRefusesToDeleteAPublishedEvent() throws Exception {
+        long id = publish(id(create(leader, NEXT_WEEK, 100)));
+        long tenantA = tenants.findBySlug(a).orElseThrow().getId();
+        assertThatThrownBy(() -> tx.executeWithoutResult(st -> {
+            pin(tenantA);
+            jdbc.update("update event set deleted_at = now(), deleted_by = created_by where id = ?", id);
+        })).isInstanceOf(DataAccessException.class).rootCause().hasMessageContaining("event_deleted_not_live");
+    }
+
+    @Test
+    void anotherTrustsEventCantBeDeleted() throws Exception {
+        String b = staff.tenant("ev-del-b");
+        MockHttpSession adminB = staff.loginAdmin(b);
+        long theirs = id(mvc.perform(on(b, post("/api/v1/events")).session(adminB).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON).content(eventBody(NEXT_WEEK, 100, true))));
+        deleteEvent(admin, theirs).andExpect(status().isNotFound());
+        mvc.perform(on(b, get("/api/v1/events")).session(adminB)).andExpect(jsonPath("$.length()").value(1));
+    }
+
+    private int count(String sql, long id) {
+        long tenantA = tenants.findBySlug(a).orElseThrow().getId();
+        Integer n = tx.execute(st -> {
+            pin(tenantA);
+            return jdbc.queryForObject(sql, Integer.class, id);
+        });
+        return n == null ? 0 : n;
+    }
+
+    private ResultActions deleteEvent(MockHttpSession session, long eventId) throws Exception {
+        return mvc.perform(on(a, delete("/api/v1/events/" + eventId)).session(session).with(csrf()));
     }
 
     // --- helpers -----------------------------------------------------------------------------

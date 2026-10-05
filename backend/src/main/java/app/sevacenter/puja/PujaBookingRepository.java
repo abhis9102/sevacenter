@@ -26,4 +26,9 @@ public interface PujaBookingRepository extends JpaRepository<PujaBooking, Long> 
     @Query("select b from PujaBooking b where (b.phone = ?1 or b.email = ?1) and b.status <> 'AWAITING_PAYMENT' "
             + "order by b.pujaDate desc")
     List<PujaBooking> forContact(String contact, org.springframework.data.domain.Pageable page);
+
+    /** Bookings a deleted puja would strand: awaiting payment, or confirmed for today or later. */
+    @Query("select count(b) > 0 from PujaBooking b where b.pujaId = ?1 and (b.status = 'AWAITING_PAYMENT' "
+            + "or (b.status = 'CONFIRMED' and b.pujaDate >= ?2))")
+    boolean hasOpenBookings(long pujaId, LocalDate today);
 }

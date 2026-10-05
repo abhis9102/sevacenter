@@ -4,6 +4,7 @@ import static app.sevacenter.TestStaff.on;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -14,12 +15,17 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.HexFormat;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import app.sevacenter.auth.RegistrationService;
+import app.sevacenter.puja.PujaRepository;
 import app.sevacenter.tenant.TenantRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,6 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -63,6 +70,8 @@ class PujaTest {
     private TransactionTemplate tx;
     @Autowired
     private OnlineDonationTest.FakeGateway gateway;
+    @Autowired
+    private PujaRepository pujas;
 
     private TestStaff staff;
     private String a;
@@ -95,6 +104,86 @@ class PujaTest {
                 .andReturn().getResponse().getContentAsString();
         assertThat(json.readTree(list).size()).isEqualTo(1);
         book(hidden, TOMORROW).andExpect(status().isNotFound());
+    }
+
+    // --- deleting a puja (ADR 0029) ----------------------------------------------------------------
+
+    @Test
+    void leadersDeleteAPujaAndItIsGoneFromEveryListButTheRowStays() throws Exception {
+        long puja = id(createPuja(leader, "Retired seva", "0", true));
+        deletePuja(member, puja).andExpect(status().isForbidden());
+        deletePuja(leader, puja).andExpect(status().isNoContent());
+        assertThat(json.readTree(mvc.perform(on(a, get("/api/v1/pujas")).session(member))
+                .andReturn().getResponse().getContentAsString()).size()).isZero();
+        assertThat(json.readTree(mvc.perform(on(a, get("/api/v1/public/pujas")))
+                .andReturn().getResponse().getContentAsString()).size()).isZero();
+        book(puja, TOMORROW).andExpect(status().isNotFound());
+        counter(leader, puja, null).andExpect(status().isNotFound());
+        mvc.perform(on(a, put("/api/v1/pujas/" + puja)).session(leader).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                .content(staff.body("name", "Back again", "dakshina", "0", "active", true, "displayOrder", 1)))
+                .andExpect(status().isNotFound());
+        deletePuja(leader, puja).andExpect(status().isNotFound());
+        assertThat(pinned(() -> jdbc.queryForObject("select count(*) from puja where id = ? and deleted_at is not null "
+                + "and deleted_by is not null", Integer.class, puja))).isOne();
+        assertThat(pinned(() -> jdbc.queryForObject("select count(*) from audit_log where action = 'PUJA_DELETED' "
+                + "and target_id = ?", Integer.class, puja))).isOne();
+    }
+
+    @Test
+    void aPujaWithBookingsStillToHonourCantBeDeleted() throws Exception {
+        long free = id(createPuja(leader, "Archana", "0", true));
+        book(free, TOMORROW).andExpect(status().isCreated());
+        deletePuja(leader, free).andExpect(status().isConflict()).andExpect(jsonPath("$.error").value("has_open_bookings"));
+        long booking = schedule(leader).get(0).at("/id").asLong();
+        mvc.perform(on(a, post("/api/v1/puja-bookings/" + booking + "/cancel")).session(leader).with(csrf()))
+                .andExpect(status().isOk());
+        deletePuja(leader, free).andExpect(status().isNoContent());
+        // The cancelled booking is still on the schedule, under the name it was booked with.
+        assertThat(schedule(leader).get(0).at("/pujaName").asString()).isEqualTo("Archana");
+
+        // A paid puja waiting for its payment would strand the devotee's money.
+        long paid = id(createPuja(leader, "Rudrabhishek", "1100", true));
+        book(paid, TOMORROW).andExpect(status().isCreated());
+        deletePuja(leader, paid).andExpect(status().isConflict());
+    }
+
+    @Test
+    void anotherTrustsPujaCantBeDeleted() throws Exception {
+        String b = staff.tenant("pj-del-b");
+        MockHttpSession adminB = staff.loginAdmin(b);
+        long theirs = id(mvc.perform(on(b, post("/api/v1/pujas")).session(adminB).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                .content(staff.body("name", "B's puja", "dakshina", "0", "active", true, "displayOrder", 1))));
+        deletePuja(admin, theirs).andExpect(status().isNotFound());
+        mvc.perform(on(b, get("/api/v1/public/pujas"))).andExpect(jsonPath("$.length()").value(1));
+    }
+
+    /** A booking holds a shared lock on its puja: a delete waits for it, then sees the booking. */
+    @Test
+    void aDeleteWaitsForABookingInFlight() throws Exception {
+        long puja = id(createPuja(leader, "Archana", "0", true));
+        long tenantA = tenants.findBySlug(a).orElseThrow().getId();
+        CountDownLatch locked = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        ExecutorService pool = Executors.newSingleThreadExecutor();
+        try {
+            Future<?> booking = pool.submit(() -> tx.executeWithoutResult(st -> {
+                jdbc.queryForObject("select set_config('app.tenant_id', ?, true)", String.class, Long.toString(tenantA));
+                assertThat(pujas.shareLock(puja)).isPresent();
+                locked.countDown();
+                await(release);
+            }));
+            locked.await();
+            assertThatThrownBy(() -> tx.executeWithoutResult(st -> {
+                jdbc.queryForObject("select set_config('app.tenant_id', ?, true)", String.class, Long.toString(tenantA));
+                jdbc.execute("set local lock_timeout = '300ms'");
+                pujas.lockById(puja);
+            })).isInstanceOf(CannotAcquireLockException.class);
+            release.countDown();
+            booking.get();
+        } finally {
+            release.countDown();
+            pool.shutdownNow();
+        }
     }
 
     // --- free and paid bookings --------------------------------------------------------------
@@ -332,6 +421,18 @@ class PujaTest {
     }
 
     // --- helpers -----------------------------------------------------------------------------
+
+    private ResultActions deletePuja(MockHttpSession session, long pujaId) throws Exception {
+        return mvc.perform(on(a, delete("/api/v1/pujas/" + pujaId)).session(session).with(csrf()));
+    }
+
+    private static void await(CountDownLatch latch) {
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
 
     private ResultActions createPuja(MockHttpSession session, String name, String dakshina, boolean active) throws Exception {
         return mvc.perform(on(a, post("/api/v1/pujas")).session(session).with(csrf()).contentType(MediaType.APPLICATION_JSON)

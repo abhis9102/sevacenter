@@ -37,6 +37,7 @@ export default function PujasPage() {
   const [editing, setEditing] = useState<Puja | "new" | null>(null);
   const [booking, setBooking] = useState(false);
   const [cancelling, setCancelling] = useState<PujaBooking | null>(null);
+  const [deleting, setDeleting] = useState<Puja | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -97,6 +98,17 @@ export default function PujasPage() {
       await api.request(`/pujas/${p.id}`, { method: "PUT", json: { name: p.name, deity: p.deity, description: p.description,
         dakshina: p.dakshina, active, displayOrder: p.displayOrder } });
       setNotice({ tone: "success", text: active ? `${p.name} is back on the Mandir Center.` : `${p.name} is hidden from the Mandir Center.` });
+      await load();
+    } catch (err) {
+      setNotice({ tone: "danger", text: describeError(err) });
+    }
+  }
+
+  async function remove(p: Puja) {
+    setNotice(null);
+    try {
+      await api.request(`/pujas/${p.id}`, { method: "DELETE" });
+      setNotice({ tone: "success", text: `${p.name} was deleted from the catalog.` });
       await load();
     } catch (err) {
       setNotice({ tone: "danger", text: describeError(err) });
@@ -250,6 +262,7 @@ export default function PujasPage() {
                     <Pill tone={p.active ? "success" : "neutral"}>{p.active ? "Active" : "Hidden"}</Pill>
                     {isLeader ? (
                       <div className="flex gap-2">
+                        <Button variant="ghost" className="text-danger" onClick={() => setDeleting(p)}>Delete</Button>
                         <Button variant="secondary" onClick={() => setEditing(p)}>Edit</Button>
                         <Button variant="secondary" onClick={() => void setActive(p, !p.active)}>{p.active ? "Hide" : "Show"}</Button>
                       </div>
@@ -281,6 +294,12 @@ export default function PujasPage() {
                      onConfirm={() => { const b = cancelling; setCancelling(null); if (b) void act(b, "cancel"); }}>
         {cancelling ? <p>{cancelling.pujaName} for {cancelling.devoteeName} on {cancelling.pujaDate} will be cancelled. A paid dakshina
           isn&apos;t refunded automatically.</p> : null}
+      </ConfirmDialog>
+      <ConfirmDialog open={deleting !== null} title="Delete this puja?" confirm="Delete puja"
+                     onClose={() => setDeleting(null)}
+                     onConfirm={() => { const p = deleting; setDeleting(null); if (p) void remove(p); }}>
+        {deleting ? <p>{deleting.name} will be removed from the catalog for good. Past bookings keep its name. If devotees
+          still have bookings to come, perform or cancel those first, or just hide the puja instead.</p> : null}
       </ConfirmDialog>
     </div>
   );

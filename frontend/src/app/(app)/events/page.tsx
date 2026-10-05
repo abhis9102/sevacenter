@@ -22,7 +22,8 @@ const VIEWS = ["gate", "festivals", "roster"] as const;
 
 /**
  * Utsavs & passes (ADR 0014, 0026). Everyone on staff checks passes in at the gate and can issue a
- * walk-in pass. Leaders create, edit, publish and cancel utsavs, and see the roster with contacts.
+ * walk-in pass. Leaders create, edit, publish and cancel utsavs, delete drafts and cancelled ones
+ * (ADR 0029), and see the roster with contacts.
  */
 export default function EventsPage() {
   const me = useMe();
@@ -34,6 +35,7 @@ export default function EventsPage() {
   const [editing, setEditing] = useState<StaffEvent | "new" | null>(null);
   const [issuing, setIssuing] = useState(false);
   const [cancelling, setCancelling] = useState<StaffEvent | null>(null);
+  const [deleting, setDeleting] = useState<StaffEvent | null>(null);
   const [checkIns, setCheckIns] = useState(0);
   // Fixed per visit: what counts as "live" shouldn't shift while staff are working the gate.
   const [now] = useState(() => Date.now());
@@ -64,6 +66,17 @@ export default function EventsPage() {
     try {
       await api.request(`/events/${e.id}/${action}`, { method: "POST" });
       setNotice({ tone: "success", text: action === "publish" ? `“${e.title}” is now on the Mandir Center.` : `“${e.title}” was cancelled.` });
+    } catch (err) {
+      setNotice({ tone: "danger", text: describeError(err) });
+    }
+    await load();
+  }
+
+  async function remove(e: StaffEvent) {
+    setNotice(null);
+    try {
+      await api.request(`/events/${e.id}`, { method: "DELETE" });
+      setNotice({ tone: "success", text: `“${e.title}” was deleted.` });
     } catch (err) {
       setNotice({ tone: "danger", text: describeError(err) });
     }
@@ -157,9 +170,14 @@ export default function EventsPage() {
                     </div>
                     {isLeader && e.status !== "CANCELLED" && !ended ? (
                       <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3">
+                        {e.status === "DRAFT" ? <Button variant="ghost" className="text-danger" onClick={() => setDeleting(e)}>Delete</Button> : null}
                         <Button variant="secondary" onClick={() => setEditing(e)}>Edit</Button>
                         {e.status === "DRAFT" ? <Button onClick={() => void changeStatus(e, "publish")}>Publish</Button> : null}
-                        <Button variant="danger" onClick={() => setCancelling(e)}>Cancel utsav</Button>
+                        {e.status === "PUBLISHED" ? <Button variant="danger" onClick={() => setCancelling(e)}>Cancel utsav</Button> : null}
+                      </div>
+                    ) : isLeader && e.status !== "PUBLISHED" ? (
+                      <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3">
+                        <Button variant="ghost" className="text-danger" onClick={() => setDeleting(e)}>Delete</Button>
                       </div>
                     ) : null}
                   </Card>
@@ -195,6 +213,13 @@ export default function EventsPage() {
                      onConfirm={() => { const e = cancelling; setCancelling(null); if (e) void changeStatus(e, "cancel"); }}>
         {cancelling ? <p>“{cancelling.title}” will be taken off the Mandir Center and its {cancelling.seatsTaken} registered
           {cancelling.seatsTaken === 1 ? " person" : " people"} can no longer use their passes.</p> : null}
+      </ConfirmDialog>
+      <ConfirmDialog open={deleting !== null} title="Delete this utsav?" confirm="Delete utsav"
+                     onClose={() => setDeleting(null)}
+                     onConfirm={() => { const e = deleting; setDeleting(null); if (e) void remove(e); }}>
+        {deleting ? <p>“{deleting.title}” will be removed from your utsav list.
+          {deleting.status === "CANCELLED" && deleting.seatsTaken > 0
+            ? " Devotees who registered keep their cancelled pass in My Mandir, and the audit trail keeps a record." : ""}</p> : null}
       </ConfirmDialog>
     </div>
   );

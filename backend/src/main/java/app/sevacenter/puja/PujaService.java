@@ -52,12 +52,27 @@ public class PujaService implements PujaSettlement {
 
     @Transactional
     public Puja save(Long id, PujaDetails d, long staffId) {
-        Puja p = id == null ? new Puja(currentTenant()) : pujas.findById(id).orElseThrow(PujaNotFoundException::new);
+        Puja p = id == null ? new Puja(currentTenant()) : pujas.lockById(id).orElseThrow(PujaNotFoundException::new);
         p.edit(d.name().strip(), blankToNull(d.deity()), blankToNull(d.description()), d.dakshinaPaise(), d.active(),
                 d.displayOrder(), staffId, OffsetDateTime.now(clock));
         Puja saved = pujas.save(p);
         auditTrail.record(AuditAction.PUJA_SAVED, "puja", saved.getId(), null);
         return saved;
+    }
+
+    /**
+     * ADR 0029: off the catalog for good, the row stays. Refused while it still has bookings to
+     * honour: those are cancelled or performed first. Past bookings keep their own copy of the name.
+     */
+    @Transactional
+    public void delete(long id, long staffId) {
+        Puja p = pujas.lockById(id).orElseThrow(PujaNotFoundException::new);
+        if (bookings.hasOpenBookings(id, LocalDate.now(clock))) {
+            throw new PujaConflictException("has_open_bookings");
+        }
+        p.delete(staffId, OffsetDateTime.now(clock));
+        audit.info("event=puja_deleted tenant={} user={} puja={}", currentTenant(), staffId, id);
+        auditTrail.record(AuditAction.PUJA_DELETED, "puja", id, null);
     }
 
     @Transactional(readOnly = true)
@@ -102,7 +117,7 @@ public class PujaService implements PujaSettlement {
     }
 
     private PujaBooking newBooking(long pujaId, BookingDetails d, boolean contactRequired) {
-        Puja puja = pujas.findById(pujaId).filter(Puja::isActive).orElseThrow(PujaNotFoundException::new);
+        Puja puja = pujas.shareLock(pujaId).filter(Puja::isActive).orElseThrow(PujaNotFoundException::new);
         LocalDate today = LocalDate.now(clock);
         if (d.pujaDate() == null || d.pujaDate().isBefore(today) || d.pujaDate().isAfter(today.plusDays(MAX_DAYS_AHEAD))) {
             throw new InvalidFieldException("pujaDate", "choose a date from today up to a year ahead");

@@ -15,6 +15,7 @@ import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -69,6 +70,14 @@ public class EventController {
     @PreAuthorize("hasRole('LEADER')")
     public EventResponse cancel(@PathVariable long id, @AuthenticationPrincipal StaffUser staff) {
         return EventResponse.of(service.changeStatus(id, EventStatus.CANCELLED, staff.userId()), service.seatsTaken(id));
+    }
+
+    /** ADR 0029: a draft or cancelled event only (409 cancel_first). */
+    @DeleteMapping("/{id:\\d+}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('LEADER')")
+    public void delete(@PathVariable long id, @AuthenticationPrincipal StaffUser staff) {
+        service.delete(id, staff.userId());
     }
 
     @GetMapping("/{id:\\d+}/passes")

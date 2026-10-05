@@ -42,6 +42,12 @@ public class Puja {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
+
+    @Column(name = "deleted_by")
+    private Long deletedBy;
+
     protected Puja() { }
 
     Puja(long tenantId) {
@@ -58,6 +64,12 @@ public class Puja {
         this.displayOrder = displayOrder;
         this.updatedBy = staffId;
         this.updatedAt = now;
+    }
+
+    /** ADR 0029: off the catalog for good; past bookings keep their own copy of the name. */
+    void delete(long staffId, OffsetDateTime now) {
+        this.deletedAt = now;
+        this.deletedBy = staffId;
     }
 
     public Long getId() { return id; }

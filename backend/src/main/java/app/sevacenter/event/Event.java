@@ -56,6 +56,12 @@ public class Event {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
+
+    @Column(name = "deleted_by")
+    private Long deletedBy;
+
     protected Event() { }
 
     Event(long tenantId, long staffId, OffsetDateTime now) {
@@ -79,6 +85,12 @@ public class Event {
     void changeStatus(EventStatus status, long staffId, OffsetDateTime now) {
         this.status = status;
         touch(staffId, now);
+    }
+
+    /** ADR 0029: hidden everywhere; the row stays. */
+    void delete(long staffId, OffsetDateTime now) {
+        this.deletedAt = now;
+        this.deletedBy = staffId;
     }
 
     /** Public registration is possible: published, open, and not yet started. */
