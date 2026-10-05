@@ -1,18 +1,34 @@
-# Local development dependencies. The app itself runs via `./mvnw spring-boot:run`
-# (Dockerizing the app comes at M5). Compose reads variables from .env (gitignored).
+# Local stack. Compose reads variables from .env (gitignored).
+#   make db-up   database + mail only (run the app with `make run` / `make fe-dev`)
+#   make up      the whole stack from the container images (profile "app"), hardened the way
+#                ECS will run it (M6): read-only, no capabilities, no-new-privileges, memory limits.
+# Images are pinned by digest, like CI. Ports are published on 127.0.0.1 only: nothing here is
+# reachable from the network you're on.
+
+# Fixed project name: container and volume names never depend on which folder or worktree runs
+# compose (a worktree once got a different database because of it).
+name: sevacenter
+
+x-hardened: &hardened
+  read_only: true
+  tmpfs: [/tmp]
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  restart: unless-stopped
+
 services:
   db:
-    image: postgres:16
+    image: postgres@sha256:1a6ab3f5345eb6dbe04a1349529caabdb0ab09293a09590fad07b2246bfa4b54 # 16.15
     container_name: sevacenter-db
     environment:
       POSTGRES_DB: ${DB_NAME:-sevacenter}
       POSTGRES_USER: ${DB_USERNAME:-sevacenter}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required — copy .env.example to .env and set it}
-      DB_APP_PASSWORD: ${DB_APP_PASSWORD:?DB_APP_PASSWORD is required — set it in .env}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required. Copy .env.example to .env and set it}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:?DB_APP_PASSWORD is required. Set it in .env}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - devdb:/var/lib/postgresql/data
       - ./docker/db-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-sevacenter} -d ${DB_NAME:-sevacenter}"]
@@ -23,11 +39,56 @@ services:
   # Catches the app's outgoing email locally (devotee login codes, ADR 0018): nothing is ever
   # delivered to a real inbox. UI: http://localhost:8025. Local only; SES/SMTP in production.
   mail:
-    image: axllent/mailpit:v1.27
+    image: axllent/mailpit@sha256:e22dce5b36f93c77082e204a3942fb6b283b7896e057458400a4c88344c3df68 # v1.27
     container_name: sevacenter-mail
     ports:
       - "127.0.0.1:1025:1025"
       - "127.0.0.1:8025:8025"
 
+  # The backend image (backend/Dockerfile, ADR 0031). Not published: like production, only the
+  # frontend's /api proxy talks to it. Secrets are an explicit list, never the whole .env.
+  backend:
+    profiles: [app]
+    <<: *hardened
+    build: ./backend
+    image: sevacenter-backend:local
+    container_name: sevacenter-backend
+    mem_limit: 768m
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: local # plain http locally: non-Secure cookies, header tenant override
+      DB_URL: jdbc:postgresql://db:5432/${DB_NAME:-sevacenter}
+      DB_USERNAME: ${DB_USERNAME:-sevacenter}
+      DB_PASSWORD: ${DB_PASSWORD:?} # owner, for Flyway at start-up. M6: a separate migration task
+      DB_APP_USERNAME: ${DB_APP_USERNAME:-sevacenter_app}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:?}
+      SEVACENTER_PAN_KEY: ${SEVACENTER_PAN_KEY:?}
+      SEVACENTER_PAN_INDEX_KEY: ${SEVACENTER_PAN_INDEX_KEY:?}
+      SEVACENTER_SECRETS_KEY: ${SEVACENTER_SECRETS_KEY:?}
+      SEVACENTER_OTP_KEY: ${SEVACENTER_OTP_KEY:?}
+      SEVACENTER_MAIL_FROM: ${SEVACENTER_MAIL_FROM:-no-reply@sevacenter.local}
+      SPRING_MAIL_HOST: mail
+      SPRING_MAIL_PORT: "1025"
+      SEVACENTER_STAFF_URL: http://{slug}.localhost:${FRONTEND_PORT:-3000}
+      SEVACENTER_TEMPLE_URL: http://{slug}.localhost:${FRONTEND_PORT:-3000}
+
+  # The frontend image (frontend/Dockerfile): staff app + MandirCenter, and the /api proxy.
+  frontend:
+    profiles: [app]
+    <<: *hardened
+    build: ./frontend
+    image: sevacenter-frontend:local
+    container_name: sevacenter-frontend
+    mem_limit: 512m
+    depends_on: [backend]
+    environment:
+      SC_BACKEND_URL: http://backend:8080
+      SC_TENANT_BASE_DOMAINS: localhost
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-3000}:3000"
+
 volumes:
-  pgdata:
+  devdb:
+    name: sevacenter_devdb

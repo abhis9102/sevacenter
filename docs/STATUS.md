@@ -15,8 +15,8 @@ _Last updated: 2026-10-05. Read this section first; everything below it is the d
 
 ## Next
 
-1. **M5 containers:** backend image ✅ (ADR 0031), **G6** image scan ✅. Next: the frontend image
-   and compose parity.
+1. **M5 containers ✅:** backend + frontend images, G6 on both, `make up` runs the whole stack
+   from the images. Next: **M6** Terraform → AWS.
 2. M6 Terraform → AWS (ECS Fargate, RDS, ALB, wildcard ACM, Secrets Manager; G7 Checkov + OIDC),
    then M7 consolidation (AI-code provenance, package-reputation check, DAST on staging).
 
@@ -528,6 +528,19 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
   blocked (8 fixable High); bad accepted risks rejected and suppressed nothing. **In CI** (#64,
   closed): required check failed and the ruleset refused the merge even for the owner. Findings
   now annotate the Dockerfile line on the PR.
+
+## M5 slice 2: frontend image + compose from images ✅ (this PR) — **M5 complete**
+- `frontend/Dockerfile`:
+  - Lockfile install with scripts off, Next.js standalone output.
+  - Distroless Node 22 / Debian 13, nonroot, read-only, pinned.
+  - 14 OS + 23 Node packages, 0 Critical/High.
+- G6 scans both images. Coverage is per image (Java vs Node). Both Dockerfiles go through the
+  misconfiguration scan; a planted `USER root` in the frontend was blocked.
+- `make up` runs DB, mail, backend and frontend from the images with production hardening. Proven
+  end to end: register, log in and `/me` through the containers; existing data intact.
+- **Fixed:** the dev Postgres was published on all interfaces (now 127.0.0.1); the compose project
+  name is pinned. Dev data was copied to the new `sevacenter_devdb` volume. The old
+  `sevacenter_pgdata` and `sevacenter-main_pgdata` volumes are untouched and can be deleted.
 
 ## Open product questions (non-blocking)
 - Diya vs lotus logo mark. Any MandirCenter colour too strong (see styleguide artifact).

@@ -8,8 +8,9 @@
   misconfig Fail on Dockerfile / IaC misconfigurations at or above a severity, reported as
             annotations on the exact file and line, so the reason shows on the PR diff instead
             of only in the job log.
-  coverage  The scan must actually have seen the image: an OS was detected and the jar's
-            libraries were listed. A scan that silently analysed nothing reports "0
+  coverage  The scan must actually have seen the image: an OS was detected, and the app's own
+            libraries (--expect jar for the backend, node-pkg for the frontend) were listed.
+            A scan that silently analysed nothing reports "0
             vulnerabilities" (the G3 lesson), so that is a failure, not a pass.
   gate      Fail on any Critical or High vulnerability that has a fix available. Unfixable ones
             don't block (nobody can act on them) but stay visible in code scanning and are
@@ -106,7 +107,7 @@ def misconfig(trivy_json: str, fail_at: str) -> list[str]:
     return errors
 
 
-def coverage(trivy_json: str) -> list[str]:
+def coverage(trivy_json: str, expect: str) -> list[str]:
     report = json.loads(pathlib.Path(trivy_json).read_text(encoding="utf-8"))
     errors = []
     os_info = (report.get("Metadata") or {}).get("OS") or {}
@@ -114,12 +115,12 @@ def coverage(trivy_json: str) -> list[str]:
         errors.append("no operating system detected in the image: the OS packages were not scanned")
     results = report.get("Results") or []
     os_pkgs = sum(len(r.get("Packages") or []) for r in results if r.get("Class") == "os-pkgs")
-    jar_pkgs = sum(len(r.get("Packages") or []) for r in results if r.get("Type") == "jar")
+    app_pkgs = sum(len(r.get("Packages") or []) for r in results if r.get("Type") == expect)
     if os_pkgs == 0:
         errors.append("0 OS packages listed (scan with --list-all-pkgs, and check the image)")
-    if jar_pkgs == 0:
-        errors.append("0 Java libraries listed: the application jar was not analysed")
-    print(f"coverage: {os_info.get('Family')} {os_info.get('Name')}, {os_pkgs} OS packages, {jar_pkgs} Java libraries")
+    if app_pkgs == 0:
+        errors.append(f"0 {expect} packages listed: the application's own libraries were not analysed")
+    print(f"coverage: {os_info.get('Family')} {os_info.get('Name')}, {os_pkgs} OS packages, {app_pkgs} {expect} packages")
     return errors
 
 
@@ -150,8 +151,9 @@ def main() -> int:
     m = sub.add_parser("misconfig", help="fail on Dockerfile/IaC misconfigurations, annotated by file and line")
     m.add_argument("trivy_json", help="trivy config --format json output (ignore file applied)")
     m.add_argument("--fail-at", default="MEDIUM", choices=SEVERITIES)
-    c = sub.add_parser("coverage", help="the scan really analysed the OS and the jar")
+    c = sub.add_parser("coverage", help="the scan really analysed the OS and the app's libraries")
     c.add_argument("trivy_json", help="trivy image --format json --list-all-pkgs output")
+    c.add_argument("--expect", required=True, choices=["jar", "node-pkg"], help="the app's package type")
     g = sub.add_parser("gate", help="fail on fixable critical/high vulnerabilities")
     g.add_argument("trivy_json", help="trivy image --format json output (ignore file applied)")
     args = p.parse_args()
@@ -161,7 +163,7 @@ def main() -> int:
     elif args.cmd == "misconfig":
         errors = misconfig(args.trivy_json, args.fail_at)
     elif args.cmd == "coverage":
-        errors = coverage(args.trivy_json)
+        errors = coverage(args.trivy_json, args.expect)
     else:
         errors = gate(args.trivy_json)
     for e in errors:

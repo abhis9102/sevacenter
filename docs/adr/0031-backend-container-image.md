@@ -34,6 +34,27 @@
 - **Image scan policy (G6, next):** Trivy fails the build on *fixable* Critical/High; unfixable ones
   are tracked and the image is re-scanned daily.
 
+## Frontend image (added 2026-10-06)
+
+- `frontend/Dockerfile`, same principles: `npm ci --ignore-scripts` from the lockfile in a build
+  stage, Next.js `output: "standalone"` so only the server's runtime files ship (23 Node packages
+  instead of all of `node_modules`), runtime **distroless Node 22 on Debian 13, nonroot**, files
+  root-owned and read-only, digest-pinned (Dependabot watches `/frontend` too). Verified under a
+  read-only root filesystem with the CSP nonce and security headers intact. Trivy: 14 OS packages,
+  0 Critical/High.
+- Runtime config is server-side only (`SC_BACKEND_URL`, `SC_TENANT_BASE_DOMAINS`, never
+  `NEXT_PUBLIC_*`), so one frontend image runs in every environment.
+
+## Local stack from the images (`docker-compose.yml`, `make up`)
+
+- Profile `app` runs backend + frontend from the images with the production hardening:
+  `read_only`, tmpfs `/tmp`, `cap_drop: ALL`, `no-new-privileges`, memory limits. The backend
+  isn't published (only the frontend's `/api` proxy reaches it, as in production). Secrets are
+  listed one by one. Every port is bound to 127.0.0.1. Postgres was published on all interfaces
+  before, so anyone on the same network could reach the dev database.
+- The project name is pinned (`name: sevacenter`), so container and volume names never depend on
+  the folder or worktree compose runs from.
+
 ## Consequences
 
 - No `docker exec` shell for debugging. Use the distroless `:debug-nonroot` variant locally, never

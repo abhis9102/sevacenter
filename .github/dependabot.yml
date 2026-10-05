@@ -39,7 +39,7 @@ updates:
   # up OS security fixes by themselves (a stale "minimal" image is how CVEs pile up). Dependabot
   # proposes digest bumps weekly; the image scan in CI judges each one like any other change.
   - package-ecosystem: docker
-    directory: /backend
+    directories: [/backend, /frontend]
     schedule:
       interval: weekly
     cooldown:

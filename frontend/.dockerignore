@@ -1,0 +1,14 @@
+# Only what the build needs: package files, config and src. No local installs or build output
+# (they'd shadow the clean install), no tests, no env files or keys.
+node_modules/
+.next/
+.test-build/
+tests/
+*.tsbuildinfo
+.env
+.env.*
+*.pem
+*.key
+Dockerfile
+.dockerignore
+README.md
