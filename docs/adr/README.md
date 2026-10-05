@@ -36,3 +36,4 @@ change a decision, add a new ADR that supersedes the old one.
 | [0028](0028-sevak-hub.md) | Sevak Hub: seva teams with shifts (create/edit/delete), staff-registered volunteers, deploy/release, remove keeps the row | Accepted |
 | [0029](0029-deleting-events-and-pujas.md) | Deleting events (draft/cancelled only) and pujas (no open bookings): soft delete, row and history kept, DB-enforced | Accepted |
 | [0030](0030-configured-public-urls.md) | Public URLs per environment: one template per brand, never from the request, required + validated at startup, frontend fails closed | Accepted |
+| [0031](0031-backend-container-image.md) | Backend image: multi-stage from clean source, distroless Debian 13 (scanned vs alternatives), digest-pinned + Dependabot, non-root, read-only rootfs | Accepted |

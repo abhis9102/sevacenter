@@ -15,8 +15,8 @@ _Last updated: 2026-10-05. Read this section first; everything below it is the d
 
 ## Next
 
-1. **M5 containers** (Abhi drives, hands-on): Dockerfiles for backend and frontend, compose parity,
-   then **G6** image scan (Trivy), proven by failing it on purpose.
+1. **M5 containers:** backend image ✅ (ADR 0031). Next: **G6** image scan in CI (Trivy, fixable
+   Critical/High fail), proven by failing it on purpose; then the frontend image and compose parity.
 2. M6 Terraform → AWS (ECS Fargate, RDS, ALB, wildcard ACM, Secrets Manager; G7 Checkov + OIDC),
    then M7 consolidation (AI-code provenance, package-reputation check, DAST on staging).
 
@@ -498,6 +498,21 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
   ZAP then raised **40018 (boolean SQLi) on PUT /temple `deity`**: reproduced by hand, one request at
   a time, the responses are identical and the payload is stored literally (JPA-bound). Accepted by
   Abhi (AppSec), scoped to that rule, param and path, and pinned by a mutation-checked TempleTest.
+
+## M5 slice 1: backend container image ✅ (this PR, ADR 0031)
+- Built round by round, each step checked on the real image:
+  - **Multi-stage from clean source.** A laptop build once packaged a stale migration from another
+    branch, so `.dockerignore` now keeps `target/` out.
+  - **Non-root.** As root, a simulated attacker backdoored the jar, read `/etc/shadow` and installed
+    nmap; as the app user, all three fail.
+  - **Dependency layer cached.** A one-line change rebuilds in 10 s instead of 76 s.
+- **Base image chosen by scanning:** Ubuntu JRE (0 High, but shell, curl and apt) vs distroless
+  Debian 12 (35 fixes not shipped, stale) vs **distroless Debian 13** (8 unreachable or unfixed
+  High, no shell): Debian 13 chosen. Pinned by digest; Dependabot watches the Dockerfile.
+- Runs read-only, all capabilities dropped, `no-new-privileges`, memory-limited. Graceful SIGTERM
+  shutdown. Trivy gate preview: 0 fixable Critical/High.
+- **Findings for M6:** pass secrets as an allowlist; run migrations as a separate task, so the app
+  never holds the DB owner password.
 
 ## Open product questions (non-blocking)
 - Diya vs lotus logo mark. Any MandirCenter colour too strong (see styleguide artifact).
