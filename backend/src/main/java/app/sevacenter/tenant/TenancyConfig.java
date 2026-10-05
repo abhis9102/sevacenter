@@ -1,7 +1,5 @@
 package app.sevacenter.tenant;
 
-import java.util.List;
-
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -50,9 +48,9 @@ public class TenancyConfig {
     FilterRegistrationBean<TenantResolutionFilter> tenantResolutionFilter(
             TenantRepository tenants,
             @Value("${sevacenter.tenant.allow-header-override:false}") boolean allowHeaderOverride,
-            @Value("${sevacenter.tenant.base-domains:sevacenter.app,mandircenter.app}") List<String> baseDomains) {
+            PublicUrls publicUrls) {
         FilterRegistrationBean<TenantResolutionFilter> reg = new FilterRegistrationBean<>();
-        reg.setFilter(new TenantResolutionFilter(tenants, allowHeaderOverride, baseDomains));
+        reg.setFilter(new TenantResolutionFilter(tenants, allowHeaderOverride, publicUrls.baseDomains()));
         reg.addUrlPatterns("/*");
         reg.setOrder(Ordered.HIGHEST_PRECEDENCE + 1);   // after the sanity filter, before Spring Security (-100)
         return reg;
