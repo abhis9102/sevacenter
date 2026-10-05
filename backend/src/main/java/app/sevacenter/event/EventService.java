@@ -49,7 +49,7 @@ public class EventService {
 
     @Transactional
     public Event update(long id, EventDetails d, long staffId) {
-        Event e = get(id);
+        Event e = lock(id);
         if (e.getStatus() == EventStatus.CANCELLED) {
             throw new EventConflictException("event_cancelled");
         }
@@ -59,7 +59,7 @@ public class EventService {
 
     @Transactional
     public Event changeStatus(long id, EventStatus status, long staffId) {
-        Event e = get(id);
+        Event e = lock(id);
         if (e.getStatus() == EventStatus.CANCELLED) {
             throw new EventConflictException("event_cancelled");
         }
@@ -69,6 +69,21 @@ public class EventService {
         return e;
     }
 
+    /**
+     * ADR 0029: a draft or cancelled event can be deleted; a published one is cancelled first, so
+     * registered devotees see "cancelled". The row and its passes stay (My Mandir, audit trail).
+     */
+    @Transactional
+    public void delete(long id, long staffId) {
+        Event e = lock(id);
+        if (e.getStatus() == EventStatus.PUBLISHED) {
+            throw new EventConflictException("cancel_first");
+        }
+        e.delete(staffId, now());
+        audit.info("event=event_deleted tenant={} user={} event={}", currentTenant(), staffId, id);
+        auditTrail.record(AuditAction.EVENT_DELETED, "event", id, null);
+    }
+
     @Transactional(readOnly = true)
     public List<Event> list() {
         return events.newestFirst(PageRequest.of(0, 200));
@@ -76,7 +91,12 @@ public class EventService {
 
     @Transactional(readOnly = true)
     public Event get(long id) {
-        return events.findById(id).orElseThrow(EventNotFoundException::new);
+        return events.live(id).orElseThrow(EventNotFoundException::new);
+    }
+
+    /** Staff changes to one event serialize with each other and with seat counting. */
+    private Event lock(long id) {
+        return events.lockById(id).orElseThrow(EventNotFoundException::new);
     }
 
     @Transactional(readOnly = true)
@@ -93,6 +113,7 @@ public class EventService {
     /** At the gate: checks a pass in once. A re-scan says when it was already used. */
     @Transactional
     public EventPass checkIn(long eventId, String rawCode, long staffId) {
+        get(eventId);
         EventPass pass = passes.lockByCode(normaliseCode(rawCode))
                 .filter(p -> p.getEventId() == eventId)
                 .orElseThrow(PassNotFoundException::new);
@@ -109,6 +130,7 @@ public class EventService {
 
     @Transactional
     public EventPass cancelPass(long eventId, long passId, long staffId) {
+        get(eventId);
         EventPass pass = passes.findById(passId).filter(p -> p.getEventId() == eventId)
                 .orElseThrow(PassNotFoundException::new);
         pass.cancel();

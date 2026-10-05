@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "@/components/apiClient";
 import { useMe } from "@/components/Session";
 import { Alert, Button, Card, PageHeader } from "@/components/ui";
+import { AUDIT_ACTIONS } from "@/lib/audit";
 import { describeError } from "@/lib/errors";
 import { formatDateTime } from "@/lib/format";
 import { hasRole } from "@/lib/types";
@@ -26,13 +27,6 @@ interface AuditPage {
   total: number;
 }
 
-const ACTIONS = [
-  "USER_INVITED", "USER_ROLE_CHANGED", "USER_DEACTIVATED", "USER_DELETED", "USER_SETUP_LINK_REISSUED",
-  "USER_RESET_LINK_ISSUED", "DEVOTEE_CREATED", "DEVOTEE_UPDATED", "DEVOTEE_ERASED", "DEVOTEES_IMPORTED",
-  "DEVOTEES_EXPORTED", "DONATION_RECORDED", "DONATION_REVERSED", "RECEIPT_ISSUED", "TRUST_PROFILE_SAVED",
-  "PAYMENT_SETTINGS_SAVED", "EVENT_STATUS_CHANGED", "PUJA_SAVED", "PUJA_BOOKING_CANCELLED", "SEVAK_REVIEWED",
-  "TEMPLE_PAGE_SAVED", "USER_ACCESS_CHANGED", "FUND_SAVED",
-] as const;
 
 const SIZE = 50;
 
@@ -81,7 +75,7 @@ export default function AuditPageView() {
         <select id="audit-action" className="rounded-[8px] border border-line bg-surface px-3 py-2 text-sm"
                 value={action} onChange={(e) => { setPage(0); setAction(e.target.value); }}>
           <option value="">All actions</option>
-          {ACTIONS.map((a) => <option key={a} value={a}>{label(a)}</option>)}
+          {AUDIT_ACTIONS.map((a) => <option key={a} value={a}>{label(a)}</option>)}
         </select>
       </div>
       {error ? <Alert tone="danger">{error}</Alert> : null}

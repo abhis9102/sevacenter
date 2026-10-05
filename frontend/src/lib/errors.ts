@@ -46,6 +46,8 @@ const MESSAGES: Record<string, string> = {
   event_full: "There aren't enough places left for this event.",
   event_cancelled: "This event was cancelled.",
   pass_cancelled: "This pass was cancelled.",
+  cancel_first: "Cancel this utsav first, so registered devotees are told. Then it can be deleted.",
+  has_open_bookings: "This puja still has bookings to honour. Perform or cancel them first, or mark the puja inactive.",
   payments_not_configured: "This trust hasn't connected a payment account yet.",
   payment_not_verified: "The payment could not be verified, so no donation was recorded.",
   gateway_unavailable: "Razorpay didn't respond. Nothing was recorded; please try again.",

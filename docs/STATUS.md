@@ -399,7 +399,7 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
   actions, aarti timetable with the next one highlighted. Donate: amount chips, fund cards.
   Bilingual (en/hi) frame and home.
 - Panchang + darshan unit tests (14), **mutation-checked 12/12**.
-- Not yet: the prototype's delete actions and staff-created volunteers (next PR).
+- The prototype's delete actions and staff-created volunteers: see ADR 0028 and 0029.
 
 ## Devotee contacts + profile ✅ (this PR, ADR 0025)
 - `V23`: `devotee_contact` (forced RLS), `devotee_account.merged_into` and profile columns. Link a
@@ -438,6 +438,22 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
   receipt copy) now follows the English/हिंदी switch. Text lives in `lib/i18n-mandir.ts`; the Hindi
   object is typed against the English one, so a missing translation fails the build. Temple-entered
   content (trust, fund, puja names) is shown as the temple wrote it.
+
+## Deleting events and pujas ✅ (this PR, ADR 0029)
+- Rebuilds the prototype's last two features. Staff-created volunteers and volunteer removal already
+  shipped in the Sevak Hub (ADR 0028); cancelling passes and puja bookings already existed and keeps
+  the money trail, so the prototype's hard deletes of those are not adopted.
+- `V28`: `deleted_at` / `deleted_by` on `event` and `puja`. **Soft delete**: the app role still has
+  no `DELETE` grant, so the prototype's `repository.delete()` would have failed against the real
+  database anyway. Deleted rows leave every list and action; My Mandir and Devotee 360 keep history.
+- Guard rails: a published event must be cancelled first (409 `cancel_first`, plus a DB check); a
+  puja with bookings still to honour can't go (409 `has_open_bookings`). Booking holds a shared lock
+  on the puja, delete an exclusive one, so a delete waits for an in-flight booking and then sees it.
+- Delete buttons with confirmation on Festivals & Passes (draft / cancelled utsavs) and the Puja
+  Catalog. The audit log filter now lists all 34 actions, kept equal to `AuditAction.java` by a test.
+- 8 new backend tests, **mutation-checked 10/11**. The one survivor is an equivalent mutant: the
+  public-list filter can't see a deleted event, because only published events are public and those
+  can't be deleted.
 
 **All of the parallel session's MVP features are now rebuilt and reviewed.** Then: M5 containers →
 M6 AWS → M7 gates.
