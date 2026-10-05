@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { api } from "@/components/apiClient";
 import { Diya, Wordmark } from "@/components/Diya";
@@ -9,6 +9,7 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { Alert, Button, Card, TextField } from "@/components/ui";
 import { describeError } from "@/lib/errors";
+import { portalBase } from "@/lib/tenant";
 
 const SLUG_REGEX = /^[a-z0-9]([a-z0-9-]{1,38}[a-z0-9])$/;
 
@@ -28,6 +29,12 @@ export default function RegisterPage() {
   const [adminPassword, setAdminPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [base, setBase] = useState("");
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the host is only known in the browser
+    setBase(portalBase(window.location));
+  }, []);
   const [result, setResult] = useState<RegistrationResult | null>(null);
 
   function onSlugChange(value: string) {
@@ -72,16 +79,10 @@ export default function RegisterPage() {
     }
   }
 
-  // Determine local port or domain preview
-  const isLocal = typeof window !== "undefined" && window.location.hostname.includes("localhost");
-  const portSuffix = isLocal && window.location.port ? `:${window.location.port}` : "";
-  const portalHost = isLocal
-    ? `${slug || "yourtrust"}.localhost${portSuffix}`
-    : `${slug || "yourtrust"}.sevacenter.app`;
-
-  const portalTargetUrl = isLocal && result
-    ? `http://${result.slug}.localhost${portSuffix}/login`
-    : result?.adminUrl || "";
+  // Preview of the trust's address under the domain this page is served on (ADR 0030). After
+  // registering, the link comes from the server's configured staff URL.
+  const portalHost = `${slug || "yourtrust"}.${base}`;
+  const portalTargetUrl = result ? `${result.adminUrl}/login` : "";
 
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center px-4 py-12">
@@ -162,11 +163,11 @@ export default function RegisterPage() {
                       className="w-full bg-transparent px-3 py-2 text-sm font-mono text-fg placeholder:text-muted/60 focus:outline-none"
                     />
                     <span className="pr-3 text-xs font-mono text-muted select-none">
-                      .{isLocal ? `localhost${portSuffix}` : "sevacenter.app"}
+                      {base ? `.${base}` : null}
                     </span>
                   </div>
                   <p className="text-xs text-muted font-mono">
-                    https://{portalHost}
+                    {base.startsWith("localhost") ? "http" : "https"}://{portalHost}
                   </p>
                   <p className="text-xs text-muted">{t.auth.register.subdomainHelp}</p>
                 </div>

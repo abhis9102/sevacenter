@@ -58,11 +58,14 @@ done
 
 echo "--- app under test: $JAR"
 JDBC_URL="jdbc:postgresql://127.0.0.1:$DB_PORT/sevacenter" # trufflehog:ignore — no credentials in URL
+# Its own domains (ADR 0030), not a production one: the probe addresses tenants as <slug>.$STAFF_DOMAIN.
+STAFF_DOMAIN=sc.dast.test
 SPRING_PROFILES_ACTIVE=local SERVER_PORT=$APP_PORT \
   DB_URL="$JDBC_URL" DB_USERNAME=sevacenter \
   DB_PASSWORD="$DB_PASSWORD" DB_APP_USERNAME=sevacenter_app DB_APP_PASSWORD="$DB_APP_PASSWORD" \
   SEVACENTER_PAN_KEY="$PAN_KEY" SEVACENTER_PAN_INDEX_KEY="$PAN_INDEX_KEY" SEVACENTER_SECRETS_KEY="$SECRETS_KEY" \
   SEVACENTER_OTP_KEY="$OTP_KEY" SEVACENTER_MAIL_FROM= \
+  SEVACENTER_STAFF_URL="https://{slug}.$STAFF_DOMAIN" SEVACENTER_TEMPLE_URL="https://{slug}.mc.dast.test" \
   java -jar "$JAR" > "$OUT/app.log" 2>&1 &
 APP_PID=$!
 for _ in $(seq 90); do
@@ -75,7 +78,7 @@ curl -sf "http://127.0.0.1:$APP_PORT/actuator/health" >/dev/null || { echo "::er
 APP="http://127.0.0.1:$APP_PORT"
 
 echo "--- 1/3 authz probe: cross-tenant + role matrix"
-python3 "$ROOT/tools/security/authz_probe.py" "$APP" --out "$OUT/authz-probe.json"
+python3 "$ROOT/tools/security/authz_probe.py" "$APP" --base-domain "$STAFF_DOMAIN" --out "$OUT/authz-probe.json"
 
 cp "$ROOT/.zap/rules.tsv" "$OUT/rules.tsv" # -c resolves inside ZAP's /zap/wrk mount
 replace() { # index, description, header, value

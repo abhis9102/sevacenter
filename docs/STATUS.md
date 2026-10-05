@@ -22,6 +22,8 @@ _Last updated: 2026-10-05. Read this section first; everything below it is the d
 
 ## Open items
 
+- **Staging domain:** a subzone of a domain we own (delegated to Route 53 in M6), set through the
+  ADR 0030 variables, never committed. Buy the product domains before going live.
 - **AppSec review pending:** `.zap/accepted.toml` entry for rule 40018 on `/priests|/seva-teams`
   (`name` param), added on the donation-funds precedent while the UI stack was merged. Confirm or
   replace it.
@@ -476,6 +478,26 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
 - 8 new backend tests, **mutation-checked 10/11**. The one survivor is an equivalent mutant: the
   public-list filter can't see a deleted event, because only published events are public and those
   can't be deleted.
+
+## Public URLs from configuration ✅ (this PR, ADR 0030)
+- **Finding (AppSec):** setup and password-reset links were hardcoded to `https://<slug>.sevacenter.app`,
+  a domain we don't own yet. On staging, or anywhere but production, every link would have handed
+  live tokens to whoever registers that domain.
+- `SEVACENTER_STAFF_URL` / `SEVACENTER_TEMPLE_URL` (`https://{slug}.<domain>`): links and tenant
+  host resolution both read them. No default, validated at startup (https, `{slug}` first label,
+  nothing else); the local profile supplies `http://{slug}.localhost:3000`. Links never come from
+  the request's Host or forwarded headers, so a test sends forged ones to prove reset links can't be
+  poisoned.
+- Frontend: `SC_TENANT_BASE_DOMAINS` defaults to `localhost` only (fail closed); the landing and
+  register pages show the domain they're served on.
+- Proven on the real jar: no config gives "SEVACENTER_STAFF_URL is not set" and the app doesn't
+  start; the local profile resolves `demo.localhost` and ignores `demo.sevacenter.app`. Mutation-checked
+  **8/8** (two survivors on the first pass came from weak test cases; the tests were fixed).
+- DAST on this PR: the authz probe still addressed tenants as `<slug>.sevacenter.app`, so it logged
+  in nowhere (401); it now takes `--base-domain` and `dast.sh` gives the app its own test domain.
+  ZAP then raised **40018 (boolean SQLi) on PUT /temple `deity`**: reproduced by hand, one request at
+  a time, the responses are identical and the payload is stored literally (JPA-bound). Accepted by
+  Abhi (AppSec), scoped to that rule, param and path, and pinned by a mutation-checked TempleTest.
 
 ## Open product questions (non-blocking)
 - Diya vs lotus logo mark. Any MandirCenter colour too strong (see styleguide artifact).

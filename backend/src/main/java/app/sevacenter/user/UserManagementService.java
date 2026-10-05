@@ -16,6 +16,7 @@ import app.sevacenter.audit.AuditAction;
 import app.sevacenter.audit.AuditTrail;
 import app.sevacenter.auth.LoginThrottle;
 import app.sevacenter.tenant.TenantContext;
+import app.sevacenter.tenant.PublicUrls;
 import app.sevacenter.tenant.TenantRepository;
 import app.sevacenter.web.InvalidFieldException;
 import org.slf4j.Logger;
@@ -50,13 +51,15 @@ public class UserManagementService {
     private final LoginThrottle throttle;
     private final PasswordResetService resets;
     private final AuditTrail auditTrail;
+    private final PublicUrls publicUrls;
     private final Clock clock;
 
     public UserManagementService(AppUserRepository users, SetupTokenRepository setupTokens,
                                  TenantRepository tenants, PasswordEncoder passwordEncoder,
                                  UserAvatarRepository avatars, LoginThrottle throttle,
-                                 PasswordResetService resets, AuditTrail auditTrail) {
+                                 PasswordResetService resets, AuditTrail auditTrail, PublicUrls publicUrls) {
         this.auditTrail = auditTrail;
+        this.publicUrls = publicUrls;
         this.users = users;
         this.setupTokens = setupTokens;
         this.tenants = tenants;
@@ -174,7 +177,7 @@ public class UserManagementService {
         auditTrail.record(AuditAction.USER_RESET_LINK_ISSUED, "user", user.getId(), null);
         String slug = tenants.findById(user.getTenantId()).orElseThrow().getSlug();
         // In the fragment, like setup links: never sent to a server, never in logs or Referer.
-        return "https://" + slug + ".sevacenter.app/reset-password#token=" + token;
+        return publicUrls.staff(slug) + "/reset-password#token=" + token;
     }
 
     /** A fresh link for a PENDING user; any earlier link stops working. */
@@ -282,7 +285,7 @@ public class UserManagementService {
         String slug = tenants.findById(user.getTenantId()).orElseThrow().getSlug();
         // In the fragment: browsers never send it to the server, so it stays out of access logs
         // and Referer headers. The setup page reads it and POSTs it to /api/v1/auth/setup.
-        return "https://" + slug + ".sevacenter.app/setup#token=" + token;
+        return publicUrls.staff(slug) + "/setup#token=" + token;
     }
 
     private void requireAnotherActiveAdmin(AppUser leaving) {

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { safeReturnTo } from "../src/lib/returnTo";
-import { portalLoginUrl, slugFromHost } from "../src/lib/tenant";
+import { parseBaseDomains, portalBase, portalLoginUrl, slugFromHost } from "../src/lib/tenant";
 import { downstreamResponseHeaders, upstreamPath, upstreamRequestHeaders } from "../src/lib/upstream";
 
 describe("safeReturnTo (no open redirects)", () => {
@@ -34,10 +34,16 @@ describe("safeReturnTo (no open redirects)", () => {
 });
 
 describe("slugFromHost", () => {
-  it("reads the tenant from <slug>.localhost[:port] and <slug>.sevacenter.app", () => {
+  it("reads the tenant from <slug>.localhost[:port] and <slug>.<configured domain>", () => {
     assert.equal(slugFromHost("siddheshwar.localhost:3000"), "siddheshwar");
     assert.equal(slugFromHost("Siddheshwar.LOCALHOST"), "siddheshwar");
-    assert.equal(slugFromHost("shri-ram.sevacenter.app"), "shri-ram");
+    const bases = parseBaseDomains("sc.stg.example.test, sevacenter.app");
+    assert.equal(slugFromHost("shri-ram.sevacenter.app", bases), "shri-ram");
+    assert.equal(slugFromHost("shri-ram.sc.stg.example.test", bases), "shri-ram");
+  });
+  it("knows no production domain until one is configured (ADR 0030)", () => {
+    assert.equal(slugFromHost("shri-ram.sevacenter.app"), null);
+    assert.deepEqual(parseBaseDomains(undefined), ["localhost"]);
   });
   it("resolves no tenant for anything else", () => {
     for (const host of [
@@ -53,6 +59,14 @@ describe("slugFromHost", () => {
     ]) {
       assert.equal(slugFromHost(host), null, String(host));
     }
+  });
+});
+
+describe("portalBase", () => {
+  it("is the domain the page is served on, with its port", () => {
+    assert.equal(portalBase({ hostname: "sevacenter.app", port: "" }), "sevacenter.app");
+    assert.equal(portalBase({ hostname: "www.sc.stg.example.test", port: "" }), "sc.stg.example.test");
+    assert.equal(portalBase({ hostname: "127.0.0.1", port: "3001" }), "localhost:3001");
   });
 });
 

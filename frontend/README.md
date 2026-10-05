@@ -35,13 +35,13 @@ Server-side configuration (environment variables, read only on the server, never
 | Variable | Default | Purpose |
 |---|---|---|
 | `SC_BACKEND_URL` | `http://localhost:8080` | where the `/api/*` proxy sends requests |
-| `SC_TENANT_BASE_DOMAINS` | `localhost,sevacenter.app` | hosts of the form `<slug>.<base>` name a tenant |
+| `SC_TENANT_BASE_DOMAINS` | `localhost` | hosts of the form `<slug>.<base>` name a tenant. A deploy sets its own (e.g. the staff and temple domains); the default knows no production domain (ADR 0030) |
 
 There are no secrets in this app: it holds no keys, and the browser never holds a credential.
 
 ## How tenants and the API work locally
 
-The tenant is the subdomain (ADR 0009). Staff use `<slug>.sevacenter.app`; locally you use
+The tenant is the subdomain (ADR 0009). Staff use `<slug>.<staff domain>`; locally you use
 `<slug>.localhost:3000`, because browsers resolve every `*.localhost` name to loopback.
 
 The browser only ever talks to its own origin. `src/app/api/[...path]/route.ts` forwards

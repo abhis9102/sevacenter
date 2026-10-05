@@ -1,6 +1,9 @@
 # Test-only overrides, merged on top of the main application.yml (config/ wins).
 # Synthetic PAN keys (bytes 0..31 and 32..63): valid for PanProtection's checks, obviously not real.
 sevacenter:
+  public:
+    staff-url: https://{slug}.sevacenter.app
+    temple-url: https://{slug}.mandircenter.app
   secrets:
     key: QEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl8=  # gitleaks:allow (synthetic test key, bytes 64..95)
   otp:
