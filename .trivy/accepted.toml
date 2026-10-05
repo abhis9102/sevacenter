@@ -1,0 +1,13 @@
+# Accepted risks for the container image and Dockerfile scans (G6). Policy: docs/security/image-scan.md
+#
+# Same rules as osv-scanner.toml (G3) and .zap/accepted.toml (G5): one ID per entry, a misconfiguration
+# scoped to its file(s), a reason (>= 20 chars: who decided, why it's acceptable) and an ignoreUntil
+# no more than 90 days out. tools/security/image_policy.py enforces it and renders Trivy's ignore
+# file from this one; an invalid entry suppresses nothing.
+
+[[accepted]]
+id = "AVD-DS-0026" # Dockerfile has no HEALTHCHECK
+kind = "misconfiguration"
+paths = ["backend/Dockerfile"]
+ignoreUntil = 2026-12-31
+reason = "Abhi (AppSec), 2026-10-05: by design (ADR 0031). The distroless runtime has no shell or curl to run a HEALTHCHECK; the platform (ALB / ECS) checks GET /actuator/health instead."

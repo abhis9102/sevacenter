@@ -222,6 +222,39 @@ jobs:
       - name: Drift (everything we ship was also seen by the G3 scan)
         run: python3 tools/security/sbom_check.py drift "$SBOM" osv-pom.json
 
+  # G6: the container image that ships (backend/Dockerfile, ADR 0031) and the Dockerfile itself.
+  # Same script locally (`make image-scan`). Policy: docs/security/image-scan.md. Fixable
+  # Critical/High block; unfixable ones go to code scanning and are re-checked by the daily run.
+  image:
+    name: Image scan (Trivy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write # upload SARIF to code scanning
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Dockerfile scan, image build, image scan, coverage, gate
+        run: tools/security/image_scan.sh image-scan
+      # Every finding, unfixable ones included, stays visible in the Security tab.
+      - uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        if: ${{ !cancelled() && hashFiles('image-scan/trivy-image.sarif') != '' }}
+        with:
+          sarif_file: image-scan/trivy-image.sarif
+          category: trivy-image
+      # The image's own SBOM: OS packages included, which the jar's SBOM (G4) can't see.
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ !cancelled() }}
+        with:
+          name: image-scan
+          path: |
+            image-scan/trivy-image.json
+            image-scan/image.cdx.json
+          if-no-files-found: warn
+          retention-days: 14
+
   # Attacks the running app: the jar from `build` + a throwaway Postgres, ZAP active API scan.
   # Same script locally (`make dast`). Active scanning only ever targets this ephemeral env.
   dast:

@@ -8,15 +8,15 @@ _Last updated: 2026-10-05. Read this section first; everything below it is the d
   M4 MandirCenter operations (temple site, utsavs + gate passes, pujas + priests, Sevak Hub,
   dashboard, Devotee 360, Hindi). ADRs 0001–0029. Every parallel-session prototype feature has been
   rebuilt as a reviewed PR (last: ADR 0029, deleting events and pujas).
-- **Security gates G1–G5: live and required on `main`** (hardened CI, SAST, SCA, SBOM + signed
+- **Security gates G1–G6: live and required on `main`** (hardened CI, SAST, SCA, SBOM + signed
   attestations, DAST). Each one was proven by making it fail on purpose; see the track below.
 - **Stack:** Spring Boot 4.1 / Java 21, Postgres with forced RLS and a least-privilege app role,
   Next.js staff app + MandirCenter public site behind a same-origin `/api` proxy.
 
 ## Next
 
-1. **M5 containers:** backend image ✅ (ADR 0031). Next: **G6** image scan in CI (Trivy, fixable
-   Critical/High fail), proven by failing it on purpose; then the frontend image and compose parity.
+1. **M5 containers:** backend image ✅ (ADR 0031), **G6** image scan ✅. Next: the frontend image
+   and compose parity.
 2. M6 Terraform → AWS (ECS Fargate, RDS, ALB, wildcard ACM, Secrets Manager; G7 Checkov + OIDC),
    then M7 consolidation (AI-code provenance, package-reputation check, DAST on staging).
 
@@ -513,6 +513,19 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
   shutdown. Trivy gate preview: 0 fixable Critical/High.
 - **Findings for M6:** pass secrets as an allowlist; run migrations as a separate task, so the app
   never holds the DB owner password.
+
+## G6: container image scan ✅ (this PR, docs/security/image-scan.md)
+- Job `image` (required check **Image scan (Trivy)**; same script as `make image-scan`):
+  - Dockerfile/IaC scan (Medium+ blocks).
+  - The image is built and scanned from a `docker save` tar, never through the Docker socket.
+  - One scan feeds four outputs: coverage, the gate (**fixable** Critical/High block), SARIF to
+    code scanning (unfixable findings included) and the image SBOM (OS packages included).
+  - Runs daily on main through the scheduled CI.
+- Accepted risks in `.trivy/accepted.toml`, in the same format and with the same rules as G3/G5
+  (`image_policy.py`), rendered into Trivy's ignore file. First entry: no HEALTHCHECK by design
+  (distroless).
+- **Made to fail on purpose:** `USER root` blocked (DS-0002 HIGH); the stale Debian 12 base
+  blocked (8 fixable High); bad accepted risks rejected and suppressed nothing.
 
 ## Open product questions (non-blocking)
 - Diya vs lotus logo mark. Any MandirCenter colour too strong (see styleguide artifact).
