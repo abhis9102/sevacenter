@@ -493,6 +493,11 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
 - Proven on the real jar: no config gives "SEVACENTER_STAFF_URL is not set" and the app doesn't
   start; the local profile resolves `demo.localhost` and ignores `demo.sevacenter.app`. Mutation-checked
   **8/8** (two survivors on the first pass came from weak test cases; the tests were fixed).
+- DAST on this PR: the authz probe still addressed tenants as `<slug>.sevacenter.app`, so it logged
+  in nowhere (401); it now takes `--base-domain` and `dast.sh` gives the app its own test domain.
+  ZAP then raised **40018 (boolean SQLi) on PUT /temple `deity`**: reproduced by hand, one request at
+  a time, the responses are identical and the payload is stored literally (JPA-bound). Accepted by
+  Abhi (AppSec), scoped to that rule, param and path, and pinned by a mutation-checked TempleTest.
 
 ## Open product questions (non-blocking)
 - Diya vs lotus logo mark. Any MandirCenter colour too strong (see styleguide artifact).
