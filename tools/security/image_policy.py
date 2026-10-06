@@ -5,6 +5,9 @@
             misconfiguration), a written reason and an expiry no more than MAX_DAYS out. Valid
             entries are rendered to the YAML ignore file Trivy reads (--write); the TOML stays the
             single source of truth, in the same format as the G3 and G5 accepted risks.
+  misconfig Fail on Dockerfile / IaC misconfigurations at or above a severity, reported as
+            annotations on the exact file and line, so the reason shows on the PR diff instead
+            of only in the job log.
   coverage  The scan must actually have seen the image: an OS was detected and the jar's
             libraries were listed. A scan that silently analysed nothing reports "0
             vulnerabilities" (the G3 lesson), so that is a failure, not a pass.
@@ -28,6 +31,7 @@ MAX_DAYS = 90
 MIN_REASON = 20
 KINDS = {"vulnerability": "vulnerabilities", "misconfiguration": "misconfigurations"}
 BLOCKING = {"CRITICAL", "HIGH"}
+SEVERITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
 
 
 def ignores(config: str, today: dt.date, write: str | None) -> list[str]:
@@ -85,6 +89,23 @@ def render(valid: dict[str, list]) -> str:
     return "\n".join(out) + "\n"
 
 
+def misconfig(trivy_json: str, fail_at: str) -> list[str]:
+    report = json.loads(pathlib.Path(trivy_json).read_text(encoding="utf-8"))
+    threshold = SEVERITIES.index(fail_at)
+    errors, files = [], 0
+    for r in report.get("Results") or []:
+        files += 1
+        for m in r.get("Misconfigurations") or []:
+            sev = m.get("Severity", "UNKNOWN")
+            if m.get("Status") != "FAIL" or sev not in SEVERITIES or SEVERITIES.index(sev) < threshold:
+                continue
+            line = (m.get("CauseMetadata") or {}).get("StartLine") or 1
+            errors.append(f"::error file={r.get('Target')},line={line}::{m.get('AVDID') or m.get('ID')} ({sev}): "
+                          f"{m.get('Title')}. {m.get('Resolution') or ''}".rstrip())
+    print(f"misconfigurations: {files} file(s) scanned, {len(errors)} at {fail_at} or above")
+    return errors
+
+
 def coverage(trivy_json: str) -> list[str]:
     report = json.loads(pathlib.Path(trivy_json).read_text(encoding="utf-8"))
     errors = []
@@ -126,6 +147,9 @@ def main() -> int:
     i = sub.add_parser("ignores", help="accepted risks are scoped, reasoned and expiring")
     i.add_argument("config", nargs="?", default=".trivy/accepted.toml")
     i.add_argument("--write", help="render valid entries to this Trivy ignore file (YAML)")
+    m = sub.add_parser("misconfig", help="fail on Dockerfile/IaC misconfigurations, annotated by file and line")
+    m.add_argument("trivy_json", help="trivy config --format json output (ignore file applied)")
+    m.add_argument("--fail-at", default="MEDIUM", choices=SEVERITIES)
     c = sub.add_parser("coverage", help="the scan really analysed the OS and the jar")
     c.add_argument("trivy_json", help="trivy image --format json --list-all-pkgs output")
     g = sub.add_parser("gate", help="fail on fixable critical/high vulnerabilities")
@@ -134,12 +158,15 @@ def main() -> int:
 
     if args.cmd == "ignores":
         errors = ignores(args.config, dt.date.today(), args.write)
+    elif args.cmd == "misconfig":
+        errors = misconfig(args.trivy_json, args.fail_at)
     elif args.cmd == "coverage":
         errors = coverage(args.trivy_json)
     else:
         errors = gate(args.trivy_json)
     for e in errors:
-        print(f"::error::{e}")  # GitHub Actions annotation; plain text locally
+        # GitHub Actions annotation (plain text locally); some already carry file/line.
+        print(e if e.startswith("::") else f"::error::{e}")
     return 1 if errors else 0
 
 

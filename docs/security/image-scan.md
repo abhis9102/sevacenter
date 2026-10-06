@@ -17,7 +17,8 @@ scan catches build mistakes such as running as root. Semgrep doesn't read Docker
 ## How it runs (`tools/security/image_scan.sh`)
 
 1. **Accepted risks** (`.trivy/accepted.toml`) are validated, then rendered to the ignore file Trivy reads.
-2. **Dockerfile / IaC misconfigurations**, scanned from the repo root: **Medium and above block**.
+2. **Dockerfile / IaC misconfigurations**, scanned from the repo root: **Medium and above block**,
+   reported as annotations on the exact file and line, so the reason shows on the PR diff.
    The root-level scan will also cover the frontend Dockerfile and the M6 Terraform.
 3. **Build** the image, then `docker save` it to a tar. Trivy reads the tar and **never gets the
    Docker socket**: mounting `/var/run/docker.sock` into a scanner gives it root on the runner, and
@@ -70,9 +71,13 @@ weekly. Each bump is a PR, and this gate judges it.
 | `USER root` in the Dockerfile | **Blocked** at step 2: `AVD-DS-0002 (HIGH): Last USER command in Dockerfile should not be 'root'` |
 | Runtime base swapped to the stale distroless Debian 12 | **Blocked**: 8 fixable High (libexpat1 2.5.0-1+deb12u2, fixed in deb12u4…); 6 unfixable reported, not blocking |
 | Accepted risks with no paths, short reason, 2-year expiry, no expiry | **Rejected**, 4 errors; the rendered ignore file was empty |
+| **In CI**: `USER root` on a throwaway PR (#64) | **Image scan (Trivy)** failed with AVD-DS-0002, and the `protect-main` ruleset **refused the merge, even for the repo owner** ("the base branch policy prohibits the merge"). Closed unmerged. The failure reason was only in the log, so findings are now annotated on file and line |
 | The real image | **Passes**: Debian 13.7, 25 OS packages + 113 Java libraries scanned, 0 fixable Critical/High, 8 unfixable reported |
 
 ## Not yet
+
+- Local pre-commit hooks don't check Dockerfiles yet (Semgrep skips them), so `USER root` is only
+  caught in CI. A pre-commit Trivy config hook would catch it before the push.
 
 - The frontend image (next M5 slice) joins the same job.
 - Image signing and pushing to a registry (ECR), with the scan result attested, come in M6.
