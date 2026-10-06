@@ -34,3 +34,15 @@ updates:
         update-types: [minor, patch]
     commit-message:
       prefix: build
+
+  # M5: base images in backend/Dockerfile are pinned by digest, which also means they never pick
+  # up OS security fixes by themselves (a stale "minimal" image is how CVEs pile up). Dependabot
+  # proposes digest bumps weekly; the image scan in CI judges each one like any other change.
+  - package-ecosystem: docker
+    directories: [/backend, /frontend]
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3 # base images are mostly security rebuilds; a short wait still beats a hijack
+    commit-message:
+      prefix: build

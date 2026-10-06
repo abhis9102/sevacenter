@@ -8,15 +8,15 @@ _Last updated: 2026-10-05. Read this section first; everything below it is the d
   M4 MandirCenter operations (temple site, utsavs + gate passes, pujas + priests, Sevak Hub,
   dashboard, Devotee 360, Hindi). ADRs 0001–0029. Every parallel-session prototype feature has been
   rebuilt as a reviewed PR (last: ADR 0029, deleting events and pujas).
-- **Security gates G1–G5: live and required on `main`** (hardened CI, SAST, SCA, SBOM + signed
+- **Security gates G1–G6: live and required on `main`** (hardened CI, SAST, SCA, SBOM + signed
   attestations, DAST). Each one was proven by making it fail on purpose; see the track below.
 - **Stack:** Spring Boot 4.1 / Java 21, Postgres with forced RLS and a least-privilege app role,
   Next.js staff app + MandirCenter public site behind a same-origin `/api` proxy.
 
 ## Next
 
-1. **M5 containers** (Abhi drives, hands-on): Dockerfiles for backend and frontend, compose parity,
-   then **G6** image scan (Trivy), proven by failing it on purpose.
+1. **M5 containers ✅:** backend + frontend images, G6 on both, `make up` runs the whole stack
+   from the images. Next: **M6** Terraform → AWS.
 2. M6 Terraform → AWS (ECS Fargate, RDS, ALB, wildcard ACM, Secrets Manager; G7 Checkov + OIDC),
    then M7 consolidation (AI-code provenance, package-reputation check, DAST on staging).
 
@@ -498,6 +498,49 @@ Work from parallel sessions, reviewed before merge. Fixed in review:
   ZAP then raised **40018 (boolean SQLi) on PUT /temple `deity`**: reproduced by hand, one request at
   a time, the responses are identical and the payload is stored literally (JPA-bound). Accepted by
   Abhi (AppSec), scoped to that rule, param and path, and pinned by a mutation-checked TempleTest.
+
+## M5 slice 1: backend container image ✅ (this PR, ADR 0031)
+- Built round by round, each step checked on the real image:
+  - **Multi-stage from clean source.** A laptop build once packaged a stale migration from another
+    branch, so `.dockerignore` now keeps `target/` out.
+  - **Non-root.** As root, a simulated attacker backdoored the jar, read `/etc/shadow` and installed
+    nmap; as the app user, all three fail.
+  - **Dependency layer cached.** A one-line change rebuilds in 10 s instead of 76 s.
+- **Base image chosen by scanning:** Ubuntu JRE (0 High, but shell, curl and apt) vs distroless
+  Debian 12 (35 fixes not shipped, stale) vs **distroless Debian 13** (8 unreachable or unfixed
+  High, no shell): Debian 13 chosen. Pinned by digest; Dependabot watches the Dockerfile.
+- Runs read-only, all capabilities dropped, `no-new-privileges`, memory-limited. Graceful SIGTERM
+  shutdown. Trivy gate preview: 0 fixable Critical/High.
+- **Findings for M6:** pass secrets as an allowlist; run migrations as a separate task, so the app
+  never holds the DB owner password.
+
+## G6: container image scan ✅ (this PR, docs/security/image-scan.md)
+- Job `image` (required check **Image scan (Trivy)**; same script as `make image-scan`):
+  - Dockerfile/IaC scan (Medium+ blocks).
+  - The image is built and scanned from a `docker save` tar, never through the Docker socket.
+  - One scan feeds four outputs: coverage, the gate (**fixable** Critical/High block), SARIF to
+    code scanning (unfixable findings included) and the image SBOM (OS packages included).
+  - Runs daily on main through the scheduled CI.
+- Accepted risks in `.trivy/accepted.toml`, in the same format and with the same rules as G3/G5
+  (`image_policy.py`), rendered into Trivy's ignore file. First entry: no HEALTHCHECK by design
+  (distroless).
+- **Made to fail on purpose:** `USER root` blocked (DS-0002 HIGH); the stale Debian 12 base
+  blocked (8 fixable High); bad accepted risks rejected and suppressed nothing. **In CI** (#64,
+  closed): required check failed and the ruleset refused the merge even for the owner. Findings
+  now annotate the Dockerfile line on the PR.
+
+## M5 slice 2: frontend image + compose from images ✅ (this PR) — **M5 complete**
+- `frontend/Dockerfile`:
+  - Lockfile install with scripts off, Next.js standalone output.
+  - Distroless Node 22 / Debian 13, nonroot, read-only, pinned.
+  - 14 OS + 23 Node packages, 0 Critical/High.
+- G6 scans both images. Coverage is per image (Java vs Node). Both Dockerfiles go through the
+  misconfiguration scan; a planted `USER root` in the frontend was blocked.
+- `make up` runs DB, mail, backend and frontend from the images with production hardening. Proven
+  end to end: register, log in and `/me` through the containers; existing data intact.
+- **Fixed:** the dev Postgres was published on all interfaces (now 127.0.0.1); the compose project
+  name is pinned. Dev data was copied to the new `sevacenter_devdb` volume. The old
+  `sevacenter_pgdata` and `sevacenter-main_pgdata` volumes are untouched and can be deleted.
 
 ## Open product questions (non-blocking)
 - Diya vs lotus logo mark. Any MandirCenter colour too strong (see styleguide artifact).

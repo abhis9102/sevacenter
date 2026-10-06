@@ -1,0 +1,16 @@
+# Only what the build needs goes into the build context: pom, wrapper, src.
+# target/ especially: stale files from another branch once ended up in the jar.
+target/
+.git
+.gitignore
+.gitattributes
+.idea/
+.vscode/
+*.iml
+.env
+.env.*
+*.pem
+*.key
+Dockerfile
+.dockerignore
+mvnw.cmd

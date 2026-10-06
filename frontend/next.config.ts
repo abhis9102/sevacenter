@@ -3,6 +3,9 @@ import type { NextConfig } from "next";
 import { STATIC_SECURITY_HEADERS } from "./src/lib/securityHeaders";
 
 const nextConfig: NextConfig = {
+  // Container image (M5): copy only what the server needs into .next/standalone, instead of
+  // shipping all of node_modules (mostly build and dev tools).
+  output: "standalone",
   // Don't advertise the framework (X-Powered-By: Next.js).
   poweredByHeader: false,
   reactStrictMode: true,

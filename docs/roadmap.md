@@ -39,7 +39,7 @@ cloud); and we **prove it by making it fail** on a planted issue before trusting
 | G3 ✅ | SCA — osv-scanner + Dependabot; coverage + expiring-risk policy | Known-vulnerable or end-of-life dependencies |
 | G4 ✅ | SBOM (CycloneDX) from the real build + signed provenance/SBOM attestations | Not knowing exactly what we ship; unverifiable artifacts; customer/regulatory asks |
 | G5 ✅ | DAST — OWASP ZAP active API scan of the built jar *inside* CI, coverage-checked | Runtime flaws that code scanning can't see (headers, cookies, error handling, injection) |
-| G6 | Container image scan (Trivy) — needs M5 | Vulnerable base images and OS packages |
+| G6 ✅ | Container image scan (Trivy) + Dockerfile misconfiguration scan; fixable Critical/High block, daily rescan | Vulnerable base images and OS packages; insecure Dockerfiles |
 | G7 | IaC scan (Checkov) + OIDC to AWS — needs M6 | Cloud misconfiguration; long-lived cloud credentials |
 
 M7 then becomes "consolidate + AI-code provenance + hallucinated-package check + DAST on staging".
