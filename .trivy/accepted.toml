@@ -8,6 +8,6 @@
 [[accepted]]
 id = "AVD-DS-0026" # Dockerfile has no HEALTHCHECK
 kind = "misconfiguration"
-paths = ["backend/Dockerfile"]
+paths = ["backend/Dockerfile", "frontend/Dockerfile"]
 ignoreUntil = 2026-12-31
-reason = "Abhi (AppSec), 2026-10-05: by design (ADR 0031). The distroless runtime has no shell or curl to run a HEALTHCHECK; the platform (ALB / ECS) checks GET /actuator/health instead."
+reason = "Abhi (AppSec), 2026-10-05: by design (ADR 0031). The distroless runtimes have no shell or curl to run a HEALTHCHECK; the platform (ALB / ECS) checks the services over HTTP instead (backend GET /actuator/health)."
