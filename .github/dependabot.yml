@@ -44,5 +44,15 @@ updates:
       interval: weekly
     cooldown:
       default-days: 3 # base images are mostly security rebuilds; a short wait still beats a hijack
+    # Runtime majors (Java, Node) are planned migrations, not drive-by bumps. The runtime stage
+    # names its major in the image itself (distroless/java21, nodejs22), which Dependabot can't
+    # move, so bumping only the build stage would compile for a runtime we don't ship (JDK 25
+    # class files fail on a Java 21 runtime). Digest and patch updates, which carry the OS
+    # security fixes, still come weekly.
+    ignore:
+      - dependency-name: eclipse-temurin
+        update-types: [version-update:semver-major]
+      - dependency-name: node
+        update-types: [version-update:semver-major]
     commit-message:
       prefix: build
