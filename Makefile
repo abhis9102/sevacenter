@@ -1,4 +1,4 @@
-.PHONY: help up down db-up db-down db-logs run test build hooks dast image-scan fe-dev fe-check
+.PHONY: help up down db-up db-down db-logs run test build hooks dast image-scan iac-scan fe-dev fe-check
 help: ## show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  %-10s %s\n",$$1,$$2}'
 db-up: ## start local Postgres + Mailpit (needs .env; mail UI http://localhost:8025)
@@ -29,6 +29,8 @@ dast: ## DAST: build the jar, ZAP-scan it against a throwaway DB, apply the poli
 	python3 tools/security/dast_policy.py gate .dast/zap-authed.json .dast/zap.json --out .dast/findings.json
 image-scan: ## G6: build the backend image, Trivy-scan it and its Dockerfile, apply the gate (report: .image-scan/)
 	tools/security/image_scan.sh .image-scan
+iac-scan: ## G7: self-test Checkov on the insecure fixture, then scan infra/ and apply the gate (report: .iac-scan/)
+	tools/security/iac_scan.sh .iac-scan
 fe-dev: ## run the staff admin web app -> http://<slug>.localhost:3000 (backend on :8080)
 	cd frontend && npm ci && npm run dev
 fe-check: ## frontend lint + typecheck + unit tests + production build

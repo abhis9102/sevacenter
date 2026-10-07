@@ -132,13 +132,22 @@ jobs:
       # Same rulesets as the pre-commit hook: one policy, two enforcement points.
       # The image is pinned by digest (= semgrep 1.179.0). It's Alpine, so it can't be the job
       # `container:` (JS actions like checkout need glibc); call it with docker run instead.
+      # Our own rules (.semgrep/) are code: their tests run first, so a rule that silently stops
+      # matching fails here instead of turning into a clean scan.
+      - name: Custom rule tests
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/src" -w /src \
+            semgrep/semgrep@sha256:93963d9295a366f59e4850127b1550400ee7b388f04fe144e4a1f6325d96e01b \
+            semgrep --test --metrics=off \
+              --config .semgrep/endpoint-missing-role-check.yaml .semgrep/endpoint-missing-role-check.java
       # No --error: this job reports, the ruleset's code_scanning rule decides what blocks.
+      # --exclude .semgrep: the rule tests are deliberately vulnerable; they're not our code.
       - name: Semgrep scan
         run: |
           docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/src" -w /src \
             semgrep/semgrep@sha256:93963d9295a366f59e4850127b1550400ee7b388f04fe144e4a1f6325d96e01b \
             semgrep scan --config p/java --config p/python --config p/typescript --config p/react \
-              --config p/nextjs --config p/secrets \
+              --config p/nextjs --config p/secrets --config .semgrep/ --exclude .semgrep \
               --metrics=off --sarif --output semgrep.sarif
       - uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
         with:
@@ -225,6 +234,37 @@ jobs:
   # G6: the container images that ship (backend + frontend, ADR 0031) and their Dockerfiles.
   # Same script locally (`make image-scan`). Policy: docs/security/image-scan.md. Fixable
   # Critical/High block; unfixable ones go to code scanning and are re-checked by the daily run.
+  # G7: the Terraform under infra/, with Checkov + our custom checks (.checkov/checks). Same script
+  # locally (`make iac-scan`). Policy: docs/security/iac-scan.md. A self-test on a deliberately
+  # insecure fixture runs first; then every failed check blocks unless accepted with a reason +
+  # expiry (open-source Checkov has no severities to draw a line on).
+  iac:
+    name: IaC scan (Checkov)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write # upload SARIF to code scanning
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Self-test, scan, gate
+        run: tools/security/iac_scan.sh iac-scan
+      # Only the real infrastructure goes to code scanning, never the fixture.
+      - uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        if: ${{ !cancelled() && hashFiles('iac-scan/infra/results_sarif.sarif') != '' }}
+        with:
+          sarif_file: iac-scan/infra/results_sarif.sarif
+          category: checkov
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ !cancelled() }}
+        with:
+          name: iac-scan
+          path: iac-scan/
+          if-no-files-found: warn
+          retention-days: 14
+
   image:
     name: Image scan (Trivy)
     runs-on: ubuntu-latest
@@ -376,9 +416,12 @@ jobs:
 
   code-scanning-tickets:
     name: Sync code scanning tickets (main)
-    needs: [sast, sca]
+    # After every job that uploads to code scanning, so the sync reads this run's alerts.
+    needs: [sast, sca, iac, image]
     # PR findings block the merge instead; only what's on main needs an owner + ticket.
-    if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+    # !cancelled(): a scanner job that FAILED on main (e.g. the daily scan found a newly fixable
+    # High) is exactly when a ticket is needed; without it GitHub skips this job.
+    if: ${{ !cancelled() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:

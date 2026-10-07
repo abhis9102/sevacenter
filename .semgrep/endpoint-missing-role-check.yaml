@@ -1,0 +1,52 @@
+# Custom SAST rule: every staff API endpoint must declare who may call it. Why, how and how to
+# change it: docs/security/semgrep-rules.md. Tested by endpoint-missing-role-check.java
+# (`semgrep --test .semgrep/`); CI runs that test before the scan.
+rules:
+  - id: endpoint-missing-role-check
+    message: >-
+      $CLASS.$METHOD() is a staff endpoint with no @PreAuthorize role check (on the method or the
+      class). SecurityConfig only requires a login, so every signed-in staff user, whatever their
+      role, can call it. Add @PreAuthorize("hasRole('...')"). If it is public, put it under
+      /api/v1/public/ (and SecurityConfig's PUBLIC_ENDPOINTS covers it); if it is role-agnostic by
+      design, add the controller to this rule's allowlist with a reason, in a reviewed PR.
+    severity: ERROR # error level: the protect-main ruleset blocks the merge on it
+    languages: [java]
+    metadata:
+      category: security
+      cwe: "CWE-862: Missing Authorization"
+      owasp: "A01:2021 - Broken Access Control"
+      confidence: HIGH
+      references:
+        - docs/security/semgrep-rules.md
+    patterns:
+      # 1. Any request-handling method of a REST controller...
+      - pattern-inside: |
+          @RestController
+          class $CLASS { ... }
+      - pattern: |
+          @$MAPPING(...)
+          $RET $METHOD(...) { ... }
+      - metavariable-regex:
+          metavariable: $MAPPING
+          regex: ^(Get|Post|Put|Patch|Delete|Request)Mapping$
+      # 2. ...that has no role check, on the method or on the class (which covers every method).
+      - pattern-not: |
+          @PreAuthorize(...)
+          $RET $METHOD(...) { ... }
+      - pattern-not-inside: |
+          @PreAuthorize(...)
+          class $CLASS { ... }
+      # 3. Public by URL: the same prefixes SecurityConfig.PUBLIC_ENDPOINTS lets through without a
+      #    staff login. /public/ is anonymous (rate-limited where it writes); /portal/ is the
+      #    devotee cookie, checked in PortalController itself (ADR 0018).
+      - pattern-not: |
+          @$MAPPING("=~/^/api/v1/(public|portal)//")
+          $RET $METHOD(...) { ... }
+      # 4. Role-agnostic by design, one reason each:
+      #    Health, Csrf, ApiError        - must answer before login (probes, CSRF bootstrap, errors)
+      #    Registration, Setup,
+      #    PasswordReset                 - the caller has no session yet
+      #    Me, Profile                   - self-service: identity from the session, never a parameter
+      - metavariable-regex:
+          metavariable: $CLASS
+          regex: ^(?!(HealthController|CsrfController|ApiErrorController|RegistrationController|SetupController|PasswordResetController|MeController|ProfileController)$)

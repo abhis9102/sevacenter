@@ -1,6 +1,6 @@
 # Dev Status — resume point
 
-_Last updated: 2026-10-05. Read this section first; everything below it is the dev log, oldest first._
+_Last updated: 2026-10-06. Read this section first; everything below it is the dev log, oldest first._
 
 ## Where we are
 
@@ -17,16 +17,23 @@ _Last updated: 2026-10-05. Read this section first; everything below it is the d
 
 1. **M5 containers ✅:** backend + frontend images, G6 on both, `make up` runs the whole stack
    from the images. Next: **M6** Terraform → AWS.
-2. M6 Terraform → AWS (ECS Fargate, RDS, ALB, wildcard ACM, Secrets Manager; G7 Checkov + OIDC),
-   then M7 consolidation (AI-code provenance, package-reputation check, DAST on staging).
+2. M6 Terraform → AWS (ECS Fargate, RDS, ALB, wildcard ACM, Secrets Manager; G7 Checkov + OIDC).
+   AppSec set the cloud security requirements first (`docs/security/cloud-security-requirements.md`,
+   CR-1…CR-6); the architecture must meet each one. Before the first apply: human access through
+   Identity Center, no access keys left (CR-1). Then M7 consolidation (AI-code provenance,
+   package-reputation check, DAST on staging).
+   - **Decided (2026-10-07):** region `ap-south-1` (Mumbai, CR-2); compute **ECS Fargate**; database
+     **RDS PostgreSQL**.
+   - **Round 1 ✅ G7 IaC scan** (Checkov, `docs/security/iac-scan.md`): self-test on an insecure
+     fixture, custom checks CKV_SEVA_1 (internet ingress only on 80/443) and CKV_SEVA_2 (no IAM
+     access keys), every unaccepted failure blocks, inline skips rejected. Trivy now scans
+     Dockerfiles only. After merge: add `IaC scan (Checkov)` to protect-main's required checks.
+   - Next: network design (VPC range, AZs, subnet tiers, egress), then state backend + OIDC role.
 
 ## Open items
 
 - **Staging domain:** a subzone of a domain we own (delegated to Route 53 in M6), set through the
   ADR 0030 variables, never committed. Buy the product domains before going live.
-- **AppSec review pending:** `.zap/accepted.toml` entry for rule 40018 on `/priests|/seva-teams`
-  (`name` param), added on the donation-funds precedent while the UI stack was merged. Confirm or
-  replace it.
 - Known limitations, not blocking: secret-ticket dedup can duplicate on a rebase (G2); a registered
   malicious look-alike package would pass SCA until M7's reputation check (G3); sevak erasure on
   request is still to be added (ADR 0028); counter cash isn't reconciled against a till (ADR 0026).
@@ -59,6 +66,9 @@ see "M1 slice 1" below for the curl flow.
   can't be a job container for JS actions) → SARIF → code scanning. Reports only.
 - Ruleset now also requires `SAST (Semgrep)` + a **code_scanning rule** (Semgrep OSS: errors /
   high+ security alerts block merge).
+- **First custom rule** (`.semgrep/endpoint-missing-role-check`, 2026-10-07): a staff endpoint
+  without `@PreAuthorize` blocks the merge (CWE-862). Rule tests run in CI before the scan.
+  Policy, exceptions, limits and validation: `docs/security/semgrep-rules.md`.
 - `tools/security/tickets.py` (stdlib only) + policy `docs/security/ticketing.md`: secret → critical
   ticket immediately, human-closed only; SAST on main → ticket, auto-close/reopen. Weekly rescan.
 - **Gate validation exercise (PR #3, closed unmerged), red-teaming our own pipeline:** hook blocked Stripe key → `--no-verify` → push protection

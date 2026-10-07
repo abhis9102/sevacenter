@@ -10,16 +10,18 @@ scan catches build mistakes such as running as root. Semgrep doesn't read Docker
 | | |
 |---|---|
 | **Risk covered** | Known-vulnerable OS packages and libraries in the shipped image; insecure Dockerfiles (root user, `:latest` / unpinned base, secrets in `ENV`, `ADD` from URLs…) |
-| **Risk not covered** | Unknown (0-day) bugs; what the app does at runtime (G5 DAST); a malicious package with no CVE yet (M7 reputation check); the ECS task settings (M6 IaC scan) |
+| **Risk not covered** | Unknown (0-day) bugs; what the app does at runtime (G5 DAST); a malicious package with no CVE yet (M7 reputation check); the ECS task settings (G7 IaC scan, `docs/security/iac-scan.md`) |
 | **When** | Every PR and push to `main`, and **daily** on `main` (scheduled CI): a clean image today gains CVEs tomorrow, and base images get fixes we should pick up |
 | **Where** | Job `image` in `.github/workflows/ci.yml`, required check **Image scan (Trivy)**. Same script locally: `make image-scan` |
 
 ## How it runs (`tools/security/image_scan.sh`)
 
 1. **Accepted risks** (`.trivy/accepted.toml`) are validated, then rendered to the ignore file Trivy reads.
-2. **Dockerfile / IaC misconfigurations**, scanned from the repo root: **Medium and above block**,
+2. **Dockerfile misconfigurations**, scanned from the repo root: **Medium and above block**,
    reported as annotations on the exact file and line, so the reason shows on the PR diff.
-   The root-level scan will also cover the frontend Dockerfile and the M6 Terraform.
+   Dockerfiles only (`--misconfig-scanners dockerfile`): Terraform belongs to G7 (Checkov,
+   `docs/security/iac-scan.md`). Without that flag this scan also read G7's deliberately
+   insecure fixture (21 failures) and the same finding would have two gates and two ignore files.
 3. **Build** each image (backend, frontend), then `docker save` it to a tar. Trivy reads the tar and **never gets the
    Docker socket**: mounting `/var/run/docker.sock` into a scanner gives it root on the runner, and
    scanners are a supply-chain target like anything else.
