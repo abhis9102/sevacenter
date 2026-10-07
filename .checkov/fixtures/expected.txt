@@ -1,0 +1,32 @@
+# G7 self-test expectations for fixtures/insecure. Format: STATUS resource check_id  # why
+# Each line ties a cloud security requirement (docs/security/cloud-security-requirements.md) to
+# the check that enforces it. If Checkov stops reporting one (an upgrade renames a check, a custom
+# check fails to load), the self-test fails instead of the gate silently passing.
+
+# CR-1: no long-lived credentials
+FAILED aws_iam_access_key.deployer CKV_SEVA_2           # custom: the key itself
+FAILED aws_iam_user.deployer CKV_AWS_273                # people use SSO, not IAM users
+FAILED aws_iam_role.ci CKV_AWS_393                      # OIDC trust open to any repo (repo:*)
+
+# CR-3: the database is private
+FAILED aws_db_instance.db CKV_AWS_17                    # publicly_accessible = true
+FAILED aws_security_group.open CKV_AWS_24               # SSH from the internet
+FAILED aws_security_group.open CKV_SEVA_1               # custom: Postgres from the internet
+FAILED aws_vpc_security_group_ingress_rule.db_from_ipv6_internet CKV_SEVA_1
+FAILED aws_security_group_rule.all_ports CKV_SEVA_1
+PASSED aws_security_group.alb CKV_SEVA_1                # 80/443 on the load balancer is fine
+PASSED aws_security_group_rule.egress_anywhere CKV_SEVA_1
+PASSED aws_vpc_security_group_ingress_rule.db_from_vpc CKV_SEVA_1
+
+# CR-4: personal data is encrypted (and not public)
+FAILED aws_db_instance.db CKV_AWS_16                    # storage_encrypted = false
+FAILED aws_s3_bucket.receipts CKV_AWS_145               # no KMS default encryption
+FAILED aws_s3_bucket_public_access_block.receipts CKV_AWS_53
+FAILED aws_s3_bucket_public_access_block.receipts CKV_AWS_54
+FAILED aws_s3_bucket_public_access_block.receipts CKV_AWS_55
+FAILED aws_s3_bucket_public_access_block.receipts CKV_AWS_56
+
+# CR-5: least-privilege IAM
+FAILED aws_iam_policy.too_broad CKV_AWS_62              # "*" on "*": admin
+FAILED aws_iam_policy.too_broad CKV_AWS_286             # privilege escalation possible
+FAILED aws_iam_policy.too_broad CKV_AWS_355             # "*" resource for restrictable actions
