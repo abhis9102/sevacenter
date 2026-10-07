@@ -5,6 +5,11 @@
 # --- stage 1: build the jar from clean source (JDK + Maven live only here) ---
 FROM eclipse-temurin:21-jdk@sha256:3e3c176ffed168beb42c607be9bc1639b466cf00261a0fb04425562c9d0c5c2b AS build
 WORKDIR /src
+# unzip: without it the Maven wrapper silently fetches the .tar.gz instead of the .zip, whose
+# SHA-256 isn't the one pinned in maven-wrapper.properties, and refuses it. Build stage only.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends unzip \
+    && rm -rf /var/lib/apt/lists/*
 # Dependencies first: this layer is reused until pom.xml changes.
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
