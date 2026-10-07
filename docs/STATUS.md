@@ -20,7 +20,15 @@ _Last updated: 2026-10-06. Read this section first; everything below it is the d
 2. M6 Terraform → AWS (ECS Fargate, RDS, ALB, wildcard ACM, Secrets Manager; G7 Checkov + OIDC).
    AppSec set the cloud security requirements first (`docs/security/cloud-security-requirements.md`,
    CR-1…CR-6); the architecture must meet each one. Before the first apply: human access through
-   Identity Center, no access keys left (CR-1). Then M7 consolidation (AI-code provenance, package-reputation check, DAST on staging).
+   Identity Center, no access keys left (CR-1). Then M7 consolidation (AI-code provenance,
+   package-reputation check, DAST on staging).
+   - **Decided (2026-10-07):** region `ap-south-1` (Mumbai, CR-2); compute **ECS Fargate**; database
+     **RDS PostgreSQL**.
+   - **Round 1 ✅ G7 IaC scan** (Checkov, `docs/security/iac-scan.md`): self-test on an insecure
+     fixture, custom checks CKV_SEVA_1 (internet ingress only on 80/443) and CKV_SEVA_2 (no IAM
+     access keys), every unaccepted failure blocks, inline skips rejected. Trivy now scans
+     Dockerfiles only. After merge: add `IaC scan (Checkov)` to protect-main's required checks.
+   - Next: network design (VPC range, AZs, subnet tiers, egress), then state backend + OIDC role.
 
 ## Open items
 
