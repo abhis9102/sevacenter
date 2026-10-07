@@ -1,6 +1,6 @@
 # Dev Status — resume point
 
-_Last updated: 2026-10-05. Read this section first; everything below it is the dev log, oldest first._
+_Last updated: 2026-10-06. Read this section first; everything below it is the dev log, oldest first._
 
 ## Where we are
 
@@ -17,16 +17,15 @@ _Last updated: 2026-10-05. Read this section first; everything below it is the d
 
 1. **M5 containers ✅:** backend + frontend images, G6 on both, `make up` runs the whole stack
    from the images. Next: **M6** Terraform → AWS.
-2. M6 Terraform → AWS (ECS Fargate, RDS, ALB, wildcard ACM, Secrets Manager; G7 Checkov + OIDC),
-   then M7 consolidation (AI-code provenance, package-reputation check, DAST on staging).
+2. M6 Terraform → AWS (ECS Fargate, RDS, ALB, wildcard ACM, Secrets Manager; G7 Checkov + OIDC).
+   AppSec set the cloud security requirements first (`docs/security/cloud-security-requirements.md`,
+   CR-1…CR-6); the architecture must meet each one. Before the first apply: human access through
+   Identity Center, no access keys left (CR-1). Then M7 consolidation (AI-code provenance, package-reputation check, DAST on staging).
 
 ## Open items
 
 - **Staging domain:** a subzone of a domain we own (delegated to Route 53 in M6), set through the
   ADR 0030 variables, never committed. Buy the product domains before going live.
-- **AppSec review pending:** `.zap/accepted.toml` entry for rule 40018 on `/priests|/seva-teams`
-  (`name` param), added on the donation-funds precedent while the UI stack was merged. Confirm or
-  replace it.
 - Known limitations, not blocking: secret-ticket dedup can duplicate on a rebase (G2); a registered
   malicious look-alike package would pass SCA until M7's reputation check (G3); sevak erasure on
   request is still to be added (ADR 0028); counter cash isn't reconciled against a till (ADR 0026).
