@@ -14,6 +14,33 @@ blocking the change that introduced it.
 | DAST (ZAP) | PR | Merge blocked if Medium+ (required DAST job) | No. Fix it in the PR. | n/a |
 | DAST (ZAP) | `main` (push or daily) | Low+ unaccepted findings | **Yes**, label `dast` | Automatically, when a later scan of main no longer finds it. See `docs/security/dast.md` |
 | SCA (osv-scanner) | `main` (push or **daily** rescan) | Alert in Security tab | **Yes**, label `sca`, severity from CVSS | Automatically, when the alert is fixed or dismissed. See `docs/security/sca.md` |
+| Image (Trivy) | PR | Merge blocked if a Critical/High has a fix (required image job) | No. Rebuild / bump in the PR. | n/a |
+| Image (Trivy) | `main` (push or **daily** rescan), **fix available** | Alert in Security tab | **Yes, one per CVE**, label `image`, covering every package and image it's in | Automatically, when no alert for the CVE has a fix pending. See `docs/security/image-scan.md` |
+| Image (Trivy) | `main`, **no fix available** | Alert in Security tab | **No.** Nobody can act on it yet; the daily scan re-checks it | n/a. The day a fix ships, the alert gains a fixed version and a ticket opens |
+| IaC (Checkov) | PR | Merge blocked on any unaccepted failed check (required IaC job) | No. Fix the Terraform in the PR. | n/a |
+| IaC (Checkov) | `main` | Alert in Security tab | **Yes**, label `iac` | Automatically, when the alert is fixed or dismissed. See `docs/security/iac-scan.md` |
+
+## A ticket must be actionable
+
+A ticket is a request for someone to act. Image findings with **no fix available** fail that
+test: nobody can patch a package Debian hasn't fixed. When G6 started uploading to code scanning,
+the ticket sync didn't know Trivy and filed every image alert as `[sast]`: 100 open tickets, one
+per package per image (7 for a single libstdc++ CVE), each telling you to edit
+`osv-scanner.toml`. 99 had no fix. A queue like that hides the one ticket that matters, which is
+how real findings get missed.
+
+So since 2026-10-07:
+- **Image findings are ticketed only once a fix exists, one ticket per CVE.** One base image
+  rebuild usually fixes every package and image the CVE is in, so that's one piece of work. The
+  unfixable ones are still visible in the Security tab, and still block the merge as soon as they
+  become fixable Critical/High.
+- **Every scanner needs an explicit entry** (`TOOLS` in `tickets.py`): kind, label and what to do.
+  A tool with no entry fails the sync instead of being guessed. Its alerts' tickets are left
+  alone until someone decides.
+- **Closing says why**: "fixed/dismissed" (`completed`), or "no fix yet, tracked in the Security
+  tab" / "now in the per-CVE ticket" (`not_planned`).
+- The sync runs after the scanners whose alerts it reads (`needs:`), so it never works from the
+  previous run's results.
 
 ## Why secrets are different
 

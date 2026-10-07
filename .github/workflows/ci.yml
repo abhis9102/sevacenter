@@ -416,9 +416,12 @@ jobs:
 
   code-scanning-tickets:
     name: Sync code scanning tickets (main)
-    needs: [sast, sca]
+    # After every job that uploads to code scanning, so the sync reads this run's alerts.
+    needs: [sast, sca, iac, image]
     # PR findings block the merge instead; only what's on main needs an owner + ticket.
-    if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+    # !cancelled(): a scanner job that FAILED on main (e.g. the daily scan found a newly fixable
+    # High) is exactly when a ticket is needed; without it GitHub skips this job.
+    if: ${{ !cancelled() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
