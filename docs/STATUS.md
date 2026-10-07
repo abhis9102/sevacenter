@@ -58,6 +58,9 @@ see "M1 slice 1" below for the curl flow.
   can't be a job container for JS actions) → SARIF → code scanning. Reports only.
 - Ruleset now also requires `SAST (Semgrep)` + a **code_scanning rule** (Semgrep OSS: errors /
   high+ security alerts block merge).
+- **First custom rule** (`.semgrep/endpoint-missing-role-check`, 2026-10-07): a staff endpoint
+  without `@PreAuthorize` blocks the merge (CWE-862). Rule tests run in CI before the scan.
+  Policy, exceptions, limits and validation: `docs/security/semgrep-rules.md`.
 - `tools/security/tickets.py` (stdlib only) + policy `docs/security/ticketing.md`: secret → critical
   ticket immediately, human-closed only; SAST on main → ticket, auto-close/reopen. Weekly rescan.
 - **Gate validation exercise (PR #3, closed unmerged), red-teaming our own pipeline:** hook blocked Stripe key → `--no-verify` → push protection

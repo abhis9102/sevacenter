@@ -132,13 +132,22 @@ jobs:
       # Same rulesets as the pre-commit hook: one policy, two enforcement points.
       # The image is pinned by digest (= semgrep 1.179.0). It's Alpine, so it can't be the job
       # `container:` (JS actions like checkout need glibc); call it with docker run instead.
+      # Our own rules (.semgrep/) are code: their tests run first, so a rule that silently stops
+      # matching fails here instead of turning into a clean scan.
+      - name: Custom rule tests
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/src" -w /src \
+            semgrep/semgrep@sha256:93963d9295a366f59e4850127b1550400ee7b388f04fe144e4a1f6325d96e01b \
+            semgrep --test --metrics=off \
+              --config .semgrep/endpoint-missing-role-check.yaml .semgrep/endpoint-missing-role-check.java
       # No --error: this job reports, the ruleset's code_scanning rule decides what blocks.
+      # --exclude .semgrep: the rule tests are deliberately vulnerable; they're not our code.
       - name: Semgrep scan
         run: |
           docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/src" -w /src \
             semgrep/semgrep@sha256:93963d9295a366f59e4850127b1550400ee7b388f04fe144e4a1f6325d96e01b \
             semgrep scan --config p/java --config p/python --config p/typescript --config p/react \
-              --config p/nextjs --config p/secrets \
+              --config p/nextjs --config p/secrets --config .semgrep/ --exclude .semgrep \
               --metrics=off --sarif --output semgrep.sarif
       - uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
         with:
