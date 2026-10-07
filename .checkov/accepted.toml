@@ -1,0 +1,15 @@
+# Accepted risks for the IaC scan (G7). Policy: docs/security/iac-scan.md
+#
+# Same rules as osv-scanner.toml (G3), .zap/accepted.toml (G5) and .trivy/accepted.toml (G6): one
+# check ID per entry, scoped to the Terraform resource address(es) it applies to, a reason
+# (>= 20 chars: who decided, why it's acceptable) and an ignoreUntil no more than 90 days out.
+# tools/security/iac_policy.py enforces it; an invalid entry suppresses nothing. Inline
+# `checkov:skip` comments are rejected by the gate: acceptances live here, reviewed and expiring.
+#
+# Entry format (no entries yet: there's no Terraform yet):
+#
+# [[accepted]]
+# id = "CKV_AWS_144"
+# resources = ["aws_s3_bucket.example"]
+# ignoreUntil = 2026-12-31
+# reason = "<who> (AppSec), <date>: <why this is acceptable, and what covers the risk instead>"

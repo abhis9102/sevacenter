@@ -32,6 +32,8 @@ osv-all.json
 .image-scan/
 image-scan/
 dast-out/
+.iac-scan/
+iac-scan/
 
 # Private local context for Claude Code (never committed)
 CLAUDE.local.md

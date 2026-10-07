@@ -225,6 +225,37 @@ jobs:
   # G6: the container images that ship (backend + frontend, ADR 0031) and their Dockerfiles.
   # Same script locally (`make image-scan`). Policy: docs/security/image-scan.md. Fixable
   # Critical/High block; unfixable ones go to code scanning and are re-checked by the daily run.
+  # G7: the Terraform under infra/, with Checkov + our custom checks (.checkov/checks). Same script
+  # locally (`make iac-scan`). Policy: docs/security/iac-scan.md. A self-test on a deliberately
+  # insecure fixture runs first; then every failed check blocks unless accepted with a reason +
+  # expiry (open-source Checkov has no severities to draw a line on).
+  iac:
+    name: IaC scan (Checkov)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write # upload SARIF to code scanning
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Self-test, scan, gate
+        run: tools/security/iac_scan.sh iac-scan
+      # Only the real infrastructure goes to code scanning, never the fixture.
+      - uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        if: ${{ !cancelled() && hashFiles('iac-scan/infra/results_sarif.sarif') != '' }}
+        with:
+          sarif_file: iac-scan/infra/results_sarif.sarif
+          category: checkov
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ !cancelled() }}
+        with:
+          name: iac-scan
+          path: iac-scan/
+          if-no-files-found: warn
+          retention-days: 14
+
   image:
     name: Image scan (Trivy)
     runs-on: ubuntu-latest

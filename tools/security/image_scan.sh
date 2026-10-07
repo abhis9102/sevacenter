@@ -4,7 +4,8 @@
 # Policy: docs/security/image-scan.md
 #
 # 1. Accepted risks (.trivy/accepted.toml) are validated and rendered to Trivy's ignore file.
-# 2. Dockerfile / IaC misconfigurations, from the repo root: Medium+ blocks.
+# 2. Dockerfile misconfigurations, from the repo root: Medium+ blocks. Dockerfiles only: Terraform
+#    is G7's (Checkov, tools/security/iac_scan.sh), so one finding never shows up in two gates.
 # 3. Each image is built and exported with `docker save`; Trivy reads the tar, so the scanner
 #    never gets the Docker socket (which would be root on this machine).
 # 4. One scan (all severities, all packages) feeds: coverage (it really saw the OS and the jar),
@@ -28,8 +29,8 @@ trivy() {
 echo "--- 1/4 accepted risks"
 policy ignores "$ROOT/.trivy/accepted.toml" --write "$OUT/trivyignore.yaml"
 
-echo "--- 2/4 Dockerfile and IaC misconfigurations (Medium+ blocks)"
-trivy config --ignorefile /out/trivyignore.yaml --skip-dirs frontend/node_modules --skip-dirs backend/target \
+echo "--- 2/4 Dockerfile misconfigurations (Medium+ blocks)"
+trivy config --misconfig-scanners dockerfile --ignorefile /out/trivyignore.yaml --skip-dirs frontend/node_modules --skip-dirs backend/target \
   --format json --output /out/trivy-config.json .
 policy misconfig "$OUT/trivy-config.json" --fail-at MEDIUM
 
