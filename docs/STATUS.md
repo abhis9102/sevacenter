@@ -1,6 +1,6 @@
 # Dev Status — resume point
 
-_Last updated: 2026-10-06. Read this section first; everything below it is the dev log, oldest first._
+_Last updated: 2026-10-10. Read this section first; everything below it is the dev log, oldest first._
 
 ## Where we are
 
@@ -27,7 +27,10 @@ _Last updated: 2026-10-06. Read this section first; everything below it is the d
    - **Round 1 ✅ G7 IaC scan** (Checkov, `docs/security/iac-scan.md`): self-test on an insecure
      fixture, custom checks CKV_SEVA_1 (internet ingress only on 80/443) and CKV_SEVA_2 (no IAM
      access keys), every unaccepted failure blocks, inline skips rejected. Trivy now scans
-     Dockerfiles only. After merge: add `IaC scan (Checkov)` to protect-main's required checks.
+     Dockerfiles only. `IaC scan (Checkov)` is a required check on protect-main (10 in all, with
+     `Frontend (lint, types, tests, build)` now required too).
+   - Also merged: image findings ticketed per CVE and only once fixable (#242); the Maven wrapper
+     download pinned by SHA-256 (#238).
    - Next: network design (VPC range, AZs, subnet tiers, egress), then state backend + OIDC role.
 
 ## Open items
