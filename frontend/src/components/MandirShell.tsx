@@ -9,6 +9,7 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 import { useLanguage } from "@/components/LanguageProvider";
 import { MandirIcon, type MandirIconName } from "@/components/MandirIcons";
 import { MandirLogo } from "@/components/MandirLogo";
+import { useStaffHref } from "@/components/SiteProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Alert } from "@/components/ui";
 import { clock, darshanState } from "@/lib/darshan";
@@ -49,6 +50,7 @@ export function useNow(): Date | null {
  */
 export function MandirShell({ children }: { children: React.ReactNode }) {
   const { lang, t } = useLanguage();
+  const staffSignInHref = useStaffHref("/login");
   const pathname = usePathname();
   const now = useNow();
   // Hindi puts the postposition after the time ("9:30 pm तक"), English before ("until 9:30 pm").
@@ -170,7 +172,7 @@ export function MandirShell({ children }: { children: React.ReactNode }) {
               </div>
             </div>
             <div className="flex flex-col gap-1 text-xs text-muted sm:items-end">
-              <Link href="/login" className="underline-offset-2 hover:underline">{t.mandir.staffSignIn}</Link>
+              <a href={staffSignInHref} className="underline-offset-2 hover:underline">{t.mandir.staffSignIn}</a>
               <span>{t.mandir.poweredBy}</span>
             </div>
           </div>

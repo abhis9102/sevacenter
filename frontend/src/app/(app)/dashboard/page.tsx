@@ -7,6 +7,7 @@ import { api } from "@/components/apiClient";
 import { MandirIcon, type MandirIconName } from "@/components/MandirIcons";
 import { MandirLogo } from "@/components/MandirLogo";
 import { useMe } from "@/components/Session";
+import { useMandirHref } from "@/components/SiteProvider";
 import { Pill } from "@/components/staff";
 import { Card } from "@/components/ui";
 import { istDate, upcomingEvents } from "@/lib/dashboard";
@@ -40,6 +41,7 @@ function useCard<T>(enabled: boolean, path: string): { data: T | null; failed: b
 /** The staff landing page: the temple's operations at a glance (built on the existing APIs). */
 export default function DashboardPage() {
   const me = useMe();
+  const mandirHref = useMandirHref("/");
   const can = (min: Role, module?: StaffModule) =>
     hasRole(me.role, min) && (!module || moduleAccess(me.moduleLimits, module) !== "NONE");
   const [now] = useState(() => Date.now());
@@ -81,7 +83,7 @@ export default function DashboardPage() {
             </p>
           </div>
         </div>
-        <a href="/" target="_blank" rel="noopener noreferrer"
+        <a href={mandirHref} target="_blank" rel="noopener noreferrer"
            className="inline-flex items-center gap-1.5 rounded-[10px] bg-primary px-3.5 py-2 text-sm font-semibold text-on-primary shadow-xs hover:bg-primary-strong">
           Open Mandir Center <span aria-hidden="true">↗</span>
         </a>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { api } from "@/components/apiClient";
 import { useMe } from "@/components/Session";
+import { useMandirHref } from "@/components/SiteProvider";
 import { Alert, Button, Card, PageHeader, TextField } from "@/components/ui";
 import { ApiError, describeError } from "@/lib/errors";
 import type { LunarCalendar } from "@/lib/panchang";
@@ -31,6 +32,7 @@ const orNull = (v: string) => v.trim() || null;
 /** Edit the public temple page (ADR 0017, 0024). LEADER+; everything optional. */
 export default function TempleSettingsPage() {
   const me = useMe();
+  const mandirHref = useMandirHref("/");
   const canEdit = hasRole(me.role, "LEADER");
   const [f, setF] = useState({ deity: "", address: "", helpline: "", timings: "", announcement: "" });
   const [hours, setHours] = useState({ morningOpen: "", morningClose: "", eveningOpen: "", eveningClose: "" });
@@ -112,7 +114,7 @@ export default function TempleSettingsPage() {
       <PageHeader
         title="Mandir Center"
         description="Your temple's public Mandir Center: what devotees see at its own address. Leave anything blank to hide it."
-        actions={<a href="/" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary-strong">Open Mandir Center ↗</a>}
+        actions={<a href={mandirHref} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary-strong">Open Mandir Center ↗</a>}
       />
       {notice ? <Alert tone={notice.tone}>{notice.text}</Alert> : null}
 

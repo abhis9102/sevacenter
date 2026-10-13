@@ -1,18 +1,27 @@
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
 import { LandingPage } from "@/components/LandingPage";
 import { TemplePublicPage } from "@/components/TemplePublicPage";
-import { parseBaseDomains, slugFromHost } from "@/lib/tenant";
+import { siteForHost } from "@/lib/brand";
 
 export default async function Home() {
   const host = (await headers()).get("host");
-  const tenant = slugFromHost(host, parseBaseDomains(process.env.SC_TENANT_BASE_DOMAINS));
+  const site = siteForHost(host);
 
-  // A trust's own host: its public temple page (ADR 0017). Staff sign in from there and land on
-  // /devotees after login.
-  if (tenant) {
-    return <TemplePublicPage />;
+  // Single-domain / dev: one host serves both brands by path (original behaviour).
+  if (site.singleDomain || site.brand === null) {
+    return site.slug ? <TemplePublicPage /> : <LandingPage />;
   }
 
+  // MandirCenter (public): a trust's own host shows its temple page; the bare domain, marketing.
+  if (site.brand === "mandir") {
+    return site.slug ? <TemplePublicPage /> : <LandingPage />;
+  }
+
+  // SevaCenter (staff): a trust's own host sends staff to sign-in; the bare domain is the landing.
+  if (site.slug) {
+    redirect("/login");
+  }
   return <LandingPage />;
 }

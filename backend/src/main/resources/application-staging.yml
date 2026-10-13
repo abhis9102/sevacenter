@@ -1,0 +1,38 @@
+# Staging profile (SPRING_PROFILES_ACTIVE=staging): a production-shaped deploy on AWS.
+# It overlays the prod baseline in application.yml. Differences, and why:
+#
+#  - TWO DB ROLES, with prod discipline. Flyway migrates as the OWNER (DB_USERNAME = the RDS
+#    master), which runs DDL; the app runtime connects as the least-privilege role
+#    sevacenter_app (DB_APP_USERNAME), which FORCE ROW LEVEL SECURITY applies to. A SQLi/code-exec
+#    bug under the runtime role therefore cannot ALTER TABLE ... NO FORCE or DROP POLICY to defeat
+#    tenant isolation. (The local profile has the same split; prod discipline here = out-of-order OFF.)
+#
+#  - TENANT comes from the frontend proxy's X-Tenant-Slug header (same mechanism as local). The only
+#    public ingress is the Next.js app; its /api proxy STRIPS any client-supplied X-Tenant-Slug and
+#    sets its own from the validated Host (src/lib/upstream.ts). A browser fetch cannot set Host, so
+#    the backend cannot read the real subdomain off request.getServerName() through the proxy — it
+#    must trust the header. THIS IS SAFE ONLY BECAUSE the backend is not publicly reachable: it has
+#    no published port, lives on a private docker network, and the EC2 security group exposes only
+#    Caddy (80/443). That isolation is the load-bearing trust boundary for Tenant->Tenant isolation.
+#
+#  - Secure session cookie stays ON (inherited from application.yml): the browser<->Caddy hop is
+#    HTTPS. Caddy terminates TLS and reverse-proxies to the frontend over the private network.
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_APP_USERNAME:sevacenter_app}
+    password: ${DB_APP_PASSWORD}
+  flyway:
+    out-of-order: false
+    url: ${DB_URL}
+    user: ${DB_USERNAME:sevacenter}
+    password: ${DB_PASSWORD}
+  mail:
+    host: ${SPRING_MAIL_HOST:mail}
+    port: ${SPRING_MAIL_PORT:1025}
+
+sevacenter:
+  tenant:
+    # The frontend proxy is the only client and sets X-Tenant-Slug from the real Host. Backend is
+    # network-isolated (see header above), so nothing else can set it.
+    allow-header-override: true
