@@ -6,6 +6,7 @@ import { useEffect, useId, useRef, useState } from "react";
 
 import { useLanguage } from "@/components/LanguageProvider";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { useMandirHref } from "@/components/SiteProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { isActive, otherPageFor, type NavModule, type Section, type SectionGroup } from "@/lib/apps";
 
@@ -54,6 +55,7 @@ function Waffle() {
 export function AppSwitcher({ sections, current }: { sections: SectionGroup[]; current: NavModule | null }) {
   const { t } = useLanguage();
   const pathname = usePathname();
+  const mandirHref = useMandirHref("/");
   // Open "on" a path: navigating anywhere closes it without a state update in an effect.
   const [openOn, setOpenOn] = useState<string | null>(null);
   const open = openOn === pathname;
@@ -150,7 +152,7 @@ export function AppSwitcher({ sections, current }: { sections: SectionGroup[]; c
           </ul>
           {/* On a phone the top bar only has room for the switcher and the user menu. */}
           <div className="mt-2 flex items-center gap-3 border-t border-line px-2.5 pb-1 pt-2.5 sm:hidden">
-            <a href="/" target="_blank" rel="noopener noreferrer" className="mr-auto text-sm font-medium text-primary-strong">
+            <a href={mandirHref} target="_blank" rel="noopener noreferrer" className="mr-auto text-sm font-medium text-primary-strong">
               {t.apps.mandirCenter} ↗<span className="sr-only"> ({t.apps.newTab})</span>
             </a>
             <ThemeToggle />

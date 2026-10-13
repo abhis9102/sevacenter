@@ -11,6 +11,7 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useLanguage } from "@/components/LanguageProvider";
 import { SessionProvider } from "@/components/Session";
+import { useMandirHref } from "@/components/SiteProvider";
 import { useTenant } from "@/components/TenantProvider";
 import { Alert, Spinner } from "@/components/ui";
 import { UserMenu } from "@/components/UserMenu";
@@ -31,6 +32,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
   const { t } = useLanguage();
+  const mandirHref = useMandirHref("/");
 
   useEffect(() => {
     if (!tenant) {
@@ -116,7 +118,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </span>
             <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
               <a
-                href="/"
+                href={mandirHref}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hidden items-center gap-1.5 rounded-[10px] border border-line bg-surface px-2.5 py-1.5 text-xs font-medium text-muted transition-colors hover:border-primary/50 hover:text-fg sm:inline-flex"

@@ -1,17 +1,53 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { siteForHost } from "@/lib/brand";
 import { buildCsp } from "@/lib/securityHeaders";
+
+/**
+ * Two-domain brand gate (ADR 0030): a SevaCenter (staff) host never serves the public MandirCenter
+ * pages and vice-versa; a wrong-brand route is redirected to the SAME trust on the correct domain.
+ * `/` is brand-dependent and handled by app/page.tsx, so it is not listed here. No-op when brand
+ * gating is off (single-domain / dev).
+ */
+const STAFF_PREFIXES = [
+  "/dashboard", "/devotees", "/donations", "/events", "/payments", "/profile",
+  "/pujas", "/staff", "/volunteers", "/temple", "/audit",
+  "/login", "/register", "/setup", "/reset-password", "/forgot-password",
+];
+const MANDIR_PREFIXES = ["/donate", "/book-puja", "/sevak", "/my-seva", "/upcoming"];
+
+function hasPrefix(path: string, prefixes: readonly string[]): boolean {
+  return prefixes.some((p) => path === p || path.startsWith(`${p}/`));
+}
 
 /**
  * Per-request CSP nonce for every page (Next.js reads the nonce from the request's CSP header
  * and stamps it on its own scripts). Static security headers live in next.config.ts.
  */
 export function proxy(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+
+  // Brand gate first: a cross-brand redirect needs no CSP of its own.
+  const site = siteForHost(request.headers.get("host"));
+  if (!site.singleDomain && site.brand) {
+    const crossTo = (base: string) => {
+      const url = request.nextUrl.clone();
+      url.host = site.slug ? `${site.slug}.${base}` : base;
+      url.port = "";
+      return url;
+    };
+    if (site.brand === "staff" && hasPrefix(path, MANDIR_PREFIXES)) {
+      return NextResponse.redirect(crossTo(site.mandirBase), 307);
+    }
+    if (site.brand === "mandir" && hasPrefix(path, STAFF_PREFIXES)) {
+      return NextResponse.redirect(crossTo(site.staffBase), 307);
+    }
+  }
+
   const nonce = Buffer.from(crypto.getRandomValues(new Uint8Array(18))).toString("base64");
   // The donate page embeds Razorpay Checkout (ADR 0013): its frames are allowed there only, and
   // it may open the bank's / UPI app's window, which COOP same-origin would cut off.
   // Pages that open Razorpay Checkout: donations and paid puja bookings (ADR 0013/0016).
-  const path = request.nextUrl.pathname;
   const donate = ["/donate", "/book-puja"].some((p) => path === p || path.startsWith(`${p}/`));
   const csp = buildCsp(nonce, process.env.NODE_ENV === "development", { razorpay: donate });
 
