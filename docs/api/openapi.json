@@ -1397,6 +1397,13 @@
             "minItems" : 0,
             "type" : "array"
           },
+          "about" : {
+            "description" : "About the temple, plain text",
+            "example" : "A 300-year-old Ganesh temple in the old city.",
+            "maxLength" : 4000,
+            "minLength" : 0,
+            "type" : "string"
+          },
           "address" : {
             "example" : "1 Temple Road, Pune 411001",
             "maxLength" : 400,
@@ -1426,8 +1433,20 @@
             "minLength" : 0,
             "type" : "string"
           },
+          "history" : {
+            "description" : "The temple's history, plain text",
+            "example" : "Built in 1720 by ...",
+            "maxLength" : 8000,
+            "minLength" : 0,
+            "type" : "string"
+          },
           "hours" : {
             "$ref" : "#/components/schemas/Hours"
+          },
+          "imageVersion" : {
+            "description" : "Set with PUT /temple/image; null when there is no photo",
+            "readOnly" : true,
+            "type" : "string"
           },
           "status" : {
             "description" : "Read-only here: set with PUT /temple/status",
@@ -1567,6 +1586,9 @@
             },
             "type" : "array"
           },
+          "about" : {
+            "type" : "string"
+          },
           "address" : {
             "type" : "string"
           },
@@ -1583,8 +1605,15 @@
           "helpline" : {
             "type" : "string"
           },
+          "history" : {
+            "type" : "string"
+          },
           "hours" : {
             "$ref" : "#/components/schemas/Hours"
+          },
+          "imageVersion" : {
+            "description" : "Photo: GET /public/temple/image?v={imageVersion}; null when none",
+            "type" : "string"
           },
           "onlineDonations" : {
             "type" : "boolean"
@@ -4197,6 +4226,33 @@
         "tags" : [ "temple-controller" ]
       }
     },
+    "/api/v1/public/temple/image" : {
+      "get" : {
+        "operationId" : "publicImage",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "v",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "format" : "byte",
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "temple-image-controller" ]
+      }
+    },
     "/api/v1/puja-bookings" : {
       "get" : {
         "operationId" : "forDate",
@@ -4697,7 +4753,7 @@
     },
     "/api/v1/sevaks/{id}" : {
       "delete" : {
-        "operationId" : "remove",
+        "operationId" : "remove_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -4848,6 +4904,52 @@
           }
         },
         "tags" : [ "temple-controller" ]
+      }
+    },
+    "/api/v1/temple/image" : {
+      "delete" : {
+        "operationId" : "remove",
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "temple-image-controller" ]
+      },
+      "put" : {
+        "operationId" : "upload",
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "properties" : {
+                  "image" : {
+                    "format" : "binary",
+                    "type" : "string"
+                  }
+                },
+                "required" : [ "image" ],
+                "type" : "object"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "additionalProperties" : {
+                    "type" : "string"
+                  },
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "temple-image-controller" ]
       }
     },
     "/api/v1/temple/status" : {

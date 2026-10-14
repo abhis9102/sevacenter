@@ -7,6 +7,7 @@ import { MandirIcon, type MandirIconName } from "@/components/MandirIcons";
 import { MandirShell, useNow, useTemple } from "@/components/MandirShell";
 import { Card, Spinner } from "@/components/ui";
 import { clock, nextAarti } from "@/lib/darshan";
+import { templeImageUrl } from "@/lib/temple";
 import { MONTHS, NAKSHATRAS, panchang, tithiName, type LunarCalendar } from "@/lib/panchang";
 
 /**
@@ -44,6 +45,11 @@ function TempleHome() {
         <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-16 size-64 rounded-full bg-haldi/20 blur-3xl" />
         <div className="relative grid gap-6 lg:grid-cols-[1fr_22rem] lg:items-center">
           <div>
+            {temple.imageVersion ? (
+              // eslint-disable-next-line @next/next/no-img-element -- our own re-encoded JPEG; next/image adds nothing here
+              <img src={templeImageUrl(temple.imageVersion)} alt={`${t.mandir.photoAlt}: ${temple.trustName ?? ""}`}
+                   className="mb-5 aspect-[16/9] w-full rounded-[14px] border border-primary/20 object-cover shadow-sm" />
+            ) : null}
             <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{temple.trustName}</h2>
             {temple.deity ? (
               <p className="mt-2 text-sm text-muted">
@@ -80,6 +86,23 @@ function TempleHome() {
           </Link>
         ))}
       </div>
+
+      {temple.about || temple.history ? (
+        <div className={`grid gap-4 ${temple.about && temple.history ? "lg:grid-cols-2" : ""}`}>
+          {temple.about ? (
+            <Card className="flex flex-col gap-2 p-6">
+              <h3 className="text-lg font-semibold">{t.mandir.about}</h3>
+              <p className="whitespace-pre-line text-sm leading-relaxed">{temple.about}</p>
+            </Card>
+          ) : null}
+          {temple.history ? (
+            <Card className="flex flex-col gap-2 p-6">
+              <h3 className="text-lg font-semibold">{t.mandir.history}</h3>
+              <p className="whitespace-pre-line text-sm leading-relaxed">{temple.history}</p>
+            </Card>
+          ) : null}
+        </div>
+      ) : null}
 
       {temple.aartis.length > 0 ? (
         <Card className="flex flex-col gap-4 p-6">

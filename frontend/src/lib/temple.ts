@@ -18,7 +18,15 @@ export interface PublicTemple {
   onlineDonations: boolean;
   upcomingEvents: boolean;
   pujaBooking: boolean;
+  /** Plain text: render as text (whitespace-pre-line), never as HTML. */
+  about: string | null;
+  history: string | null;
+  /** Photo at /api/v1/public/temple/image?v={imageVersion}; null when the temple has none. */
+  imageVersion: string | null;
 }
+
+export const templeImageUrl = (version: string) =>
+  `/api/v1/public/temple/image?v=${encodeURIComponent(version)}`;
 
 /** Fired by the sign-in page so the header can show the devotee straight away. */
 export const DEVOTEE_CHANGED = "devotee-changed";

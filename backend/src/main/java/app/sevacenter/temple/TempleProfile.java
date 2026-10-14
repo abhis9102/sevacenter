@@ -23,6 +23,8 @@ public class TempleProfile {
     private String helpline;
     private String timings;
     private String announcement;
+    private String about;
+    private String history;
 
     @Column(name = "morning_open")
     private LocalTime morningOpen;
@@ -65,6 +67,12 @@ public class TempleProfile {
         touch(staffId, now);
     }
 
+    /** The About and History sections of the public page (plain text). */
+    void story(String about, String history) {
+        this.about = about;
+        this.history = history;
+    }
+
     void schedule(LocalTime morningOpen, LocalTime morningClose, LocalTime eveningOpen, LocalTime eveningClose,
                   String calendar) {
         this.morningOpen = morningOpen;
@@ -90,6 +98,9 @@ public class TempleProfile {
     public String getAddress() { return address; }
     public String getHelpline() { return helpline; }
     public String getTimings() { return timings; }
+    public String getAbout() { return about; }
+    public String getHistory() { return history; }
+
     public String getAnnouncement() { return announcement; }
     public OffsetDateTime getUpdatedAt() { return updatedAt; }
     public LocalTime getMorningOpen() { return morningOpen; }

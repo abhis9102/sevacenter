@@ -49,11 +49,13 @@ public class TempleController {
     private final EventService events;
     private final PujaService pujas;
     private final AuditTrail auditTrail;
+    private final TempleImageRepository images;
     private final Clock clock = Clock.system(DonationService.IST);
 
     public TempleController(TempleProfileRepository profiles, TempleAartiRepository aartis, TenantRepository tenants, OnlineDonationService payments,
-                            EventService events, PujaService pujas, AuditTrail auditTrail) {
+                            EventService events, PujaService pujas, AuditTrail auditTrail, TempleImageRepository images) {
         this.auditTrail = auditTrail;
+        this.images = images;
         this.profiles = profiles;
         this.aartis = aartis;
         this.tenants = tenants;
@@ -77,7 +79,9 @@ public class TempleController {
                 p == null ? null : p.getTimings(), p == null ? null : p.getAnnouncement(), hours(p), timetable(),
                 status(p, today), p == null ? null : p.noteFor(today),
                 p == null ? LunarCalendar.AMANTA : LunarCalendar.valueOf(p.getCalendar()),
-                payments.settings().isPresent(), !events.upcoming().isEmpty(), !pujas.publicCatalog().isEmpty()));
+                payments.settings().isPresent(), !events.upcoming().isEmpty(), !pujas.publicCatalog().isEmpty(),
+                p == null ? null : p.getAbout(), p == null ? null : p.getHistory(),
+                images.versionOf(tenantId).orElse(null)));
     }
 
     @PutMapping("/api/v1/temple")
@@ -97,6 +101,7 @@ public class TempleController {
                 clean(r.timings()), clean(r.announcement()), staff.userId(), OffsetDateTime.now(clock));
         p.schedule(h.morningOpen(), h.morningClose(), h.eveningOpen(), h.eveningClose(),
                 (r.calendar() == null ? LunarCalendar.AMANTA : r.calendar()).name());
+        p.story(clean(r.about()), clean(r.history()));
         profiles.save(p);
         aartis.deleteForTenant(tenantId);
         aartis.flush();
@@ -129,12 +134,14 @@ public class TempleController {
 
     private Profile profile(TempleProfile p) {
         if (p == null) {
-            return new Profile(null, null, null, null, null, null, List.of(), LunarCalendar.AMANTA, null, null);
+            return new Profile(null, null, null, null, null, null, List.of(), LunarCalendar.AMANTA, null, null, null, null,
+                    images.versionOf(TenantContext.get()).orElse(null));
         }
         LocalDate today = LocalDate.now(clock);
         return new Profile(p.getDeity(), p.getAddress(), p.getHelpline(), p.getTimings(), p.getAnnouncement(), hours(p),
                 timetable(), LunarCalendar.valueOf(p.getCalendar()),
-                status(p, today), p.noteFor(today));
+                status(p, today), p.noteFor(today), p.getAbout(), p.getHistory(),
+                images.versionOf(TenantContext.get()).orElse(null));
     }
 
     private static DarshanStatus status(TempleProfile p, LocalDate today) {
@@ -222,11 +229,20 @@ public class TempleController {
             @Schema(example = "AMANTA") LunarCalendar calendar,
             @Schema(description = "Read-only here: set with PUT /temple/status", accessMode = Schema.AccessMode.READ_ONLY)
             DarshanStatus status,
-            @Schema(accessMode = Schema.AccessMode.READ_ONLY) String statusNote) { }
+            @Schema(accessMode = Schema.AccessMode.READ_ONLY) String statusNote,
+            @Schema(description = "About the temple, plain text", example = "A 300-year-old Ganesh temple in the old city.")
+            @Size(max = 4000) String about,
+            @Schema(description = "The temple's history, plain text", example = "Built in 1720 by ...")
+            @Size(max = 8000) String history,
+            @Schema(description = "Set with PUT /temple/image; null when there is no photo",
+                    accessMode = Schema.AccessMode.READ_ONLY) String imageVersion) { }
 
     /** Public: the temple's own words plus which services it actually offers right now. */
     public record PublicTemple(String trustName, String deity, String address, String helpline, String timings,
                                String announcement, Hours hours, List<Aarti> aartis, DarshanStatus status,
                                String statusNote, LunarCalendar calendar,
-                               boolean onlineDonations, boolean upcomingEvents, boolean pujaBooking) { }
+                               boolean onlineDonations, boolean upcomingEvents, boolean pujaBooking,
+                               String about, String history,
+                               @Schema(description = "Photo: GET /public/temple/image?v={imageVersion}; null when none")
+                               String imageVersion) { }
 }
