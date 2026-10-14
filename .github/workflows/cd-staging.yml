@@ -40,6 +40,8 @@ jobs:
     name: Scan, push, deploy to staging
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    outputs:
+      deployed: ${{ steps.redeploy.outputs.skipped != 'true' }}
     permissions:
       id-token: write # OIDC token for the deploy role
       contents: read
@@ -129,3 +131,17 @@ jobs:
             echo "$url -> $code"
             [ "$code" = "200" ] || { echo "::error::smoke test failed for $url ($code)"; exit 1; }
           done
+
+  # Attack what was just deployed (ADR 0035). Its own workflow so the scan job holds only the scan
+  # trust's credentials and no AWS role.
+  dast:
+    name: DAST staging
+    needs: deploy
+    if: needs.deploy.outputs.deployed == 'true'
+    uses: $/.github/workflows/dast-staging.yml
+    permissions:
+      contents: read
+      issues: write # the scan's ticket sync
+    secrets:
+      STAGING_STAFF_BASE_DOMAIN: ${{ secrets.STAGING_STAFF_BASE_DOMAIN }}
+      STAGING_MANDIR_BASE_DOMAIN: ${{ secrets.STAGING_MANDIR_BASE_DOMAIN }}
