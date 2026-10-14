@@ -1,7 +1,7 @@
 /**
  * Brand = which product a request's Host belongs to (ADR 0030, two-domain split):
- *   - SevaCenter (staff/admin)    -> SC_STAFF_BASE_DOMAINS   (e.g. stg-seva.ehack.co.in)
- *   - MandirCenter (public/devotee) -> SC_MANDIR_BASE_DOMAINS (e.g. stg-mandir.ehack.co.in)
+ *   - SevaCenter (staff/admin)    -> SC_STAFF_BASE_DOMAINS   (e.g. stg-seva.example.com)
+ *   - MandirCenter (public/devotee) -> SC_MANDIR_BASE_DOMAINS (e.g. stg-mandir.example.com)
  *
  * When the two base-domain sets are identical (local dev, or a single-domain deploy where both
  * brands share one host and are told apart by path), brand gating is OFF: `singleDomain` is true,

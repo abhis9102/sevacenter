@@ -1,88 +1,131 @@
 name: cd-staging
 
-# Continuous deployment to the AWS staging box. Runs on a push to main that touches the app
-# (after the PR's CI gates have already passed), or on manual dispatch. Auth to AWS is via GitHub
-# OIDC — a short-lived role, NO stored AWS keys. The role (sevacenter-staging-deploy) may only push
-# the two ECR repos, update /sevacenter/staging/* SSM params, and run the deploy on the one staging
-# instance; its trust is restricted to refs/heads/main of this repo.
+# Continuous deployment to staging in ap-south-1 (ADR 0034). Runs on a push to main that touches
+# the app (after the PR's CI gates passed), or on manual dispatch.
+#
+# 1. G6 scans the two images first, before any AWS credential exists in the job; the images
+#    pushed are exactly the ones scanned, never a rebuild.
+# 2. The deploy role (sevacenter-cd-staging, OIDC, main only) pushes them under immutable SHA tags,
+#    mirrors Caddy and Mailpit into our ECR by digest, and pins every digest in SSM.
+# 3. It runs the one SSM document it's allowed, on the box tagged as the app box. At night staging
+#    is stopped (ADR 0032): the pins are set and the boxes pick them up at 08:00.
+#
+# Identifiers (registry, role, host names) are repository secrets: the repo and its logs are public
+# and secrets are masked in logs.
 on:
   push:
     branches: [main]
     paths:
       - "backend/**"
       - "frontend/**"
-      - "docker/**"
+      - "tools/security/image_scan.sh"
+      - ".trivy/**"
       - ".github/workflows/cd-staging.yml"
   workflow_dispatch: {}
 
-permissions: {} # least privilege by default; the job grants only what it needs
+permissions: {}
 
 concurrency:
   group: cd-staging
   cancel-in-progress: false
 
 env:
-  AWS_REGION: ap-southeast-2
-  ECR: 998890770019.dkr.ecr.ap-southeast-2.amazonaws.com
-  INSTANCE_ID: i-0fe3242ad65cabeae
-  SSM_PREFIX: /sevacenter/staging
+  AWS_REGION: ap-south-1
+  # Third-party images staging runs, mirrored by digest (the boxes pull only from our ECR).
+  CADDY_IMAGE: caddy@sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d # 2.10.2-alpine
+  MAILPIT_IMAGE: axllent/mailpit@sha256:e22dce5b36f93c77082e204a3942fb6b283b7896e057458400a4c88344c3df68 # v1.27
 
 jobs:
   deploy:
-    name: Build, push, deploy to staging
+    name: Scan, push, deploy to staging
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     permissions:
-      id-token: write # mint the OIDC token exchanged for short-lived AWS creds
+      id-token: write # OIDC token for the deploy role
       contents: read
+    env:
+      ECR: ${{ secrets.STAGING_ECR_REGISTRY }}
+      SMOKE_URLS: ${{ secrets.STAGING_SMOKE_URLS }} # space-separated
     steps:
+      - name: Required configuration is present
+        env:
+          ROLE: ${{ secrets.STAGING_DEPLOY_ROLE_ARN }}
+        run: |
+          set -euo pipefail
+          for v in ECR SMOKE_URLS ROLE; do
+            [ -n "${!v}" ] || { echo "::error::missing repository secret for $v"; exit 1; }
+          done
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
+      - name: Image scan (G6) before push
+        run: tools/security/image_scan.sh image-scan
+
       - name: AWS credentials via OIDC (no stored keys)
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
-          role-to-assume: arn:aws:iam::998890770019:role/sevacenter-staging-deploy
-          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.STAGING_DEPLOY_ROLE_ARN }}
+          aws-region: ap-south-1
 
-      - name: Build & push images, pin digests in SSM
+      - name: Push the scanned images and mirrors, pin digests
         run: |
           set -euo pipefail
           TAG="${GITHUB_SHA::12}"
-          aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR"
-          docker build -t "$ECR/sevacenter-backend:$TAG"  -t "$ECR/sevacenter-backend:staging"  backend
-          docker build -t "$ECR/sevacenter-frontend:$TAG" -t "$ECR/sevacenter-frontend:staging" frontend
-          for ref in "sevacenter-backend:$TAG" "sevacenter-backend:staging" "sevacenter-frontend:$TAG" "sevacenter-frontend:staging"; do
-            docker push "$ECR/$ref"
+          aws ecr get-login-password | docker login --username AWS --password-stdin "$ECR"
+          pin() { aws ssm put-parameter --name "/sevacenter/staging/images/$1" --type String --overwrite --value "$2" >/dev/null; echo "pinned $1"; }
+          # Push unless the (immutable) tag is already there; return the digest reference.
+          push() {
+            local src=$1 repo=$2 tag=$3
+            if ! aws ecr describe-images --repository-name "$repo" --image-ids "imageTag=$tag" >/dev/null 2>&1; then
+              docker tag "$src" "$ECR/$repo:$tag"
+              docker push -q "$ECR/$repo:$tag" >/dev/null
+            fi
+            echo "$ECR/$repo@$(aws ecr describe-images --repository-name "$repo" --image-ids "imageTag=$tag" --query 'imageDetails[0].imageDigest' --output text)"
+          }
+          for name in backend frontend; do
+            pin "$name" "$(push "sevacenter-$name:scan" "sevacenter-$name" "$TAG")"
           done
-          BE=$(docker inspect --format='{{index .RepoDigests 0}}' "$ECR/sevacenter-backend:$TAG")
-          FE=$(docker inspect --format='{{index .RepoDigests 0}}' "$ECR/sevacenter-frontend:$TAG")
-          aws ssm put-parameter --region "$AWS_REGION" --name "$SSM_PREFIX/BACKEND_IMAGE"  --type String --overwrite --value "$BE"
-          aws ssm put-parameter --region "$AWS_REGION" --name "$SSM_PREFIX/FRONTEND_IMAGE" --type String --overwrite --value "$FE"
-          echo "pinned BACKEND_IMAGE=$BE"
-          echo "pinned FRONTEND_IMAGE=$FE"
+          docker pull -q "$CADDY_IMAGE" >/dev/null && pin caddy "$(push "$CADDY_IMAGE" sevacenter-caddy "${CADDY_IMAGE##*sha256:}")"
+          docker pull -q "$MAILPIT_IMAGE" >/dev/null && pin mailpit "$(push "$MAILPIT_IMAGE" sevacenter-mailpit "${MAILPIT_IMAGE##*sha256:}")"
 
-      - name: Deploy on the staging box via SSM and wait
+      - name: Redeploy the app box (skipped while staging sleeps)
+        id: redeploy
         run: |
           set -euo pipefail
-          CID=$(aws ssm send-command --region "$AWS_REGION" --instance-ids "$INSTANCE_ID" \
-            --document-name AWS-RunShellScript --timeout-seconds 600 \
-            --parameters 'commands=["aws ssm get-parameter --region ap-southeast-2 --name /sevacenter/staging/redeploy --query Parameter.Value --output text > /tmp/redeploy.sh","bash /tmp/redeploy.sh"]' \
-            --query 'Command.CommandId' --output text)
+          RUNNING=$(aws ec2 describe-instances \
+            --filters Name=tag:sevacenter-role,Values=app Name=instance-state-name,Values=running \
+            --query 'length(Reservations[].Instances[])' --output text)
+          if [ "$RUNNING" = "0" ]; then
+            echo "::notice::staging is stopped (night schedule); the new images start with it at 08:00 IST"
+            echo "skipped=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          CID=$(aws ssm send-command --document-name sevacenter-staging-redeploy \
+            --targets Key=tag:sevacenter-role,Values=app --query 'Command.CommandId' --output text)
           echo "command: $CID"
+          st=Pending
           for _ in $(seq 1 80); do
-            st=$(aws ssm get-command-invocation --region "$AWS_REGION" --command-id "$CID" --instance-id "$INSTANCE_ID" --query Status --output text 2>/dev/null || echo Pending)
-            case "$st" in Success) echo "deploy OK"; break;; Failed|TimedOut|Cancelled) echo "::error::deploy $st"; exit 1;; esac
+            st=$(aws ssm list-command-invocations --command-id "$CID" --query 'CommandInvocations[0].Status' --output text 2>/dev/null || echo Pending)
+            case "$st" in Success) break;; Failed|TimedOut|Cancelled) break;; esac
             sleep 5
           done
-          aws ssm get-command-invocation --region "$AWS_REGION" --command-id "$CID" --instance-id "$INSTANCE_ID" --query 'StandardOutputContent' --output text | tail -20
+          aws ssm list-command-invocations --command-id "$CID" --details \
+            --query 'CommandInvocations[0].CommandPlugins[0].Output' --output text | tail -20
+          [ "$st" = "Success" ] || { echo "::error::redeploy $st"; exit 1; }
 
       - name: Smoke test both brands
+        if: steps.redeploy.outputs.skipped != 'true'
         run: |
           set -euo pipefail
-          for url in https://demo.stg-seva.ehack.co.in/login https://demo.stg-mandir.ehack.co.in/; do
-            code=$(curl -sS -m 30 -o /dev/null -w '%{http_code}' "$url" || echo 000)
+          for url in $SMOKE_URLS; do
+            code=000
+            for _ in $(seq 1 12); do  # the backend takes a minute to migrate and start
+              code=$(curl -sS -m 30 -o /dev/null -w '%{http_code}' "$url" || echo 000)
+              [ "$code" = "200" ] && break
+              sleep 10
+            done
             echo "$url -> $code"
             [ "$code" = "200" ] || { echo "::error::smoke test failed for $url ($code)"; exit 1; }
           done
