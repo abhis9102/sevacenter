@@ -2,9 +2,13 @@ name: cd-staging
 
 # Continuous deployment to the AWS staging box. Runs on a push to main that touches the app
 # (after the PR's CI gates have already passed), or on manual dispatch. Auth to AWS is via GitHub
-# OIDC — a short-lived role, NO stored AWS keys. The role (sevacenter-staging-deploy) may only push
-# the two ECR repos, update /sevacenter/staging/* SSM params, and run the deploy on the one staging
-# instance; its trust is restricted to refs/heads/main of this repo.
+# OIDC — a short-lived role, NO stored AWS keys. The role may only push the two ECR repos, update
+# the staging SSM params, and run the deploy on the one staging instance; its trust is restricted
+# to refs/heads/main of this repo.
+#
+# Environment identifiers (account, registry, instance, hostnames) are repository secrets, not
+# literals: the repo and its Actions logs are public, and secrets are masked in logs.
+# The images pushed are the ones G6 just scanned (tools/security/image_scan.sh), never a rebuild.
 on:
   push:
     branches: [main]
@@ -12,6 +16,8 @@ on:
       - "backend/**"
       - "frontend/**"
       - "docker/**"
+      - "tools/security/image_scan.sh"
+      - ".trivy/**"
       - ".github/workflows/cd-staging.yml"
   workflow_dispatch: {}
 
@@ -21,40 +27,55 @@ concurrency:
   group: cd-staging
   cancel-in-progress: false
 
-env:
-  AWS_REGION: ap-southeast-2
-  ECR: 998890770019.dkr.ecr.ap-southeast-2.amazonaws.com
-  INSTANCE_ID: i-0fe3242ad65cabeae
-  SSM_PREFIX: /sevacenter/staging
-
 jobs:
   deploy:
-    name: Build, push, deploy to staging
+    name: Scan, push, deploy to staging
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     permissions:
       id-token: write # mint the OIDC token exchanged for short-lived AWS creds
       contents: read
+    env:
+      AWS_REGION: ${{ secrets.STAGING_AWS_REGION }}
+      ECR: ${{ secrets.STAGING_ECR_REGISTRY }}
+      INSTANCE_ID: ${{ secrets.STAGING_INSTANCE_ID }}
+      SMOKE_URLS: ${{ secrets.STAGING_SMOKE_URLS }} # space-separated
+      SSM_PREFIX: /sevacenter/staging
     steps:
+      - name: Required configuration is present
+        env:
+          ROLE: ${{ secrets.STAGING_DEPLOY_ROLE_ARN }}
+        run: |
+          set -euo pipefail
+          for v in AWS_REGION ECR INSTANCE_ID SMOKE_URLS ROLE; do
+            [ -n "${!v}" ] || { echo "::error::missing repository secret for $v"; exit 1; }
+          done
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
+      # G6 on the exact images we deploy: builds sevacenter-{backend,frontend}:scan and fails on
+      # fixable Critical/High. Runs before any AWS credential exists in the job.
+      - name: Image scan (G6) before push
+        run: tools/security/image_scan.sh image-scan
+
       - name: AWS credentials via OIDC (no stored keys)
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
-          role-to-assume: arn:aws:iam::998890770019:role/sevacenter-staging-deploy
-          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.STAGING_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ secrets.STAGING_AWS_REGION }}
 
-      - name: Build & push images, pin digests in SSM
+      - name: Push the scanned images, pin digests in SSM
         run: |
           set -euo pipefail
           TAG="${GITHUB_SHA::12}"
           aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR"
-          docker build -t "$ECR/sevacenter-backend:$TAG"  -t "$ECR/sevacenter-backend:staging"  backend
-          docker build -t "$ECR/sevacenter-frontend:$TAG" -t "$ECR/sevacenter-frontend:staging" frontend
-          for ref in "sevacenter-backend:$TAG" "sevacenter-backend:staging" "sevacenter-frontend:$TAG" "sevacenter-frontend:staging"; do
-            docker push "$ECR/$ref"
+          for name in backend frontend; do
+            for t in "$TAG" staging; do
+              docker tag "sevacenter-$name:scan" "$ECR/sevacenter-$name:$t"
+              docker push "$ECR/sevacenter-$name:$t"
+            done
           done
           BE=$(docker inspect --format='{{index .RepoDigests 0}}' "$ECR/sevacenter-backend:$TAG")
           FE=$(docker inspect --format='{{index .RepoDigests 0}}' "$ECR/sevacenter-frontend:$TAG")
@@ -66,22 +87,25 @@ jobs:
       - name: Deploy on the staging box via SSM and wait
         run: |
           set -euo pipefail
+          PARAMS=$(jq -cn --arg r "$AWS_REGION" --arg p "$SSM_PREFIX/redeploy" \
+            '{commands: ["aws ssm get-parameter --region \($r) --name \($p) --query Parameter.Value --output text > /tmp/redeploy.sh", "bash /tmp/redeploy.sh"]}')
           CID=$(aws ssm send-command --region "$AWS_REGION" --instance-ids "$INSTANCE_ID" \
             --document-name AWS-RunShellScript --timeout-seconds 600 \
-            --parameters 'commands=["aws ssm get-parameter --region ap-southeast-2 --name /sevacenter/staging/redeploy --query Parameter.Value --output text > /tmp/redeploy.sh","bash /tmp/redeploy.sh"]' \
-            --query 'Command.CommandId' --output text)
+            --parameters "$PARAMS" --query 'Command.CommandId' --output text)
           echo "command: $CID"
+          st=Pending
           for _ in $(seq 1 80); do
             st=$(aws ssm get-command-invocation --region "$AWS_REGION" --command-id "$CID" --instance-id "$INSTANCE_ID" --query Status --output text 2>/dev/null || echo Pending)
             case "$st" in Success) echo "deploy OK"; break;; Failed|TimedOut|Cancelled) echo "::error::deploy $st"; exit 1;; esac
             sleep 5
           done
+          [ "$st" = "Success" ] || { echo "::error::deploy did not finish in time ($st)"; exit 1; }
           aws ssm get-command-invocation --region "$AWS_REGION" --command-id "$CID" --instance-id "$INSTANCE_ID" --query 'StandardOutputContent' --output text | tail -20
 
       - name: Smoke test both brands
         run: |
           set -euo pipefail
-          for url in https://demo.stg-seva.ehack.co.in/login https://demo.stg-mandir.ehack.co.in/; do
+          for url in $SMOKE_URLS; do
             code=$(curl -sS -m 30 -o /dev/null -w '%{http_code}' "$url" || echo 000)
             echo "$url -> $code"
             [ "$code" = "200" ] || { echo "::error::smoke test failed for $url ($code)"; exit 1; }

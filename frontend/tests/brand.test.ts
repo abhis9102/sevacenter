@@ -9,33 +9,33 @@ afterEach(() => {
 });
 
 function twoDomain() {
-  process.env.SC_STAFF_BASE_DOMAINS = "stg-seva.ehack.co.in";
-  process.env.SC_MANDIR_BASE_DOMAINS = "stg-mandir.ehack.co.in";
-  process.env.SC_TENANT_BASE_DOMAINS = "stg-seva.ehack.co.in,stg-mandir.ehack.co.in";
+  process.env.SC_STAFF_BASE_DOMAINS = "stg-seva.example.com";
+  process.env.SC_MANDIR_BASE_DOMAINS = "stg-mandir.example.com";
+  process.env.SC_TENANT_BASE_DOMAINS = "stg-seva.example.com,stg-mandir.example.com";
 }
 
 describe("siteForHost (two-domain brand split)", () => {
   it("maps a staff host to the staff brand and slug", () => {
     twoDomain();
-    const s = siteForHost("demo.stg-seva.ehack.co.in");
+    const s = siteForHost("demo.stg-seva.example.com");
     assert.equal(s.brand, "staff");
     assert.equal(s.slug, "demo");
     assert.equal(s.singleDomain, false);
-    assert.equal(s.mandirBase, "stg-mandir.ehack.co.in");
+    assert.equal(s.mandirBase, "stg-mandir.example.com");
   });
 
   it("maps a mandir host to the mandir brand and slug", () => {
     twoDomain();
-    const s = siteForHost("demo.stg-mandir.ehack.co.in");
+    const s = siteForHost("demo.stg-mandir.example.com");
     assert.equal(s.brand, "mandir");
     assert.equal(s.slug, "demo");
-    assert.equal(s.staffBase, "stg-seva.ehack.co.in");
+    assert.equal(s.staffBase, "stg-seva.example.com");
   });
 
   it("a bare brand domain resolves no tenant", () => {
     twoDomain();
-    assert.equal(siteForHost("stg-seva.ehack.co.in").slug, null);
-    assert.equal(siteForHost("stg-mandir.ehack.co.in").slug, null);
+    assert.equal(siteForHost("stg-seva.example.com").slug, null);
+    assert.equal(siteForHost("stg-mandir.example.com").slug, null);
   });
 
   it("an unknown host has no brand and no slug", () => {
