@@ -54,11 +54,12 @@ public class DevoteeLoginService {
     private final TenantRepository tenants;
     private final OtpMac mac;
     private final List<OtpSender> senders;
+    private final ScanLoginCode scanCode;
     private final Clock clock = Clock.systemUTC();
 
     public DevoteeLoginService(DevoteeOtpRepository codes, DevoteeAccountRepository accounts,
                                DevoteeContactRepository contacts, DevoteeSessionRepository sessions, TenantRepository tenants, OtpMac mac,
-                               List<OtpSender> senders) {
+                               List<OtpSender> senders, ScanLoginCode scanCode) {
         this.codes = codes;
         this.accounts = accounts;
         this.contacts = contacts;
@@ -66,6 +67,7 @@ public class DevoteeLoginService {
         this.tenants = tenants;
         this.mac = mac;
         this.senders = senders;
+        this.scanCode = scanCode;
     }
 
     public boolean offered(OtpChannel channel) {
@@ -199,9 +201,15 @@ public class DevoteeLoginService {
         DevoteeOtp otp = codes.lockLatest(contactMac, PageRequest.of(0, 1)).stream().findFirst()
                 .filter(o -> o.open(now)).orElseThrow(InvalidCodeException::new);
         otp.countAttempt();
-        if (!MessageDigest.isEqual(mac.code(tenantId, contactMac, code).getBytes(StandardCharsets.US_ASCII),
-                otp.codeMac().getBytes(StandardCharsets.US_ASCII))) {
+        boolean sent = MessageDigest.isEqual(mac.code(tenantId, contactMac, code).getBytes(StandardCharsets.US_ASCII),
+                otp.codeMac().getBytes(StandardCharsets.US_ASCII));
+        // The DAST scan trust's fixed code (ADR 0035) stands in for the sent one, never for the
+        // request: the send limits and this code's attempt cap still apply.
+        if (!sent && !scanCode.matches(tenantId, code)) {
             throw new InvalidCodeException();
+        }
+        if (!sent) {
+            audit.info("event=devotee_login_scan_code tenant={} code_id={}", tenantId, otp.getId());
         }
         otp.use(now);
     }
