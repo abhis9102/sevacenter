@@ -1,6 +1,6 @@
 # Dev Status — resume point
 
-_Last updated: 2026-10-10. Read this section first; everything below it is the dev log, oldest first._
+_Last updated: 2026-10-14. Read this section first; everything below it is the dev log, oldest first._
 
 ## Where we are
 
@@ -31,10 +31,17 @@ _Last updated: 2026-10-10. Read this section first; everything below it is the d
      `Frontend (lint, types, tests, build)` now required too).
    - Also merged: image findings ticketed per CVE and only once fixable (#242); the Maven wrapper
      download pinned by SHA-256 (#238).
-   - Next: network design (VPC range, AZs, subnet tiers, egress), then state backend + OIDC role.
+   - **Round 2: network (ADR 0032)**, sized for a credit-funded account: three tiers in 1a, an
+     edge box (TLS + NAT) instead of NAT gateway + ALB, DNS Firewall allowlist, flow logs to S3 for
+     180 days, one KMS key, budget alerts. Terraform under `infra/` (not applied yet); G7 passes
+     with expiring acceptances, and a Postgres-open-to-the-internet test was blocked by CKV_SEVA_1.
+   - Next: state backend + OIDC plan/apply roles, then compute (edge box, app box), then RDS.
+   - Staging from #247 runs outside ap-south-1 (CR-2); it moves when the M6 stack is up.
 
 ## Open items
 
+- **AWS credit deadline ~2027-02-14** ($139.81 on 2026-10-14, free plan): upgrade the account or
+  shut staging down before then; the account is closed after the plan ends. Budget alerts at $30.
 - **Staging domain:** a subzone of a domain we own (delegated to Route 53 in M6), set through the
   ADR 0030 variables, never committed. Buy the product domains before going live.
 - Known limitations, not blocking: secret-ticket dedup can duplicate on a rebase (G2); a registered

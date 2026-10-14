@@ -251,11 +251,12 @@ jobs:
           persist-credentials: false
       - name: Self-test, scan, gate
         run: tools/security/iac_scan.sh iac-scan
-      # Only the real infrastructure goes to code scanning, never the fixture.
+      # Only the real infrastructure goes to code scanning, never the fixture, and without the
+      # findings accepted in .checkov/accepted.toml (they're decisions on record, not open alerts).
       - uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
-        if: ${{ !cancelled() && hashFiles('iac-scan/infra/results_sarif.sarif') != '' }}
+        if: ${{ !cancelled() && hashFiles('iac-scan/infra/code-scanning.sarif') != '' }}
         with:
-          sarif_file: iac-scan/infra/results_sarif.sarif
+          sarif_file: iac-scan/infra/code-scanning.sarif
           category: checkov
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: ${{ !cancelled() }}

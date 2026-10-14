@@ -6,10 +6,60 @@
 # tools/security/iac_policy.py enforces it; an invalid entry suppresses nothing. Inline
 # `checkov:skip` comments are rejected by the gate: acceptances live here, reviewed and expiring.
 #
-# Entry format (no entries yet: there's no Terraform yet):
+# Entry format:
 #
 # [[accepted]]
 # id = "CKV_AWS_144"
 # resources = ["aws_s3_bucket.example"]
 # ignoreUntil = 2026-12-31
 # reason = "<who> (AppSec), <date>: <why this is acceptable, and what covers the risk instead>"
+
+# --- M6 network (ADR 0032). Proposed 2026-10-14; AppSec (Abhi) approves by merging the PR. ---
+
+[[accepted]]
+id = "CKV_AWS_356"
+resources = ["aws_iam_policy_document.kms"]
+ignoreUntil = 2027-01-12
+reason = "AppSec (Abhi), 2026-10-14: KMS key policy root statement. In a key policy Resource '*' means this key only, and the account-root kms:* statement is what lets IAM policies grant use at all (AWS default key policy); without it a policy mistake locks the key forever. Who may use the key is decided by scoped IAM roles (CR-5)."
+
+[[accepted]]
+id = "CKV_AWS_109"
+resources = ["aws_iam_policy_document.kms"]
+ignoreUntil = 2027-01-12
+reason = "AppSec (Abhi), 2026-10-14: same KMS key policy root statement as CKV_AWS_356: resource is this key only, delegation to IAM; permissions management on the key is limited to account administrators through Identity Center."
+
+[[accepted]]
+id = "CKV_AWS_111"
+resources = ["aws_iam_policy_document.kms"]
+ignoreUntil = 2027-01-12
+reason = "AppSec (Abhi), 2026-10-14: same KMS key policy root statement as CKV_AWS_356: write actions are on this key only and granted onward only by scoped IAM roles (CR-5)."
+
+[[accepted]]
+id = "CKV_AWS_260"
+resources = ["module.network.aws_vpc_security_group_ingress_rule.edge_http"]
+ignoreUntil = 2027-01-12
+reason = "AppSec (Abhi), 2026-10-14: CR-4 requires HTTP to redirect to HTTPS, so port 80 is open on the edge box only; Caddy answers it with a 301 to HTTPS (and ACME challenges) and never proxies it to the app. HSTS stops later plain-HTTP requests."
+
+[[accepted]]
+id = "CKV_AWS_144"
+resources = ["module.network.aws_s3_bucket.flow_logs"]
+ignoreUntil = 2027-01-12
+reason = "AppSec (Abhi), 2026-10-14: cross-region replication is forbidden by CR-2 (data stays in ap-south-1). Durability comes from S3 itself and versioning."
+
+[[accepted]]
+id = "CKV2_AWS_62"
+resources = ["module.network.aws_s3_bucket.flow_logs"]
+ignoreUntil = 2027-01-12
+reason = "AppSec (Abhi), 2026-10-14: flow-log bucket written only by the log delivery service and read on demand (Athena) during an investigation; nothing consumes per-object events. Alerting on traffic is GuardDuty's job."
+
+[[accepted]]
+id = "CKV_AWS_18"
+resources = ["module.network.aws_s3_bucket.flow_logs"]
+ignoreUntil = 2027-01-12
+reason = "AppSec (Abhi), 2026-10-14: access logging for the log bucket needs a second log bucket (logging into itself loops). Writes come only from the delivery service (bucket policy), public access is blocked, and policy changes are in CloudTrail. Revisit with the central logging bucket."
+
+[[accepted]]
+id = "CKV2_AWS_5"
+resources = ["module.network.aws_security_group.edge", "module.network.aws_security_group.app", "module.network.aws_security_group.db"]
+ignoreUntil = 2026-11-14
+reason = "AppSec (Abhi), 2026-10-14: the security groups are attached by the edge box, app box and RDS in the compute and database rounds. Short expiry on purpose: if those rounds stall, this fails again."

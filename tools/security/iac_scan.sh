@@ -41,4 +41,6 @@ if [ -z "$(find "$ROOT/$SCAN_DIR" -name '*.tf' -not -path '*/.terraform/*' 2>/de
   exit 0
 fi
 checkov "$SCAN_DIR" infra
-policy gate "$OUT/infra/results_json.json" --accepted "$ROOT/.checkov/accepted.toml" --dir "$ROOT/$SCAN_DIR"
+# Code scanning gets the SARIF without accepted findings (code-scanning.sarif); the JSON keeps all.
+policy gate "$OUT/infra/results_json.json" --accepted "$ROOT/.checkov/accepted.toml" --dir "$ROOT/$SCAN_DIR" \
+  --sarif-in "$OUT/infra/results_sarif.sarif" --sarif-out "$OUT/infra/code-scanning.sarif"

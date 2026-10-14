@@ -38,3 +38,12 @@ iac-scan/
 # Private local context for Claude Code (never committed)
 CLAUDE.local.md
 .claude/
+
+# Terraform: providers, state and real variable values never committed (the lock file is)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+*.tfplan
+crash.log
