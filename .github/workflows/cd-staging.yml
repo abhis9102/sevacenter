@@ -45,6 +45,7 @@ jobs:
     permissions:
       id-token: write # OIDC token for the deploy role
       contents: read
+      actions: write # cancel a DAST scan running against the build being replaced
     env:
       ECR: ${{ secrets.STAGING_ECR_REGISTRY }}
       SMOKE_URLS: ${{ secrets.STAGING_SMOKE_URLS }} # space-separated
@@ -91,6 +92,18 @@ jobs:
           done
           docker pull -q "$CADDY_IMAGE" >/dev/null && pin caddy "$(push "$CADDY_IMAGE" sevacenter-caddy "${CADDY_IMAGE##*sha256:}")"
           docker pull -q "$MAILPIT_IMAGE" >/dev/null && pin mailpit "$(push "$MAILPIT_IMAGE" sevacenter-mailpit "${MAILPIT_IMAGE##*sha256:}")"
+
+      # A redeploy restarts the backend: a scan running across it gets 502s and loses its session
+      # (the first staging scan did, 2026-10-15). Stop it; the scan started after this deploy
+      # tests the new build from the start.
+      - name: Stop a DAST scan that is running against the old build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for id in $(gh run list --repo "$GITHUB_REPOSITORY" --workflow dast-staging.yml --status in_progress --json databaseId --jq '.[].databaseId'); do
+            echo "cancelling DAST run $id"
+            gh run cancel "$id" --repo "$GITHUB_REPOSITORY" || true
+          done
 
       - name: Redeploy the app box (skipped while staging sleeps)
         id: redeploy

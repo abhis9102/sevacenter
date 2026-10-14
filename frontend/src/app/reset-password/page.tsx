@@ -71,7 +71,7 @@ export default function ResetPasswordPage() {
           </div>
         </div>
       ) : (
-        <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
+        <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
           <p className="text-sm text-muted">{t.auth.reset.subtitle}</p>
 
           {error ? <Alert tone="danger">{error}</Alert> : null}

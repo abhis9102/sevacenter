@@ -61,3 +61,30 @@ param = "deity"
 uri = '/api/v1/temple$' # the temple page save only
 ignoreUntil = 2026-12-31
 reason = "Abhi (AppSec), 2026-10-05: not injection. Reproduced by hand, one request at a time: the original, AND 1=1, OR 1=1 and AND 1=2 all give 200 with identical responses apart from the echoed text, and the payload is stored literally. The save binds every value through JPA (no SQL built from input). ZAP's baseline was a differing response ('Data was NOT returned for the original parameter') while parallel scan threads rewrote this temple's aarti timetable, which the response includes. Pinned by TempleTest.sqlLookingTextIsStoredAsTextAndChangesNothingElse (mutation-checked)."
+
+# --- Staging scan (ADR 0035), first run 2026-10-15. Proposed by Claude (triage), for AppSec review in the PR.
+
+[[accepted]]
+pluginId = "40018" # SQL Injection (boolean heuristic)
+param = "contact"
+uri = '/api/v1/public/devotee-login/code$'
+ignoreUntil = 2027-01-10
+reason = "Claude (triage) for Abhi: reproduced by hand on staging: 'x@example.org AND 1=1 -- ' and 'AND 1=2 -- ' both get the identical 400 'email is not valid'; the value never reaches a query (validation first, JPA parameters). ZAP's difference came from the per-contact/per-IP send limit between its requests."
+
+[[accepted]]
+pluginId = "10099" # Source Code Disclosure - SQL
+uri = '/api/v1/devotees/export(\?|$)'
+ignoreUntil = 2027-01-10
+reason = "Claude (triage) for Abhi: the 'SQL' is ZAP's own payloads (e.g. select \"java.lang.Thread.sleep\"(15000)…) that its active scan stored as devotee names and the CSV export returned as data. Not our source. Export is text/csv attachment + nosniff (DevoteeCsvTest)."
+
+[[accepted]]
+pluginId = "100001" # Unexpected Content-Type
+uri = '^https://[^/]+/(?!api/)' # staging API passes probing non-API paths (/_next/*, /WEB-INF/*, pages)
+ignoreUntil = 2027-01-10
+reason = "Claude (triage) for Abhi: on staging the API scans share a host with the Next.js site, so probes of /_next/*, /WEB-INF/* and page paths get HTML/JS/fonts by design. Only /api/ paths must return JSON, and none of those were flagged."
+
+[[accepted]]
+pluginId = "90004" # Cross-Origin-Embedder-Policy missing
+uri = '^https://[^/]+/(?!api/)' # pages only
+ignoreUntil = 2027-01-10
+reason = "Claude (triage) for Abhi: COEP only matters for cross-origin isolation (SharedArrayBuffer etc.), which we don't use; COOP and CORP are set. require-corp would break the Razorpay Checkout frame on /donate and /book-puja. Re-check if Razorpay supports COEP."

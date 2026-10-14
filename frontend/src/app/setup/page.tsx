@@ -85,7 +85,7 @@ export default function SetupPage() {
 
   return (
     <AuthFrame title="Set up your account">
-      <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
+      <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
         <p className="text-sm text-muted">Choose a password to finish setting up your staff account.</p>
         {error ? <Alert tone="danger">{error}</Alert> : null}
         <TextField
