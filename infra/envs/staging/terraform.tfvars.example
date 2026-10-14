@@ -1,0 +1,4 @@
+# Copy to terraform.tfvars (gitignored) and fill in. Never commit the real file.
+alert_email        = "you@example.com"
+monthly_budget_usd = 40
+# extra_allowed_domains = ["smtp.example-provider.com"]
