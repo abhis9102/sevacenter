@@ -35,8 +35,18 @@ _Last updated: 2026-10-14. Read this section first; everything below it is the d
      edge box (TLS + NAT) instead of NAT gateway + ALB, DNS Firewall allowlist, flow logs to S3 for
      180 days, one KMS key, budget alerts. Terraform under `infra/` (not applied yet); G7 passes
      with expiring acceptances, and a Postgres-open-to-the-internet test was blocked by CKV_SEVA_1.
-   - Next: state backend + OIDC plan/apply roles, then compute (edge box, app box), then RDS.
-   - Staging from #247 runs outside ap-south-1 (CR-2); it moves when the M6 stack is up.
+   - **Round 3 ✅ staging live in ap-south-1 (2026-10-14):** state backend + OIDC plan/apply roles
+     (ADR 0033), edge box + app box + RDS (ADR 0034), plan on PR / apply on `main` behind the
+     `staging` environment (#251–#255), CD deploys only G6-scanned images with the scoped CD role
+     (#248). The #247 Sydney staging was moved (data checksummed table by table, same app keys)
+     and then deleted completely (CR-2: no snapshot left behind).
+   - Found on cutover: DNS Firewall checks every CNAME hop, so the allowlisted Let's Encrypt name
+     still failed and no certificate was issued; the allow rule now trusts the chain of an allowed
+     name (#258, ADR 0032). Non-listed names still get NODATA (checked from the edge box).
+   - Demo data: `tools/demo/seed_demo.py` fills a trust through the staff API (#257). Staging
+     trusts `demo` and `siddhivinayak` are seeded; `seed-check*` were throwaway test runs.
+   - Next: CR-1 (Identity Center, remove the IAM users' access keys), then M7.
+   - Note: tenant `status` is stored but not enforced anywhere; suspending a trust needs a feature.
 
 ## Open items
 
