@@ -132,4 +132,25 @@ data "aws_iam_policy_document" "s3_endpoint" {
       identifiers = ["*"]
     }
   }
+
+  # AWS-owned buckets the boxes need: Amazon Linux 2023 package repositories, and the SSM agent's
+  # updates, documents and patch baselines. Read-only and named one by one, so the endpoint
+  # still can't reach anyone else's bucket. (Without these, dnf got 403 at first boot.)
+  statement {
+    sid     = "AwsOwnedOsAndAgentBuckets"
+    actions = ["s3:GetObject"]
+    resources = [
+      "arn:aws:s3:::al2023-repos-${data.aws_region.current.region}-de612dc2/*",
+      "arn:aws:s3:::aws-ssm-${data.aws_region.current.region}/*",
+      "arn:aws:s3:::amazon-ssm-${data.aws_region.current.region}/*",
+      "arn:aws:s3:::amazon-ssm-packages-${data.aws_region.current.region}/*",
+      "arn:aws:s3:::${data.aws_region.current.region}-birdwatcher-prod/*",
+      "arn:aws:s3:::aws-ssm-document-attachments-${data.aws_region.current.region}/*",
+      "arn:aws:s3:::patch-baseline-snapshot-${data.aws_region.current.region}/*",
+    ]
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+  }
 }
