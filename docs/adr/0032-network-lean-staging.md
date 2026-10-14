@@ -48,7 +48,14 @@ encrypted with the environment's KMS key, kept 180 days (CERT-In), then deleted.
 
 **One KMS key per environment**, rotated yearly, used by every service that stores data.
 
-**Budget alerts** at 25/50/100% of the monthly limit, plus a forecast alert.
+**Budget alerts** at 25/50/100% of the monthly limit ($30), plus a forecast alert.
+
+**Staging sleeps at night.** The account has $139.81 of credit for 123 days (until about
+2027-02-14), about $34 a month. The lean design costs about $38 a month around the clock. The edge
+box, app box and RDS stop from 23:00 to 08:00 IST (EventBridge Scheduler, compute round), which
+brings it to about $25. Only hourly-billed resources stop; storage, the public IPv4 address and
+the KMS key keep billing. A daily stop also never hits RDS's automatic restart after 7 days.
+Before the credit ends the account is upgraded or staging is shut down.
 
 ## Consequences
 
@@ -63,6 +70,8 @@ encrypted with the environment's KMS key, kept 180 days (CERT-In), then deleted.
 - **DNS Firewall doesn't stop a connection to a hard-coded IP address.** That needs a filtering
   proxy or AWS Network Firewall (about $280+ per month), deferred until production.
 - **One AZ for workloads:** an AZ outage takes staging down. Production revisits this.
+- **Staging is offline 23:00–08:00 IST.** Nightly jobs (the scheduled DAST run against staging, M7)
+  must run while it's up, or start it first.
 - **G7 findings accepted with expiry** (`.checkov/accepted.toml`):
   - The KMS key policy's root statement.
   - Port 80 on the edge box.

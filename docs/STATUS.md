@@ -40,6 +40,8 @@ _Last updated: 2026-10-14. Read this section first; everything below it is the d
 
 ## Open items
 
+- **AWS credit deadline ~2027-02-14** ($139.81 on 2026-10-14, free plan): upgrade the account or
+  shut staging down before then; the account is closed after the plan ends. Budget alerts at $30.
 - **Staging domain:** a subzone of a domain we own (delegated to Route 53 in M6), set through the
   ADR 0030 variables, never committed. Buy the product domains before going live.
 - Known limitations, not blocking: secret-ticket dedup can duplicate on a rebase (G2); a registered
