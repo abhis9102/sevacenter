@@ -13,7 +13,10 @@
             blocks until it's fixed or explicitly accepted. Also fails on parsing errors (a file
             Checkov couldn't read wasn't scanned), on inline `checkov:skip` comments (acceptances
             belong in the reviewed, expiring file, not in a feature diff), and on a scan that saw
-            Terraform files but no resources.
+            Terraform files but no resources. With --sarif-in/--sarif-out it also writes the
+            SARIF for code scanning without the accepted findings, the way Trivy's ignore file
+            keeps them out of G6's SARIF: an accepted risk is a decision on record, not an
+            open alert.
 
 Stdlib only (tomllib needs Python 3.11+).
 """
@@ -109,7 +112,27 @@ def where(r: dict) -> str:
     return f"file={path},line={line}"
 
 
-def gate(report_path: str, config: str, scanned_dir: str, today: dt.date) -> list[str]:
+def drop_accepted(sarif_in: str, sarif_out: str, keys: set[tuple[str, str, int]]) -> int:
+    """Write sarif_in to sarif_out without results matching (check ID, file, start line)."""
+    sarif = json.loads(pathlib.Path(sarif_in).read_text(encoding="utf-8"))
+    dropped = 0
+    for run in sarif.get("runs", []):
+        kept = []
+        for res in run.get("results", []):
+            loc = ((res.get("locations") or [{}])[0].get("physicalLocation") or {})
+            key = (res.get("ruleId"), (loc.get("artifactLocation") or {}).get("uri", "").lstrip("/"),
+                   (loc.get("region") or {}).get("startLine"))
+            if key in keys:
+                dropped += 1
+            else:
+                kept.append(res)
+        run["results"] = kept
+    pathlib.Path(sarif_out).write_text(json.dumps(sarif), encoding="utf-8")
+    return dropped
+
+
+def gate(report_path: str, config: str, scanned_dir: str, today: dt.date,
+         sarif_in: str | None = None, sarif_out: str | None = None) -> list[str]:
     errors, valid = accepted(config, today)
     report = load_report(report_path)
     summary = report.get("summary") or report
@@ -129,15 +152,25 @@ def gate(report_path: str, config: str, scanned_dir: str, today: dt.date) -> lis
                       ".checkov/accepted.toml with a reason and an expiry")
 
     blocked = 0
+    accepted_keys: set[tuple[str, str, int]] = set()
     for r in results(report, "failed_checks"):
         match = next((a for a in valid if a["id"] == r["check_id"] and r["resource"] in a["resources"]), None)
         if match:
             match["used"] = True
             print(f"accepted: {r['check_id']} on {r['resource']}")
+            path = (r.get("repo_file_path") or r.get("file_path") or "").lstrip("/")
+            accepted_keys.add((r["check_id"], path, (r.get("file_line_range") or [1])[0]))
             continue
         blocked += 1
         hint = f" See {r['guideline']}" if r.get("guideline") else ""
         errors.append(f"::error {where(r)}::{r['check_id']} {r['resource']}: {r['check_name']}.{hint}")
+
+    if sarif_in and sarif_out:
+        dropped = drop_accepted(sarif_in, sarif_out, accepted_keys)
+        print(f"code scanning SARIF: {dropped} accepted finding(s) left out")
+        if dropped != len(accepted_keys):
+            errors.append(f"accepted {len(accepted_keys)} finding location(s) but matched {dropped} in the SARIF: "
+                          "the SARIF and JSON reports disagree, so code scanning would be wrong")
 
     for a in valid:
         if not a["used"]:
@@ -159,6 +192,8 @@ def main() -> int:
     g.add_argument("report", help="checkov -o json output for the scanned directory")
     g.add_argument("--accepted", default=".checkov/accepted.toml")
     g.add_argument("--dir", required=True, help="the directory Checkov scanned (for the coverage check)")
+    g.add_argument("--sarif-in", help="checkov -o sarif output for the same scan")
+    g.add_argument("--sarif-out", help="where to write that SARIF without the accepted findings")
     args = p.parse_args()
 
     today = dt.date.today()
@@ -167,7 +202,7 @@ def main() -> int:
     elif args.cmd == "selftest":
         errors = selftest(args.report, args.expected)
     else:
-        errors = gate(args.report, args.accepted, args.dir, today)
+        errors = gate(args.report, args.accepted, args.dir, today, args.sarif_in, args.sarif_out)
     for e in errors:
         print(e if e.startswith("::") else f"::error::{e}")
     return 1 if errors else 0

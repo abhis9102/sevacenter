@@ -29,7 +29,11 @@ checks. Trivy keeps Dockerfiles (`--misconfig-scanners dockerfile`, G6).
    upgrade that renames one, fails here instead of looking like clean infrastructure.
 3. **Scan `infra/`** (no Terraform yet: the step says so and passes). Checkov runs with
    `--soft-fail`; `tools/security/iac_policy.py gate` decides, the same split as ZAP and
-   `dast_policy.py`. SARIF of `infra/` (never the fixture) goes to code scanning.
+   `dast_policy.py`. SARIF of `infra/` (never the fixture) goes to code scanning, **without the
+   accepted findings** (`code-scanning.sarif`): an accepted risk is a recorded decision, not an
+   open alert, the same as Trivy's ignore file does for G6. The JSON artifact keeps everything.
+   If the gate can't match each accepted finding in the SARIF, it fails rather than upload a
+   wrong picture.
 
 ## What blocks
 
@@ -75,6 +79,7 @@ exactly that.
 | Same, plus a valid acceptance (CKV_AWS_157) | That one accepted; the rest still block |
 | Inline `#checkov:skip=CKV_AWS_17:it is fine trust me` | **Blocked**: inline skip rejected |
 | Acceptance with a 5-character reason and a 2027 expiry | **Blocked** at step 1, both problems named |
+| First real Terraform (2026-10-14): 10 accepted findings still uploaded as open "error" alerts, so the Checkov check stayed red | Fixed: accepted findings are left out of the SARIF; an unaccepted `CKV_SEVA_1` still reaches code scanning |
 | `trivy config .` before G6 was limited to Dockerfiles | Read the fixture: 21 Terraform failures in G6. Now 0 |
 
 ## Known gaps
