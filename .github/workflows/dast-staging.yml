@@ -1,0 +1,117 @@
+name: dast-staging
+
+# DAST against staging (ADR 0035): active ZAP scans through the real edge, only on the dedicated
+# scan trust. Runs after every staging deploy (called by cd-staging), daily, and on demand.
+# A detect gate: findings turn the run red and open tickets; the change is already on staging.
+on:
+  workflow_call:
+    secrets:
+      STAGING_STAFF_BASE_DOMAIN:
+        required: true
+      STAGING_MANDIR_BASE_DOMAIN:
+        required: true
+  schedule:
+    - cron: "30 4 * * *" # 10:00 IST: staging runs 08:00-23:00 IST
+  workflow_dispatch: {}
+
+permissions: {}
+
+concurrency:
+  group: dast-staging
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    name: DAST (staging)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    # Holds only the scan trust's credentials; main only, no reviewer, so scans run unattended.
+    # No AWS role: the scanner attacks over HTTPS like any outsider.
+    environment: staging-dast
+    permissions:
+      contents: read
+    env:
+      DAST_TRUST: ${{ secrets.DAST_TRUST }}
+      DAST_STAFF_EMAIL: ${{ secrets.DAST_STAFF_EMAIL }}
+      DAST_STAFF_PASSWORD: ${{ secrets.DAST_STAFF_PASSWORD }}
+      DAST_DEVOTEE_OTP: ${{ secrets.DAST_DEVOTEE_OTP }}
+      STAFF_BASE_DOMAIN: ${{ secrets.STAGING_STAFF_BASE_DOMAIN }}
+      MANDIR_BASE_DOMAIN: ${{ secrets.STAGING_MANDIR_BASE_DOMAIN }}
+    steps:
+      - name: Required configuration is present
+        run: |
+          set -euo pipefail
+          for v in DAST_TRUST DAST_STAFF_EMAIL DAST_STAFF_PASSWORD DAST_DEVOTEE_OTP STAFF_BASE_DOMAIN MANDIR_BASE_DOMAIN; do
+            [ -n "${!v}" ] || { echo "::error::missing secret for $v"; exit 1; }
+          done
+
+      - name: Staging is awake
+        id: awake
+        run: |
+          code=$(curl -sS -m 20 -o /dev/null -w '%{http_code}' "https://$DAST_TRUST.$STAFF_BASE_DOMAIN/api/v1/ping" || echo 000)
+          echo "ping -> $code"
+          if [ "$code" != 200 ]; then
+            echo "::warning::staging isn't answering (asleep 23:00-08:00 IST?): no scan this time"
+            echo "## DAST staging: skipped, staging didn't answer (ping -> $code)" >> "$GITHUB_STEP_SUMMARY"
+            echo "up=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "up=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.awake.outputs.up == 'true'
+        with:
+          persist-credentials: false
+
+      - name: Scan staging (guard, edge, staff, devotee, anonymous, frontend, coverage)
+        if: steps.awake.outputs.up == 'true'
+        run: python3 tools/security/dast_staging.py dast-out
+
+      # Also after a failed scan step: whatever passes finished still get gated, summarised and ticketed.
+      - name: Policy gate (Medium+ fails the run; Low becomes a ticket) + run summary
+        if: ${{ !cancelled() && steps.awake.outputs.up == 'true' }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          reports=(dast-out/zap-*.json)
+          if [ ${#reports[@]} -eq 0 ]; then
+            echo "## DAST staging: ❌ no ZAP report was produced (see the scan step)" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          python3 tools/security/dast_policy.py gate "${reports[@]}" --out dast-out/findings.json \
+            --summary "DAST staging (scan trust)" --coverage dast-out/coverage.json
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ !cancelled() && steps.awake.outputs.up == 'true' }}
+        with:
+          name: dast-staging-report
+          path: |
+            dast-out/*.html
+            dast-out/*.json
+          retention-days: 14
+
+  tickets:
+    name: Sync DAST staging tickets
+    needs: scan
+    # Even when the gate failed, so every finding gets an owner.
+    if: ${{ !cancelled() && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write # create / reopen / close DAST staging tickets
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        id: report
+        continue-on-error: true # no report when staging was asleep
+        with:
+          name: dast-staging-report
+          path: dast-report
+      - name: Sync tickets with unaccepted findings
+        if: steps.report.outcome == 'success' && hashFiles('dast-report/findings.json') != ''
+        run: python3 tools/security/tickets.py dast --scope staging dast-report/findings.json
+        env:
+          GITHUB_TOKEN: ${{ github.token }}

@@ -156,6 +156,35 @@ every run**: event `capacity`, `startsAt`, `title`; puja `name`, `dakshina`, `di
 **Why not demote rule 6 to INFO?** That would drop the signal everywhere, with nothing guarding the
 reason it's safe.
 
+## Staging scan after every deploy (ADR 0035)
+
+The CI scan above attacks the jar alone. `dast-staging.yml` attacks **what users actually reach**:
+the Caddy edge, the Next.js frontend and its `/api` proxy, with staging's real configuration. It
+runs after every staging deploy (called by `cd-staging`), daily at 10:00 IST, and on demand.
+
+| Piece | What |
+|---|---|
+| `tools/security/dast_staging.py` | Target guard → edge checks → three active API passes → frontend baseline → coverage. |
+| Target guard | Refuses any host outside a `stg-` domain, and refuses unless the temple API answers as the **DAST Scan Trust**, whatever the inputs or DNS say. |
+| Edge checks | TLS 1.2+ only (1.0/1.1 refused), verified certificate, HTTP → HTTPS permanent redirect, HSTS ≥ 180 days, on both brands. A failure fails the run. |
+| Staff pass | Active API scan logged in as the scan trust's admin. Login, logout, register and change-password are left out (they'd end the session or lock the scanner out). |
+| Devotee pass | Active scan of `/api/v1/portal/**`, signed in through the real MandirCenter login with the scan trust's fixed code (`ScanLoginCode`, ADR 0035). |
+| Anonymous pass | Active scan of `/api/v1/public/**` and registration on the temple host. |
+| Frontend | ZAP baseline (crawl + passive rules) of the staff login page and the temple site. |
+| Coverage | Both sessions must survive, and the staff pass must have created devotees and donations (counted through the staff API: staging's database isn't reachable from CI). |
+| Spec | `docs/api/openapi.json`, the API contract (`OpenApiContractTest` fails if it drifts): staging doesn't serve `/v3/api-docs`. |
+| Load | Two threads per host, at most 2 minutes per rule and 20 per pass: staging is one small box. |
+| Gate + tickets | Same `dast_policy.py` and `.zap/accepted.toml`. Tickets are scoped (`--scope staging`, `[dast-staging]`): each scan only ever closes its own. |
+
+**Where it runs:** environment `staging-dast` (main only, no reviewer) holds only the scan trust's
+credentials, and the job has no AWS role: it attacks over HTTPS like any outsider. Staging sleeps
+23:00–08:00 IST; a scan that finds it asleep warns and skips.
+
+**What changes:** this is a *detect* gate. A finding turns the run red and opens a ticket; the change
+is already on staging and is fixed forward or reverted. Prevention returns at promotion: a staging
+scan with unaccepted findings will block production. The CI scan stays required until the staging
+scan has been proven against a planted flaw.
+
 ## Known gaps
 
 - No beta/alpha ZAP rules: fetching add-ons at scan time would pull unpinned code into CI. If

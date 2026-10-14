@@ -1,0 +1,5148 @@
+{
+  "components" : {
+    "schemas" : {
+      "Aarti" : {
+        "properties" : {
+          "at" : {
+            "example" : "05:30",
+            "format" : "time-local",
+            "type" : "string"
+          },
+          "description" : {
+            "example" : "Waking the deity with bhajans",
+            "maxLength" : 200,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "name" : {
+            "example" : "Kakad Aarti",
+            "maxLength" : 60,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "at", "name" ],
+        "type" : "object"
+      },
+      "Activity" : {
+        "properties" : {
+          "devoteeId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "donations" : {
+            "$ref" : "#/components/schemas/Donations"
+          },
+          "eventPasses" : {
+            "items" : {
+              "$ref" : "#/components/schemas/PassItem"
+            },
+            "type" : "array"
+          },
+          "pujaBookings" : {
+            "items" : {
+              "$ref" : "#/components/schemas/PujaItem"
+            },
+            "type" : "array"
+          },
+          "sevaOffers" : {
+            "items" : {
+              "$ref" : "#/components/schemas/SevaItem"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "AssignRequest" : {
+        "properties" : {
+          "duty" : {
+            "example" : "Navratri morning kitchen",
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "teamId" : {
+            "description" : "null releases them from their team",
+            "example" : 1,
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "AuditPage" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Item"
+            },
+            "type" : "array"
+          },
+          "page" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "size" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "total" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "BookRequest" : {
+        "properties" : {
+          "devoteeName" : {
+            "example" : "Lakshmi Iyer",
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "email" : {
+            "example" : "lakshmi@example.org",
+            "maxLength" : 254,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "familyNames" : {
+            "example" : "Ravi, Meena",
+            "maxLength" : 500,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "gotra" : {
+            "example" : "Kashyap",
+            "maxLength" : 60,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "nakshatra" : {
+            "example" : "Rohini",
+            "maxLength" : 60,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "phone" : {
+            "example" : "98765 43210",
+            "maxLength" : 30,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "pujaDate" : {
+            "example" : "2030-08-15",
+            "format" : "date",
+            "type" : "string"
+          },
+          "rashi" : {
+            "example" : "Vrishabha",
+            "maxLength" : 60,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "devoteeName", "pujaDate" ],
+        "type" : "object"
+      },
+      "BookedResponse" : {
+        "properties" : {
+          "amount" : {
+            "type" : "string"
+          },
+          "amountPaise" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "bookingCode" : {
+            "type" : "string"
+          },
+          "keyId" : {
+            "type" : "string"
+          },
+          "orderId" : {
+            "type" : "string"
+          },
+          "pujaDate" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "pujaName" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "BookingResponse" : {
+        "properties" : {
+          "amount" : {
+            "type" : "string"
+          },
+          "bookingCode" : {
+            "type" : "string"
+          },
+          "counter" : {
+            "type" : "boolean"
+          },
+          "counterMode" : {
+            "type" : "string"
+          },
+          "devoteeName" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "familyNames" : {
+            "type" : "string"
+          },
+          "gotra" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "nakshatra" : {
+            "type" : "string"
+          },
+          "phone" : {
+            "type" : "string"
+          },
+          "priestId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "priestName" : {
+            "type" : "string"
+          },
+          "pujaDate" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "pujaName" : {
+            "type" : "string"
+          },
+          "rashi" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ChangePasswordRequest" : {
+        "properties" : {
+          "currentPassword" : {
+            "example" : "current-password-123",
+            "minLength" : 1,
+            "type" : "string"
+          },
+          "newPassword" : {
+            "example" : "new-secure-password-456",
+            "maxLength" : 200,
+            "minLength" : 12,
+            "type" : "string"
+          }
+        },
+        "required" : [ "currentPassword", "newPassword" ],
+        "type" : "object"
+      },
+      "ChangeRoleRequest" : {
+        "properties" : {
+          "role" : {
+            "enum" : [ "TRUST_ADMIN", "LEADER", "MEMBER" ],
+            "example" : "LEADER",
+            "type" : "string"
+          }
+        },
+        "required" : [ "role" ],
+        "type" : "object"
+      },
+      "Channels" : {
+        "properties" : {
+          "email" : {
+            "type" : "boolean"
+          },
+          "sms" : {
+            "type" : "boolean"
+          }
+        },
+        "type" : "object"
+      },
+      "CheckInRequest" : {
+        "properties" : {
+          "passCode" : {
+            "example" : "ABCD234567",
+            "maxLength" : 20,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "passCode" ],
+        "type" : "object"
+      },
+      "CheckInResponse" : {
+        "properties" : {
+          "attendeeCount" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "attendeeName" : {
+            "type" : "string"
+          },
+          "checkedInAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CodeRequest" : {
+        "properties" : {
+          "channel" : {
+            "enum" : [ "EMAIL", "SMS" ],
+            "example" : "EMAIL",
+            "type" : "string"
+          },
+          "contact" : {
+            "example" : "lakshmi@example.org",
+            "maxLength" : 254,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "channel" ],
+        "type" : "object"
+      },
+      "ConfirmRequest" : {
+        "properties" : {
+          "orderId" : {
+            "example" : "order_PZ1example00001",
+            "maxLength" : 64,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "paymentId" : {
+            "example" : "pay_PZ1example00001",
+            "maxLength" : 64,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "signature" : {
+            "example" : "0000000000000000000000000000000000000000000000000000000000000000",
+            "maxLength" : 128,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "orderId", "paymentId", "signature" ],
+        "type" : "object"
+      },
+      "ConfirmResponse" : {
+        "properties" : {
+          "amount" : {
+            "type" : "string"
+          },
+          "bookingCode" : {
+            "type" : "string"
+          },
+          "donationId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "donorName" : {
+            "type" : "string"
+          },
+          "kind" : {
+            "type" : "string"
+          },
+          "receivedOn" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CounterBookingRequest" : {
+        "properties" : {
+          "devoteeName" : {
+            "example" : "Lakshmi Iyer",
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "email" : {
+            "example" : "lakshmi@example.org",
+            "maxLength" : 254,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "familyNames" : {
+            "example" : "Ravi, Meena",
+            "maxLength" : 500,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "gotra" : {
+            "example" : "Kashyap",
+            "maxLength" : 60,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "mode" : {
+            "description" : "Required for a paid puja: CASH, UPI, CARD, CHEQUE or BANK_TRANSFER",
+            "example" : "CASH",
+            "maxLength" : 20,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "nakshatra" : {
+            "example" : "Rohini",
+            "maxLength" : 60,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "phone" : {
+            "description" : "Optional for a walk-in",
+            "example" : "98765 43210",
+            "maxLength" : 30,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "pujaDate" : {
+            "example" : "2030-08-15",
+            "format" : "date",
+            "type" : "string"
+          },
+          "pujaId" : {
+            "example" : 1,
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "rashi" : {
+            "example" : "Vrishabha",
+            "maxLength" : 60,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "reference" : {
+            "example" : "UTR 412345678901",
+            "maxLength" : 64,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "devoteeName", "pujaDate", "pujaId" ],
+        "type" : "object"
+      },
+      "CounterPassRequest" : {
+        "properties" : {
+          "count" : {
+            "example" : 2,
+            "format" : "int32",
+            "maximum" : 10,
+            "minimum" : 1,
+            "type" : "integer"
+          },
+          "email" : {
+            "example" : "lakshmi@example.org",
+            "maxLength" : 254,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "name" : {
+            "example" : "Lakshmi Iyer",
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "phone" : {
+            "example" : "98765 43210",
+            "maxLength" : 30,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "name" ],
+        "type" : "object"
+      },
+      "CreateUserRequest" : {
+        "properties" : {
+          "displayName" : {
+            "example" : "Ravi Kumar",
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "email" : {
+            "example" : "staff@example.org",
+            "format" : "email",
+            "maxLength" : 254,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "role" : {
+            "enum" : [ "TRUST_ADMIN", "LEADER", "MEMBER" ],
+            "example" : "MEMBER",
+            "type" : "string"
+          }
+        },
+        "required" : [ "displayName", "email", "role" ],
+        "type" : "object"
+      },
+      "CreatedOrder" : {
+        "properties" : {
+          "amountPaise" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "keyId" : {
+            "type" : "string"
+          },
+          "orderId" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CreatedUserResponse" : {
+        "properties" : {
+          "setupUrl" : {
+            "type" : "string"
+          },
+          "user" : {
+            "$ref" : "#/components/schemas/UserResponse"
+          }
+        },
+        "type" : "object"
+      },
+      "DevoteeDetails" : {
+        "properties" : {
+          "addressLine" : {
+            "example" : "12 Temple Street",
+            "maxLength" : 200,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "city" : {
+            "example" : "Pune",
+            "maxLength" : 80,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "consentSource" : {
+            "description" : "Required on create; set once, ignored on update",
+            "enum" : [ "IN_PERSON", "PHONE", "ONLINE_FORM", "WRITTEN" ],
+            "example" : "IN_PERSON",
+            "type" : "string"
+          },
+          "dateOfBirth" : {
+            "example" : "1980-05-14",
+            "format" : "date",
+            "type" : "string"
+          },
+          "email" : {
+            "example" : "lakshmi@example.org",
+            "format" : "email",
+            "maxLength" : 254,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "fullName" : {
+            "example" : "Lakshmi Iyer",
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "phone" : {
+            "example" : "98765 43210",
+            "maxLength" : 30,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "pincode" : {
+            "example" : "411001",
+            "pattern" : "^[1-9][0-9]{5}$",
+            "type" : "string"
+          },
+          "state" : {
+            "example" : "Maharashtra",
+            "maxLength" : 80,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "fullName" ],
+        "type" : "object"
+      },
+      "DevoteeResponse" : {
+        "properties" : {
+          "addressLine" : {
+            "type" : "string"
+          },
+          "city" : {
+            "type" : "string"
+          },
+          "consentGivenAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "consentSource" : {
+            "enum" : [ "IN_PERSON", "PHONE", "ONLINE_FORM", "WRITTEN" ],
+            "type" : "string"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "dateOfBirth" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "fullName" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "masked" : {
+            "type" : "boolean"
+          },
+          "phone" : {
+            "type" : "string"
+          },
+          "pincode" : {
+            "type" : "string"
+          },
+          "state" : {
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "DonationItem" : {
+        "properties" : {
+          "amount" : {
+            "type" : "string"
+          },
+          "fundId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "mode" : {
+            "enum" : [ "CASH", "UPI", "CHEQUE", "BANK_TRANSFER", "CARD", "WALLET" ],
+            "type" : "string"
+          },
+          "purpose" : {
+            "type" : "string"
+          },
+          "receiptNumber" : {
+            "type" : "string"
+          },
+          "receivedOn" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "reversed" : {
+            "type" : "boolean"
+          }
+        },
+        "type" : "object"
+      },
+      "DonationResponse" : {
+        "properties" : {
+          "amount" : {
+            "type" : "string"
+          },
+          "channel" : {
+            "enum" : [ "STAFF", "ONLINE" ],
+            "type" : "string"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "devoteeId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "donorName" : {
+            "type" : "string"
+          },
+          "fundId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "mode" : {
+            "enum" : [ "CASH", "UPI", "CHEQUE", "BANK_TRANSFER", "CARD", "WALLET" ],
+            "type" : "string"
+          },
+          "paymentRef" : {
+            "type" : "string"
+          },
+          "purpose" : {
+            "type" : "string"
+          },
+          "receivedOn" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "recordedBy" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "reference" : {
+            "type" : "string"
+          },
+          "reversalReason" : {
+            "type" : "string"
+          },
+          "reversesId" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "Donations" : {
+        "properties" : {
+          "count" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/DonationItem"
+            },
+            "type" : "array"
+          },
+          "net" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "Entry" : {
+        "properties" : {
+          "amount" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "mode" : {
+            "enum" : [ "CASH", "UPI", "CHEQUE", "BANK_TRANSFER", "CARD", "WALLET" ],
+            "type" : "string"
+          },
+          "purpose" : {
+            "type" : "string"
+          },
+          "receiptNumber" : {
+            "type" : "string"
+          },
+          "receiptValid" : {
+            "type" : "boolean"
+          },
+          "receivedOn" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "reversed" : {
+            "type" : "boolean"
+          }
+        },
+        "type" : "object"
+      },
+      "EventRequest" : {
+        "properties" : {
+          "capacity" : {
+            "example" : 500,
+            "format" : "int32",
+            "maximum" : 100000,
+            "minimum" : 1,
+            "type" : "integer"
+          },
+          "description" : {
+            "example" : "Midnight darshan and aarti.",
+            "maxLength" : 2000,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "endsAt" : {
+            "example" : "2030-08-16T01:00:00+05:30",
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "registrationOpen" : {
+            "example" : true,
+            "type" : "boolean"
+          },
+          "startsAt" : {
+            "example" : "2030-08-15T22:00:00+05:30",
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "title" : {
+            "example" : "Janmashtami Darshan",
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "endsAt", "startsAt", "title" ],
+        "type" : "object"
+      },
+      "EventResponse" : {
+        "properties" : {
+          "capacity" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "endsAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "registrationOpen" : {
+            "type" : "boolean"
+          },
+          "seatsTaken" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "startsAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "DRAFT", "PUBLISHED", "CANCELLED" ],
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "FundRequest" : {
+        "properties" : {
+          "active" : {
+            "example" : true,
+            "type" : "boolean"
+          },
+          "name" : {
+            "example" : "Annadanam fund",
+            "maxLength" : 80,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "name" ],
+        "type" : "object"
+      },
+      "FundResponse" : {
+        "properties" : {
+          "active" : {
+            "type" : "boolean"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "name" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "FundSummary" : {
+        "properties" : {
+          "donations" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "fund" : {
+            "type" : "string"
+          },
+          "fundId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "net" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "Hours" : {
+        "properties" : {
+          "eveningClose" : {
+            "example" : "21:30",
+            "format" : "time-local",
+            "type" : "string"
+          },
+          "eveningOpen" : {
+            "example" : "16:00",
+            "format" : "time-local",
+            "type" : "string"
+          },
+          "morningClose" : {
+            "example" : "12:30",
+            "format" : "time-local",
+            "type" : "string"
+          },
+          "morningOpen" : {
+            "example" : "05:30",
+            "format" : "time-local",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ImportResponse" : {
+        "properties" : {
+          "imported" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "InfoResponse" : {
+        "properties" : {
+          "onlineDonations" : {
+            "type" : "boolean"
+          },
+          "trustName" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "IssueRequest" : {
+        "properties" : {
+          "donorAddress" : {
+            "example" : "12 Temple Street, Pune 411001",
+            "maxLength" : 400,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "donorPan" : {
+            "example" : "ABCPE1234F",
+            "maxLength" : 20,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "donorAddress", "donorPan" ],
+        "type" : "object"
+      },
+      "Item" : {
+        "properties" : {
+          "action" : {
+            "enum" : [ "USER_INVITED", "USER_ROLE_CHANGED", "USER_DEACTIVATED", "USER_DELETED", "USER_SETUP_LINK_REISSUED", "USER_RESET_LINK_ISSUED", "USER_ACCESS_CHANGED", "DEVOTEE_CREATED", "DEVOTEE_UPDATED", "DEVOTEE_ERASED", "DEVOTEES_IMPORTED", "DEVOTEES_EXPORTED", "DONATION_RECORDED", "DONATION_REVERSED", "RECEIPT_ISSUED", "TRUST_PROFILE_SAVED", "PAYMENT_SETTINGS_SAVED", "FUND_SAVED", "EVENT_STATUS_CHANGED", "PUJA_SAVED", "PUJA_BOOKING_CANCELLED", "SEVAK_REVIEWED", "TEMPLE_PAGE_SAVED", "PUJA_BOOKED_AT_COUNTER", "PASS_ISSUED_AT_COUNTER", "PRIEST_SAVED", "PRIEST_ASSIGNED", "SEVA_TEAM_SAVED", "SEVA_TEAM_DELETED", "SEVAK_REGISTERED", "SEVAK_ASSIGNED", "SEVAK_REMOVED", "EVENT_DELETED", "PUJA_DELETED" ],
+            "type" : "string"
+          },
+          "actor" : {
+            "type" : "string"
+          },
+          "at" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "detail" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "targetId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "targetType" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "MeResponse" : {
+        "properties" : {
+          "displayName" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "hasAvatar" : {
+            "type" : "boolean"
+          },
+          "moduleLimits" : {
+            "additionalProperties" : {
+              "enum" : [ "FULL", "VIEW", "NONE" ],
+              "type" : "string"
+            },
+            "type" : "object"
+          },
+          "role" : {
+            "type" : "string"
+          },
+          "tenant" : {
+            "type" : "string"
+          },
+          "userId" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "ModeSummary" : {
+        "properties" : {
+          "donations" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "mode" : {
+            "enum" : [ "CASH", "UPI", "CHEQUE", "BANK_TRANSFER", "CARD", "WALLET" ],
+            "type" : "string"
+          },
+          "net" : {
+            "type" : "string"
+          },
+          "reversals" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "ModuleAccessRequest" : {
+        "properties" : {
+          "limits" : {
+            "additionalProperties" : {
+              "enum" : [ "FULL", "VIEW", "NONE" ],
+              "type" : "string"
+            },
+            "example" : {
+              "DEVOTEES" : "VIEW",
+              "DONATIONS" : "NONE"
+            },
+            "type" : "object"
+          }
+        },
+        "required" : [ "limits" ],
+        "type" : "object"
+      },
+      "MyBooking" : {
+        "properties" : {
+          "amount" : {
+            "type" : "string"
+          },
+          "bookingCode" : {
+            "type" : "string"
+          },
+          "pujaDate" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "pujaName" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "MyContact" : {
+        "properties" : {
+          "channel" : {
+            "enum" : [ "EMAIL", "SMS" ],
+            "type" : "string"
+          },
+          "contact" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "MyPass" : {
+        "properties" : {
+          "attendeeCount" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "eventTitle" : {
+            "type" : "string"
+          },
+          "passCode" : {
+            "type" : "string"
+          },
+          "startsAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "MySeva" : {
+        "properties" : {
+          "channel" : {
+            "enum" : [ "EMAIL", "SMS" ],
+            "type" : "string"
+          },
+          "contact" : {
+            "type" : "string"
+          },
+          "contacts" : {
+            "items" : {
+              "$ref" : "#/components/schemas/MyContact"
+            },
+            "type" : "array"
+          },
+          "donations" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Entry"
+            },
+            "type" : "array"
+          },
+          "eventPasses" : {
+            "items" : {
+              "$ref" : "#/components/schemas/MyPass"
+            },
+            "type" : "array"
+          },
+          "profile" : {
+            "$ref" : "#/components/schemas/Profile"
+          },
+          "pujaBookings" : {
+            "items" : {
+              "$ref" : "#/components/schemas/MyBooking"
+            },
+            "type" : "array"
+          },
+          "sevakSignups" : {
+            "items" : {
+              "$ref" : "#/components/schemas/MySignup"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "MySignup" : {
+        "properties" : {
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "sevaAreas" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "OrderRequest" : {
+        "properties" : {
+          "amount" : {
+            "example" : "501",
+            "maxLength" : 20,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "donorName" : {
+            "example" : "Lakshmi Iyer",
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "email" : {
+            "example" : "lakshmi@example.org",
+            "maxLength" : 254,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "fundId" : {
+            "description" : "Optional earmarked fund (ADR 0022); omit for the general fund",
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "phone" : {
+            "example" : "98765 43210",
+            "maxLength" : 30,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "purpose" : {
+            "example" : "Annadanam",
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "amount", "donorName" ],
+        "type" : "object"
+      },
+      "PageResponse" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/DonationResponse"
+            },
+            "type" : "array"
+          },
+          "page" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "size" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "total" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "PassIssued" : {
+        "properties" : {
+          "count" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "eventTitle" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "passCode" : {
+            "type" : "string"
+          },
+          "startsAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PassItem" : {
+        "properties" : {
+          "attendeeCount" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "checkedIn" : {
+            "type" : "boolean"
+          },
+          "eventTitle" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "startsAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PassResponse" : {
+        "properties" : {
+          "attendeeCount" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "attendeeName" : {
+            "type" : "string"
+          },
+          "checkedInAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "passCode" : {
+            "type" : "string"
+          },
+          "phone" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PriestAssignment" : {
+        "properties" : {
+          "priestId" : {
+            "description" : "null clears the assignment",
+            "example" : 1,
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "PriestRequest" : {
+        "properties" : {
+          "active" : {
+            "example" : true,
+            "type" : "boolean"
+          },
+          "name" : {
+            "example" : "Pt. Shridhar Joshi",
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "phone" : {
+            "example" : "98765 43210",
+            "maxLength" : 30,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "specialties" : {
+            "example" : "Rudrabhishek, Navagraha homa",
+            "maxLength" : 200,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "name" ],
+        "type" : "object"
+      },
+      "PriestResponse" : {
+        "properties" : {
+          "active" : {
+            "type" : "boolean"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "phone" : {
+            "type" : "string"
+          },
+          "specialties" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "Profile" : {
+        "properties" : {
+          "aartis" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Aarti"
+            },
+            "maxItems" : 12,
+            "minItems" : 0,
+            "type" : "array"
+          },
+          "address" : {
+            "example" : "1 Temple Road, Pune 411001",
+            "maxLength" : 400,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "announcement" : {
+            "example" : "Annual utsav begins on Sunday.",
+            "maxLength" : 1000,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "calendar" : {
+            "enum" : [ "AMANTA", "PURNIMANTA" ],
+            "example" : "AMANTA",
+            "type" : "string"
+          },
+          "deity" : {
+            "example" : "Shri Siddheshwar",
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "helpline" : {
+            "example" : "98765 43210",
+            "maxLength" : 30,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "hours" : {
+            "$ref" : "#/components/schemas/Hours"
+          },
+          "status" : {
+            "description" : "Read-only here: set with PUT /temple/status",
+            "enum" : [ "OPEN", "CLOSED" ],
+            "readOnly" : true,
+            "type" : "string"
+          },
+          "statusNote" : {
+            "readOnly" : true,
+            "type" : "string"
+          },
+          "timings" : {
+            "example" : "Mondays open till 10:30 pm",
+            "maxLength" : 500,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ProfileRequest" : {
+        "properties" : {
+          "address" : {
+            "example" : "1 Temple Road, Pune 411001",
+            "maxLength" : 400,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "legalName" : {
+            "example" : "Shri Siddheshwar Seva Trust",
+            "maxLength" : 200,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "pan" : {
+            "example" : "AAATS1234F",
+            "maxLength" : 20,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "registration80g" : {
+            "example" : "AAATS1234FF20214",
+            "maxLength" : 60,
+            "minLength" : 5,
+            "type" : "string"
+          },
+          "validFrom" : {
+            "example" : "2021-04-01",
+            "format" : "date",
+            "type" : "string"
+          },
+          "validTo" : {
+            "example" : "2030-03-31",
+            "format" : "date",
+            "type" : "string"
+          }
+        },
+        "required" : [ "address", "legalName", "pan", "registration80g", "validFrom", "validTo" ],
+        "type" : "object"
+      },
+      "ProfileResponse" : {
+        "properties" : {
+          "address" : {
+            "type" : "string"
+          },
+          "legalName" : {
+            "type" : "string"
+          },
+          "pan" : {
+            "type" : "string"
+          },
+          "registration80g" : {
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "validFrom" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "validTo" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PublicEvent" : {
+        "properties" : {
+          "description" : {
+            "type" : "string"
+          },
+          "endsAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "placesLeft" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "registrationOpen" : {
+            "type" : "boolean"
+          },
+          "startsAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PublicFund" : {
+        "properties" : {
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "name" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PublicTemple" : {
+        "properties" : {
+          "aartis" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Aarti"
+            },
+            "type" : "array"
+          },
+          "address" : {
+            "type" : "string"
+          },
+          "announcement" : {
+            "type" : "string"
+          },
+          "calendar" : {
+            "enum" : [ "AMANTA", "PURNIMANTA" ],
+            "type" : "string"
+          },
+          "deity" : {
+            "type" : "string"
+          },
+          "helpline" : {
+            "type" : "string"
+          },
+          "hours" : {
+            "$ref" : "#/components/schemas/Hours"
+          },
+          "onlineDonations" : {
+            "type" : "boolean"
+          },
+          "pujaBooking" : {
+            "type" : "boolean"
+          },
+          "status" : {
+            "enum" : [ "OPEN", "CLOSED" ],
+            "type" : "string"
+          },
+          "statusNote" : {
+            "type" : "string"
+          },
+          "timings" : {
+            "type" : "string"
+          },
+          "trustName" : {
+            "type" : "string"
+          },
+          "upcomingEvents" : {
+            "type" : "boolean"
+          }
+        },
+        "type" : "object"
+      },
+      "PujaItem" : {
+        "properties" : {
+          "amount" : {
+            "type" : "string"
+          },
+          "bookingCode" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "pujaDate" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "pujaName" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PujaRequest" : {
+        "properties" : {
+          "active" : {
+            "example" : true,
+            "type" : "boolean"
+          },
+          "dakshina" : {
+            "example" : "1100",
+            "maxLength" : 20,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "deity" : {
+            "example" : "Shiva",
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "description" : {
+            "example" : "Abhishek with milk and bilva",
+            "maxLength" : 1000,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "displayOrder" : {
+            "example" : 1,
+            "format" : "int32",
+            "maximum" : 1000,
+            "minimum" : 0,
+            "type" : "integer"
+          },
+          "name" : {
+            "example" : "Rudrabhishek",
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "dakshina", "name" ],
+        "type" : "object"
+      },
+      "PujaResponse" : {
+        "properties" : {
+          "active" : {
+            "type" : "boolean"
+          },
+          "dakshina" : {
+            "type" : "string"
+          },
+          "deity" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "displayOrder" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "name" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ReceiptPage" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ReceiptResponse"
+            },
+            "type" : "array"
+          },
+          "page" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "size" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "total" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "ReceiptResponse" : {
+        "properties" : {
+          "amount" : {
+            "type" : "string"
+          },
+          "cancellationReason" : {
+            "type" : "string"
+          },
+          "cancelled" : {
+            "type" : "boolean"
+          },
+          "donationId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "donorAddress" : {
+            "type" : "string"
+          },
+          "donorName" : {
+            "type" : "string"
+          },
+          "donorPan" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "issuedOn" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "mode" : {
+            "enum" : [ "CASH", "UPI", "CHEQUE", "BANK_TRANSFER", "CARD", "WALLET" ],
+            "type" : "string"
+          },
+          "number" : {
+            "type" : "string"
+          },
+          "receivedOn" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "trustAddress" : {
+            "type" : "string"
+          },
+          "trustLegalName" : {
+            "type" : "string"
+          },
+          "trustPan" : {
+            "type" : "string"
+          },
+          "trustRegistration80g" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ReconcileResponse" : {
+        "properties" : {
+          "settled" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "RecordDonationRequest" : {
+        "properties" : {
+          "amount" : {
+            "description" : "Rupees as a decimal string, at most 2 decimals",
+            "example" : "1500.50",
+            "maxLength" : 20,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "devoteeId" : {
+            "description" : "Optional: links the donation to a devotee record",
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "donorName" : {
+            "description" : "Required without devoteeId; ignored with one",
+            "example" : "Lakshmi Iyer",
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "fundId" : {
+            "description" : "Optional earmarked fund (ADR 0022); omit for the general fund",
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "mode" : {
+            "enum" : [ "CASH", "UPI", "CHEQUE", "BANK_TRANSFER", "CARD", "WALLET" ],
+            "example" : "UPI",
+            "type" : "string"
+          },
+          "purpose" : {
+            "example" : "Annadanam",
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "receivedOn" : {
+            "example" : "2026-04-14",
+            "format" : "date",
+            "type" : "string"
+          },
+          "reference" : {
+            "example" : "UTR 412345678901",
+            "maxLength" : 64,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "amount", "mode", "receivedOn" ],
+        "type" : "object"
+      },
+      "RegisterRequest" : {
+        "properties" : {
+          "approved" : {
+            "description" : "Default true: staff registering someone approves them",
+            "example" : true,
+            "type" : "boolean"
+          },
+          "availability" : {
+            "example" : "Weekends",
+            "maxLength" : 300,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "duty" : {
+            "example" : "Navratri morning kitchen",
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "email" : {
+            "example" : "ravi@example.org",
+            "maxLength" : 254,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "fullName" : {
+            "example" : "Ravi Kumar",
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "notes" : {
+            "example" : "Cooked for 500 at earlier bhandaras",
+            "maxLength" : 1000,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "phone" : {
+            "example" : "98765 43210",
+            "maxLength" : 30,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "sevaAreas" : {
+            "example" : "Annadanam kitchen",
+            "maxLength" : 300,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "teamId" : {
+            "example" : 1,
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "fullName", "sevaAreas" ],
+        "type" : "object"
+      },
+      "RegistrationRequest" : {
+        "properties" : {
+          "adminEmail" : {
+            "example" : "admin@example.org",
+            "format" : "email",
+            "minLength" : 1,
+            "type" : "string"
+          },
+          "adminName" : {
+            "example" : "Priya Sharma",
+            "minLength" : 1,
+            "type" : "string"
+          },
+          "adminPassword" : {
+            "example" : "correct-horse-battery-staple",
+            "maxLength" : 200,
+            "minLength" : 12,
+            "type" : "string"
+          },
+          "slug" : {
+            "example" : "siddheshwar",
+            "minLength" : 1,
+            "pattern" : "^[a-z0-9]([a-z0-9-]{1,38}[a-z0-9])$",
+            "type" : "string"
+          },
+          "trustName" : {
+            "example" : "Shri Siddheshwar Seva Trust",
+            "minLength" : 1,
+            "type" : "string"
+          }
+        },
+        "required" : [ "adminEmail", "adminName", "adminPassword", "slug", "trustName" ],
+        "type" : "object"
+      },
+      "RegistrationResponse" : {
+        "properties" : {
+          "adminUrl" : {
+            "type" : "string"
+          },
+          "publicUrl" : {
+            "type" : "string"
+          },
+          "slug" : {
+            "type" : "string"
+          },
+          "tenantId" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "ResetLinkResponse" : {
+        "properties" : {
+          "resetUrl" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ResetPasswordRequest" : {
+        "properties" : {
+          "newPassword" : {
+            "example" : "correct-horse-battery-staple",
+            "maxLength" : 200,
+            "minLength" : 12,
+            "type" : "string"
+          },
+          "token" : {
+            "example" : "3f2a9c1e7b6d4a5f8e0c2b1a9d7f6e5c4b3a2918f7e6d5c4b3a29180f7e6d5c4",
+            "maxLength" : 100,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "newPassword", "token" ],
+        "type" : "object"
+      },
+      "ReverseRequest" : {
+        "properties" : {
+          "reason" : {
+            "example" : "Entered twice by mistake",
+            "maxLength" : 300,
+            "minLength" : 10,
+            "type" : "string"
+          }
+        },
+        "required" : [ "reason" ],
+        "type" : "object"
+      },
+      "SettingsRequest" : {
+        "properties" : {
+          "keyId" : {
+            "example" : "rzp_test_ExampleKey01",
+            "maxLength" : 40,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "keySecret" : {
+            "example" : "example-secret-value",
+            "maxLength" : 64,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "keyId", "keySecret" ],
+        "type" : "object"
+      },
+      "SettingsResponse" : {
+        "properties" : {
+          "keyId" : {
+            "type" : "string"
+          },
+          "live" : {
+            "type" : "boolean"
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "SetupLinkResponse" : {
+        "properties" : {
+          "setupUrl" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "SetupRequest" : {
+        "properties" : {
+          "password" : {
+            "example" : "correct-horse-battery-staple",
+            "maxLength" : 200,
+            "minLength" : 12,
+            "type" : "string"
+          },
+          "token" : {
+            "example" : "q3Zt0b8lGkY1wJ2mN5pR7sT9vX4cE6hA0dF3gK8jL2o",
+            "maxLength" : 100,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "password", "token" ],
+        "type" : "object"
+      },
+      "SevaItem" : {
+        "properties" : {
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "sevaAreas" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ShiftRequest" : {
+        "properties" : {
+          "endsAt" : {
+            "example" : "12:00",
+            "format" : "time-local",
+            "type" : "string"
+          },
+          "name" : {
+            "example" : "Pratah preparation",
+            "maxLength" : 60,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "startsAt" : {
+            "example" : "06:00",
+            "format" : "time-local",
+            "type" : "string"
+          }
+        },
+        "required" : [ "endsAt", "name", "startsAt" ],
+        "type" : "object"
+      },
+      "ShiftResponse" : {
+        "properties" : {
+          "endsAt" : {
+            "format" : "time-local",
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "startsAt" : {
+            "format" : "time-local",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "SignupRequest" : {
+        "properties" : {
+          "availability" : {
+            "example" : "Weekends, festival days",
+            "maxLength" : 300,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "email" : {
+            "example" : "ravi@example.org",
+            "maxLength" : 254,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "fullName" : {
+            "example" : "Ravi Kumar",
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "notes" : {
+            "example" : "Can drive the temple van",
+            "maxLength" : 1000,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "phone" : {
+            "example" : "98765 43210",
+            "maxLength" : 30,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "sevaAreas" : {
+            "example" : "Annadanam kitchen, crowd management",
+            "maxLength" : 300,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "fullName", "sevaAreas" ],
+        "type" : "object"
+      },
+      "SignupResponse" : {
+        "properties" : {
+          "availability" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "duty" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "fullName" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "notes" : {
+            "type" : "string"
+          },
+          "phone" : {
+            "type" : "string"
+          },
+          "registeredByStaff" : {
+            "type" : "boolean"
+          },
+          "sevaAreas" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "teamId" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "StatusRequest" : {
+        "properties" : {
+          "note" : {
+            "example" : "Closed for the lunar eclipse; reopens tomorrow 5:30 am",
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "status" : {
+            "description" : "null returns to the regular hours",
+            "enum" : [ "OPEN", "CLOSED" ],
+            "example" : "CLOSED",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "SummaryResponse" : {
+        "properties" : {
+          "byFund" : {
+            "items" : {
+              "$ref" : "#/components/schemas/FundSummary"
+            },
+            "type" : "array"
+          },
+          "byMode" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ModeSummary"
+            },
+            "type" : "array"
+          },
+          "financialYear" : {
+            "type" : "string"
+          },
+          "from" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "net" : {
+            "type" : "string"
+          },
+          "to" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "TeamRequest" : {
+        "properties" : {
+          "description" : {
+            "example" : "Cooking and serving mahaprasad",
+            "maxLength" : 300,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "icon" : {
+            "description" : "One of the listed icon names",
+            "example" : "kitchen",
+            "maxLength" : 24,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "name" : {
+            "example" : "Annadanam kitchen",
+            "maxLength" : 80,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "shifts" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ShiftRequest"
+            },
+            "maxItems" : 8,
+            "minItems" : 0,
+            "type" : "array"
+          },
+          "targetCount" : {
+            "example" : 15,
+            "format" : "int32",
+            "maximum" : 1000,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        },
+        "required" : [ "name" ],
+        "type" : "object"
+      },
+      "TeamResponse" : {
+        "properties" : {
+          "description" : {
+            "type" : "string"
+          },
+          "icon" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "shifts" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ShiftResponse"
+            },
+            "type" : "array"
+          },
+          "targetCount" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "Thanks" : {
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "UpdateProfileRequest" : {
+        "properties" : {
+          "displayName" : {
+            "example" : "Ravi Kumar",
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "notifyDevotees" : {
+            "type" : "boolean"
+          },
+          "notifyDonations" : {
+            "type" : "boolean"
+          },
+          "notifySecurity" : {
+            "type" : "boolean"
+          }
+        },
+        "type" : "object"
+      },
+      "UserResponse" : {
+        "properties" : {
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "moduleLimits" : {
+            "additionalProperties" : {
+              "enum" : [ "FULL", "VIEW", "NONE" ],
+              "type" : "string"
+            },
+            "type" : "object"
+          },
+          "role" : {
+            "enum" : [ "TRUST_ADMIN", "LEADER", "MEMBER" ],
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "PENDING", "ACTIVE", "DISABLED" ],
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "VerifyRequest" : {
+        "properties" : {
+          "channel" : {
+            "enum" : [ "EMAIL", "SMS" ],
+            "example" : "EMAIL",
+            "type" : "string"
+          },
+          "code" : {
+            "example" : "123456",
+            "maxLength" : 10,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "contact" : {
+            "example" : "lakshmi@example.org",
+            "maxLength" : 254,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "channel" ],
+        "type" : "object"
+      }
+    }
+  },
+  "info" : {
+    "contact" : {
+      "name" : "SevaCenter"
+    },
+    "description" : "Multi-tenant temple/trust management platform — devotees, donations (with 80G), and events. All endpoints are tenant-scoped and authorization is enforced server-side.",
+    "license" : {
+      "name" : "Proprietary"
+    },
+    "title" : "SevaCenter API",
+    "version" : "v1"
+  },
+  "openapi" : "3.1.0",
+  "paths" : {
+    "/api/v1/audit" : {
+      "get" : {
+        "operationId" : "list_5",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "default" : 0,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "default" : 50,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "action",
+          "required" : false,
+          "schema" : {
+            "enum" : [ "USER_INVITED", "USER_ROLE_CHANGED", "USER_DEACTIVATED", "USER_DELETED", "USER_SETUP_LINK_REISSUED", "USER_RESET_LINK_ISSUED", "USER_ACCESS_CHANGED", "DEVOTEE_CREATED", "DEVOTEE_UPDATED", "DEVOTEE_ERASED", "DEVOTEES_IMPORTED", "DEVOTEES_EXPORTED", "DONATION_RECORDED", "DONATION_REVERSED", "RECEIPT_ISSUED", "TRUST_PROFILE_SAVED", "PAYMENT_SETTINGS_SAVED", "FUND_SAVED", "EVENT_STATUS_CHANGED", "PUJA_SAVED", "PUJA_BOOKING_CANCELLED", "SEVAK_REVIEWED", "TEMPLE_PAGE_SAVED", "PUJA_BOOKED_AT_COUNTER", "PASS_ISSUED_AT_COUNTER", "PRIEST_SAVED", "PRIEST_ASSIGNED", "SEVA_TEAM_SAVED", "SEVA_TEAM_DELETED", "SEVAK_REGISTERED", "SEVAK_ASSIGNED", "SEVAK_REMOVED", "EVENT_DELETED", "PUJA_DELETED" ],
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AuditPage"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "audit-controller" ]
+      }
+    },
+    "/api/v1/auth/login" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "properties" : {
+                  "email" : {
+                    "type" : "string"
+                  },
+                  "password" : {
+                    "type" : "string"
+                  }
+                },
+                "type" : "object"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          }
+        },
+        "tags" : [ "login-endpoint" ]
+      }
+    },
+    "/api/v1/auth/reset-password" : {
+      "post" : {
+        "operationId" : "resetPassword",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ResetPasswordRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "password-reset-controller" ]
+      }
+    },
+    "/api/v1/auth/setup" : {
+      "post" : {
+        "operationId" : "completeSetup",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SetupRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "setup-controller" ]
+      }
+    },
+    "/api/v1/csrf" : {
+      "get" : {
+        "operationId" : "csrf",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "additionalProperties" : {
+                    "type" : "string"
+                  },
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "csrf-controller" ]
+      }
+    },
+    "/api/v1/devotees" : {
+      "get" : {
+        "operationId" : "search_1",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "default" : 0,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "default" : 25,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "devotee-controller" ]
+      },
+      "post" : {
+        "operationId" : "create_4",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DevoteeDetails"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DevoteeResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "devotee-controller" ]
+      }
+    },
+    "/api/v1/devotees/export" : {
+      "get" : {
+        "operationId" : "export",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "format" : "byte",
+                  "type" : "string"
+                }
+              },
+              "text/csv" : {
+                "schema" : {
+                  "format" : "byte",
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "devotee-controller" ]
+      }
+    },
+    "/api/v1/devotees/import" : {
+      "post" : {
+        "operationId" : "importCsv",
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "properties" : {
+                  "file" : {
+                    "format" : "binary",
+                    "type" : "string"
+                  }
+                },
+                "required" : [ "file" ],
+                "type" : "object"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ImportResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "devotee-controller" ]
+      }
+    },
+    "/api/v1/devotees/{id}" : {
+      "delete" : {
+        "operationId" : "erase",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "devotee-controller" ]
+      },
+      "get" : {
+        "operationId" : "get_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DevoteeResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "devotee-controller" ]
+      },
+      "put" : {
+        "operationId" : "update_3",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DevoteeDetails"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DevoteeResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "devotee-controller" ]
+      }
+    },
+    "/api/v1/devotees/{id}/activity" : {
+      "get" : {
+        "operationId" : "activity",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Activity"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "devotee-activity-controller" ]
+      }
+    },
+    "/api/v1/donation-funds" : {
+      "get" : {
+        "operationId" : "list_3",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/FundResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "fund-controller" ]
+      },
+      "post" : {
+        "operationId" : "create_3",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/FundRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FundResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "fund-controller" ]
+      }
+    },
+    "/api/v1/donation-funds/{id}" : {
+      "put" : {
+        "operationId" : "update_2",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/FundRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FundResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "fund-controller" ]
+      }
+    },
+    "/api/v1/donations" : {
+      "get" : {
+        "operationId" : "search",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "from",
+          "required" : false,
+          "schema" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "to",
+          "required" : false,
+          "schema" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "devoteeId",
+          "required" : false,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "default" : 0,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "default" : 25,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "donation-controller" ]
+      },
+      "post" : {
+        "operationId" : "record",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RecordDonationRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DonationResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "donation-controller" ]
+      }
+    },
+    "/api/v1/donations/summary" : {
+      "get" : {
+        "operationId" : "summary",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "fy",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SummaryResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "donation-controller" ]
+      }
+    },
+    "/api/v1/donations/{id}" : {
+      "get" : {
+        "operationId" : "get_3",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DonationResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "donation-controller" ]
+      }
+    },
+    "/api/v1/donations/{id}/receipt" : {
+      "get" : {
+        "operationId" : "getForDonation",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReceiptResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "receipt-controller" ]
+      },
+      "post" : {
+        "operationId" : "issue",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/IssueRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReceiptResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "receipt-controller" ]
+      }
+    },
+    "/api/v1/donations/{id}/reverse" : {
+      "post" : {
+        "operationId" : "reverse",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReverseRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DonationResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "donation-controller" ]
+      }
+    },
+    "/api/v1/events" : {
+      "get" : {
+        "operationId" : "list_2",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/EventResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "event-controller" ]
+      },
+      "post" : {
+        "operationId" : "create_2",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/EventRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EventResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "event-controller" ]
+      }
+    },
+    "/api/v1/events/{id}" : {
+      "delete" : {
+        "operationId" : "delete_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "event-controller" ]
+      },
+      "put" : {
+        "operationId" : "update_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/EventRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EventResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "event-controller" ]
+      }
+    },
+    "/api/v1/events/{id}/cancel" : {
+      "post" : {
+        "operationId" : "cancel_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EventResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "event-controller" ]
+      }
+    },
+    "/api/v1/events/{id}/check-in" : {
+      "post" : {
+        "operationId" : "checkIn",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CheckInRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CheckInResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "event-controller" ]
+      }
+    },
+    "/api/v1/events/{id}/passes" : {
+      "get" : {
+        "operationId" : "passes",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/PassResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "event-controller" ]
+      },
+      "post" : {
+        "operationId" : "issuePass",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CounterPassRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PassResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "event-controller" ]
+      }
+    },
+    "/api/v1/events/{id}/passes/{passId}/cancel" : {
+      "post" : {
+        "operationId" : "cancelPass",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "path",
+          "name" : "passId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PassResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "event-controller" ]
+      }
+    },
+    "/api/v1/events/{id}/publish" : {
+      "post" : {
+        "operationId" : "publish",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EventResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "event-controller" ]
+      }
+    },
+    "/api/v1/me" : {
+      "get" : {
+        "operationId" : "me_1",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MeResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "me-controller" ]
+      }
+    },
+    "/api/v1/payment-settings" : {
+      "get" : {
+        "operationId" : "settings",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SettingsResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "online-donation-controller" ]
+      },
+      "put" : {
+        "operationId" : "saveSettings",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SettingsRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SettingsResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "online-donation-controller" ]
+      }
+    },
+    "/api/v1/payment-settings/reconcile" : {
+      "post" : {
+        "operationId" : "reconcile",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReconcileResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "online-donation-controller" ]
+      }
+    },
+    "/api/v1/ping" : {
+      "get" : {
+        "operationId" : "ping",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "additionalProperties" : {
+                    "type" : "string"
+                  },
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "health-controller" ]
+      }
+    },
+    "/api/v1/portal/contacts" : {
+      "post" : {
+        "operationId" : "addContact",
+        "parameters" : [ {
+          "in" : "cookie",
+          "name" : "SC_DEVOTEE",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/VerifyRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MySeva"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "portal-controller" ]
+      }
+    },
+    "/api/v1/portal/donations/{id}/receipt" : {
+      "get" : {
+        "operationId" : "receipt",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "cookie",
+          "name" : "SC_DEVOTEE",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReceiptResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "portal-controller" ]
+      }
+    },
+    "/api/v1/portal/logout" : {
+      "post" : {
+        "operationId" : "logout",
+        "parameters" : [ {
+          "in" : "cookie",
+          "name" : "SC_DEVOTEE",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "portal-controller" ]
+      }
+    },
+    "/api/v1/portal/me" : {
+      "get" : {
+        "operationId" : "me",
+        "parameters" : [ {
+          "in" : "cookie",
+          "name" : "SC_DEVOTEE",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MySeva"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "portal-controller" ]
+      }
+    },
+    "/api/v1/portal/profile" : {
+      "put" : {
+        "operationId" : "saveProfile_1",
+        "parameters" : [ {
+          "in" : "cookie",
+          "name" : "SC_DEVOTEE",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Profile"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MySeva"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "portal-controller" ]
+      }
+    },
+    "/api/v1/priests" : {
+      "get" : {
+        "operationId" : "priests",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/PriestResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "puja-controller" ]
+      },
+      "post" : {
+        "operationId" : "addPriest",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PriestRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PriestResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "puja-controller" ]
+      }
+    },
+    "/api/v1/priests/{id}" : {
+      "put" : {
+        "operationId" : "editPriest",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PriestRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PriestResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "puja-controller" ]
+      }
+    },
+    "/api/v1/profile" : {
+      "get" : {
+        "operationId" : "getProfile",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProfileResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "profile-controller" ]
+      },
+      "patch" : {
+        "operationId" : "updateProfile",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateProfileRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProfileResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "profile-controller" ]
+      }
+    },
+    "/api/v1/profile/avatar" : {
+      "delete" : {
+        "operationId" : "removeAvatar",
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "profile-controller" ]
+      },
+      "get" : {
+        "operationId" : "getAvatar",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "format" : "byte",
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "profile-controller" ]
+      },
+      "post" : {
+        "operationId" : "uploadAvatar",
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "properties" : {
+                  "file" : {
+                    "format" : "binary",
+                    "type" : "string"
+                  }
+                },
+                "type" : "object"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProfileResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "profile-controller" ]
+      }
+    },
+    "/api/v1/profile/change-password" : {
+      "post" : {
+        "operationId" : "changePassword",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ChangePasswordRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "profile-controller" ]
+      }
+    },
+    "/api/v1/public/devotee-login" : {
+      "get" : {
+        "operationId" : "channels",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Channels"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "portal-controller" ]
+      }
+    },
+    "/api/v1/public/devotee-login/code" : {
+      "post" : {
+        "operationId" : "sendCode",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CodeRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "202" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "additionalProperties" : { },
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "Accepted"
+          }
+        },
+        "tags" : [ "portal-controller" ]
+      }
+    },
+    "/api/v1/public/devotee-login/verify" : {
+      "post" : {
+        "operationId" : "verify",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/VerifyRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "additionalProperties" : { },
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "portal-controller" ]
+      }
+    },
+    "/api/v1/public/donation-funds" : {
+      "get" : {
+        "operationId" : "publicList",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/PublicFund"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "fund-controller" ]
+      }
+    },
+    "/api/v1/public/donations/confirm" : {
+      "post" : {
+        "operationId" : "confirm",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ConfirmRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConfirmResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "online-donation-controller" ]
+      }
+    },
+    "/api/v1/public/donations/info" : {
+      "get" : {
+        "operationId" : "info",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/InfoResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "online-donation-controller" ]
+      }
+    },
+    "/api/v1/public/donations/orders" : {
+      "post" : {
+        "operationId" : "createOrder",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/OrderRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CreatedOrder"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "online-donation-controller" ]
+      }
+    },
+    "/api/v1/public/events" : {
+      "get" : {
+        "operationId" : "upcoming",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/PublicEvent"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "public-event-controller" ]
+      }
+    },
+    "/api/v1/public/events/{id}/register" : {
+      "post" : {
+        "operationId" : "register_2",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PassIssued"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "public-event-controller" ]
+      }
+    },
+    "/api/v1/public/pujas" : {
+      "get" : {
+        "operationId" : "publicCatalog",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/PujaResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "puja-controller" ]
+      }
+    },
+    "/api/v1/public/pujas/{id}/book" : {
+      "post" : {
+        "operationId" : "book",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BookRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookedResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "puja-controller" ]
+      }
+    },
+    "/api/v1/public/sevak" : {
+      "post" : {
+        "operationId" : "signUp",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SignupRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Thanks"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "sevak-controller" ]
+      }
+    },
+    "/api/v1/public/temple" : {
+      "get" : {
+        "operationId" : "publicPage",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PublicTemple"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "temple-controller" ]
+      }
+    },
+    "/api/v1/puja-bookings" : {
+      "get" : {
+        "operationId" : "forDate",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "date",
+          "required" : true,
+          "schema" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/BookingResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "puja-controller" ]
+      },
+      "post" : {
+        "operationId" : "bookAtCounter",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CounterBookingRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "puja-controller" ]
+      }
+    },
+    "/api/v1/puja-bookings/{id}/cancel" : {
+      "post" : {
+        "operationId" : "cancel",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "puja-controller" ]
+      }
+    },
+    "/api/v1/puja-bookings/{id}/performed" : {
+      "post" : {
+        "operationId" : "performed",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "puja-controller" ]
+      }
+    },
+    "/api/v1/puja-bookings/{id}/priest" : {
+      "post" : {
+        "operationId" : "assignPriest",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PriestAssignment"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "puja-controller" ]
+      }
+    },
+    "/api/v1/pujas" : {
+      "get" : {
+        "operationId" : "catalog",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/PujaResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "puja-controller" ]
+      },
+      "post" : {
+        "operationId" : "create_1",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PujaRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PujaResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "puja-controller" ]
+      }
+    },
+    "/api/v1/pujas/{id}" : {
+      "delete" : {
+        "operationId" : "delete",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "puja-controller" ]
+      },
+      "put" : {
+        "operationId" : "update",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PujaRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PujaResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "puja-controller" ]
+      }
+    },
+    "/api/v1/receipts" : {
+      "get" : {
+        "operationId" : "list_4",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "fy",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "default" : 0,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "default" : 25,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReceiptPage"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "receipt-controller" ]
+      }
+    },
+    "/api/v1/receipts/{id}" : {
+      "get" : {
+        "operationId" : "get_2",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReceiptResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "receipt-controller" ]
+      }
+    },
+    "/api/v1/register" : {
+      "post" : {
+        "operationId" : "register_1",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RegistrationRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RegistrationResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "registration-controller" ]
+      }
+    },
+    "/api/v1/seva-teams" : {
+      "get" : {
+        "operationId" : "teams",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/TeamResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "sevak-controller" ]
+      },
+      "post" : {
+        "operationId" : "createTeam",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/TeamRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TeamResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "sevak-controller" ]
+      }
+    },
+    "/api/v1/seva-teams/{id}" : {
+      "delete" : {
+        "operationId" : "deleteTeam",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "sevak-controller" ]
+      },
+      "put" : {
+        "operationId" : "editTeam",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/TeamRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TeamResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "sevak-controller" ]
+      }
+    },
+    "/api/v1/sevaks" : {
+      "get" : {
+        "operationId" : "list_1",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/SignupResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "sevak-controller" ]
+      },
+      "post" : {
+        "operationId" : "register",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SignupResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "sevak-controller" ]
+      }
+    },
+    "/api/v1/sevaks/{id}" : {
+      "delete" : {
+        "operationId" : "remove",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "sevak-controller" ]
+      }
+    },
+    "/api/v1/sevaks/{id}/approve" : {
+      "post" : {
+        "operationId" : "approve",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SignupResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "sevak-controller" ]
+      }
+    },
+    "/api/v1/sevaks/{id}/assign" : {
+      "post" : {
+        "operationId" : "assign",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AssignRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SignupResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "sevak-controller" ]
+      }
+    },
+    "/api/v1/sevaks/{id}/decline" : {
+      "post" : {
+        "operationId" : "decline",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SignupResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "sevak-controller" ]
+      }
+    },
+    "/api/v1/temple" : {
+      "get" : {
+        "operationId" : "get",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Profile"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "temple-controller" ]
+      },
+      "put" : {
+        "operationId" : "save",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Profile"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Profile"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "temple-controller" ]
+      }
+    },
+    "/api/v1/temple/status" : {
+      "put" : {
+        "operationId" : "setStatus",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/StatusRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Profile"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "temple-controller" ]
+      }
+    },
+    "/api/v1/trust-profile" : {
+      "get" : {
+        "operationId" : "profile",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProfileResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "receipt-controller" ]
+      },
+      "put" : {
+        "operationId" : "saveProfile",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ProfileRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProfileResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "receipt-controller" ]
+      }
+    },
+    "/api/v1/users" : {
+      "get" : {
+        "operationId" : "list",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/UserResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "user-controller" ]
+      },
+      "post" : {
+        "operationId" : "create",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateUserRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CreatedUserResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "user-controller" ]
+      }
+    },
+    "/api/v1/users/{id}" : {
+      "delete" : {
+        "operationId" : "delete_2",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "user-controller" ]
+      }
+    },
+    "/api/v1/users/{id}/deactivate" : {
+      "post" : {
+        "operationId" : "deactivate",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "user-controller" ]
+      }
+    },
+    "/api/v1/users/{id}/module-access" : {
+      "put" : {
+        "operationId" : "changeModuleAccess",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ModuleAccessRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "user-controller" ]
+      }
+    },
+    "/api/v1/users/{id}/reset-link" : {
+      "post" : {
+        "operationId" : "issueResetLink",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ResetLinkResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "user-controller" ]
+      }
+    },
+    "/api/v1/users/{id}/role" : {
+      "patch" : {
+        "operationId" : "changeRole",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ChangeRoleRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "user-controller" ]
+      }
+    },
+    "/api/v1/users/{id}/setup-link" : {
+      "post" : {
+        "operationId" : "reissueSetupLink",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SetupLinkResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "user-controller" ]
+      }
+    }
+  }
+}
