@@ -2,3 +2,5 @@
 alert_email        = "you@example.com"
 monthly_budget_usd = 30
 # extra_allowed_domains = ["smtp.example-provider.com"]
+staff_base_domain  = "stg-seva.example.com"
+mandir_base_domain = "stg-mandir.example.com"

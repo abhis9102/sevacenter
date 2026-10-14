@@ -136,3 +136,47 @@ id = "CKV2_AWS_62"
 resources = ["aws_s3_bucket.state"]
 ignoreUntil = 2027-01-12
 reason = "AppSec (Abhi), 2026-10-14: nothing consumes per-object events on the state bucket; state writes come from Terraform runs that are themselves logged in GitHub Actions."
+
+# --- M6 staging compute and database (ADR 0034). Proposed 2026-10-14; AppSec (Abhi) delegated the rollout to Claude, review on merge. ---
+
+[[accepted]]
+id = "CKV_AWS_126"
+resources = ["aws_instance.edge", "aws_instance.app"]
+ignoreUntil = 2027-01-12
+reason = "AppSec (Abhi), 2026-10-14: detailed (1-minute) EC2 monitoring is billed per metric; staging runs on a fixed credit (ADR 0032) and 5-minute basic metrics are enough for it. Revisit for production."
+
+[[accepted]]
+id = "CKV_AWS_157"
+resources = ["aws_db_instance.this"]
+ignoreUntil = 2027-01-12
+reason = "AppSec (Abhi), 2026-10-14: Multi-AZ doubles the database cost; staging runs workloads in one AZ by design (ADR 0032) and can be down. Backups are kept 7 days. Production revisits this."
+
+[[accepted]]
+id = "CKV_AWS_353"
+resources = ["aws_db_instance.this"]
+ignoreUntil = 2027-01-12
+reason = "AppSec (Abhi), 2026-10-14: Performance Insights isn't available on db.t4g.micro, the size the credit budget allows (ADR 0032). Slow statements (>1s) go to the encrypted CloudWatch log group instead."
+
+[[accepted]]
+id = "CKV_AWS_118"
+resources = ["aws_db_instance.this"]
+ignoreUntil = 2027-01-12
+reason = "AppSec (Abhi), 2026-10-14: enhanced monitoring adds a monitoring role and CloudWatch cost; basic RDS metrics and the slow-query log are enough for staging. Revisit for production."
+
+[[accepted]]
+id = "CKV_AWS_338"
+resources = ["aws_cloudwatch_log_group.rds"]
+ignoreUntil = 2027-01-12
+reason = "AppSec (Abhi), 2026-10-14: 180 days meets CERT-In; slow-query logs can carry personal data, so they aren't kept longer than required (DPDP data minimisation)."
+
+[[accepted]]
+id = "CKV_AWS_297"
+resources = ["aws_scheduler_schedule.night"]
+ignoreUntil = 2027-01-12
+reason = "AppSec (Abhi), 2026-10-14: the schedules' only input is instance IDs and the database identifier, nothing confidential; AWS-owned key encryption is enough."
+
+[[accepted]]
+id = "CKV2_AWS_34"
+resources = ['aws_ssm_parameter.image["backend"]', 'aws_ssm_parameter.image["frontend"]', 'aws_ssm_parameter.image["caddy"]', 'aws_ssm_parameter.image["mailpit"]', "aws_ssm_parameter.db_endpoint", "aws_ssm_parameter.db_master_secret"]
+ignoreUntil = 2027-01-12
+reason = "AppSec (Abhi), 2026-10-14: these hold image digests, the database host name and the ARN of the secret (not the secret). Nothing confidential; the actual secrets are SecureString under /sevacenter/staging/app/ with the environment key and in Secrets Manager."

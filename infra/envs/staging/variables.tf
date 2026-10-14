@@ -27,3 +27,15 @@ variable "extra_allowed_domains" {
   type        = list(string)
   default     = []
 }
+
+variable "staff_base_domain" {
+  sensitive   = true # kept out of plan output in public CI logs
+  description = "SevaCenter (staff) base domain, e.g. stg-seva.example.com. Not committed: TF_VAR_staff_base_domain."
+  type        = string
+}
+
+variable "mandir_base_domain" {
+  sensitive   = true # kept out of plan output in public CI logs
+  description = "MandirCenter (public) base domain, e.g. stg-mandir.example.com. Not committed: TF_VAR_mandir_base_domain."
+  type        = string
+}

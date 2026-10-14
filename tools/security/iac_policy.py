@@ -112,10 +112,11 @@ def where(r: dict) -> str:
     return f"file={path},line={line}"
 
 
-def drop_accepted(sarif_in: str, sarif_out: str, keys: set[tuple[str, str, int]]) -> int:
-    """Write sarif_in to sarif_out without results matching (check ID, file, start line)."""
+def drop_accepted(sarif_in: str, sarif_out: str, keys: set[tuple[str, str, int]]) -> tuple[int, set]:
+    """Write sarif_in to sarif_out without results matching (check ID, file, start line).
+    Returns how many results were dropped and which keys matched (for_each instances share a key)."""
     sarif = json.loads(pathlib.Path(sarif_in).read_text(encoding="utf-8"))
-    dropped = 0
+    dropped, matched = 0, set()
     for run in sarif.get("runs", []):
         kept = []
         for res in run.get("results", []):
@@ -124,11 +125,12 @@ def drop_accepted(sarif_in: str, sarif_out: str, keys: set[tuple[str, str, int]]
                    (loc.get("region") or {}).get("startLine"))
             if key in keys:
                 dropped += 1
+                matched.add(key)
             else:
                 kept.append(res)
         run["results"] = kept
     pathlib.Path(sarif_out).write_text(json.dumps(sarif), encoding="utf-8")
-    return dropped
+    return dropped, matched
 
 
 def gate(report_path: str, config: str, scanned_dir: str, today: dt.date,
@@ -166,10 +168,10 @@ def gate(report_path: str, config: str, scanned_dir: str, today: dt.date,
         errors.append(f"::error {where(r)}::{r['check_id']} {r['resource']}: {r['check_name']}.{hint}")
 
     if sarif_in and sarif_out:
-        dropped = drop_accepted(sarif_in, sarif_out, accepted_keys)
+        dropped, matched = drop_accepted(sarif_in, sarif_out, accepted_keys)
         print(f"code scanning SARIF: {dropped} accepted finding(s) left out")
-        if dropped != len(accepted_keys):
-            errors.append(f"accepted {len(accepted_keys)} finding location(s) but matched {dropped} in the SARIF: "
+        if missing := accepted_keys - matched:
+            errors.append(f"{len(missing)} accepted finding location(s) not found in the SARIF ({sorted(missing)[:3]}): "
                           "the SARIF and JSON reports disagree, so code scanning would be wrong")
 
     for a in valid:

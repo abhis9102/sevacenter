@@ -46,4 +46,20 @@ data "aws_iam_policy_document" "kms" {
       values   = [data.aws_caller_identity.current.account_id]
     }
   }
+
+  # The database's CloudWatch log group is encrypted with this key (CR-4).
+  statement {
+    sid       = "CloudWatchLogs"
+    actions   = ["kms:Encrypt*", "kms:Decrypt*", "kms:ReEncrypt*", "kms:GenerateDataKey*", "kms:Describe*"]
+    resources = ["*"]
+    principals {
+      type        = "Service"
+      identifiers = ["logs.${var.region}.amazonaws.com"]
+    }
+    condition {
+      test     = "ArnLike"
+      variable = "kms:EncryptionContext:aws:logs:arn"
+      values   = ["arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:*"]
+    }
+  }
 }

@@ -1,0 +1,33 @@
+#!/bin/bash
+# Edge box (ADR 0032/0034): NAT for the app tier, then Caddy for TLS. Runs at every boot.
+set -euo pipefail
+
+REGION=${region}
+REGISTRY=${account_id}.dkr.ecr.${region}.amazonaws.com
+
+# --- NAT: forward the app tier's outbound traffic, masquerading as this box ---------------------
+sysctl -qw net.ipv4.ip_forward=1
+OUT=$(ip route show default | awk '{print $5; exit}')
+iptables -t nat -C POSTROUTING -o "$OUT" -s ${app_cidr} -j MASQUERADE 2>/dev/null \
+  || iptables -t nat -A POSTROUTING -o "$OUT" -s ${app_cidr} -j MASQUERADE
+# Docker sets the FORWARD policy to DROP; DOCKER-USER is where our own forwarding rules go.
+# Only HTTPS from the app tier leaves (the security group says the same), and replies come back.
+iptables -N DOCKER-USER 2>/dev/null || true
+iptables -C DOCKER-USER -s ${app_cidr} -p tcp --dport 443 -j ACCEPT 2>/dev/null \
+  || iptables -I DOCKER-USER -s ${app_cidr} -p tcp --dport 443 -j ACCEPT
+iptables -C DOCKER-USER -d ${app_cidr} -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null \
+  || iptables -I DOCKER-USER -d ${app_cidr} -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+
+# --- Caddy ---------------------------------------------------------------------------------------
+CADDY=$(aws ssm get-parameter --region "$REGION" --name /sevacenter/staging/images/caddy --query Parameter.Value --output text)
+if [ "$CADDY" = "unset" ]; then echo "caddy image not pinned yet: NAT only"; exit 0; fi
+
+aws ecr get-login-password --region "$REGION" | docker login --username AWS --password-stdin "$REGISTRY" >/dev/null
+docker pull -q "$CADDY" >/dev/null
+docker rm -f sevacenter-caddy >/dev/null 2>&1 || true
+docker run -d --name sevacenter-caddy --restart unless-stopped \
+  --read-only --tmpfs /tmp --cap-drop ALL --cap-add NET_BIND_SERVICE --security-opt no-new-privileges:true \
+  --memory 128m -p 80:80 -p 443:443 \
+  -v /opt/sevacenter/Caddyfile:/etc/caddy/Caddyfile:ro -v caddy_data:/data -v caddy_config:/config \
+  "$CADDY" >/dev/null
+echo "edge up"
