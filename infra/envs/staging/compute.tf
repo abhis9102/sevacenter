@@ -158,7 +158,7 @@ resource "aws_iam_instance_profile" "box" {
 
 resource "aws_instance" "edge" {
   ami                    = data.aws_ssm_parameter.al2023.value
-  instance_type          = "t3.nano"
+  instance_type          = "t3.micro" # free-plan accounts may launch free-tier-eligible types only
   subnet_id              = module.network.subnet_ids.public[0]
   vpc_security_group_ids = [module.network.security_group_ids.edge]
   iam_instance_profile   = aws_iam_instance_profile.box["edge"].name
