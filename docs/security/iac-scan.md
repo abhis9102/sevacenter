@@ -25,7 +25,7 @@ checks. Trivy keeps Dockerfiles (`--misconfig-scanners dockerfile`, G6).
 1. **Accepted risks** (`.checkov/accepted.toml`) are validated. An invalid entry fails the job.
 2. **Self-test.** Checkov scans `.checkov/fixtures/insecure`, Terraform that breaks the cloud
    requirements on purpose, and the result must match `.checkov/fixtures/expected.txt` line by line
-   (20 expectations: what must fail and what must pass). A check that stops loading, or a Checkov
+   (25 expectations: what must fail and what must pass). A check that stops loading, or a Checkov
    upgrade that renames one, fails here instead of looking like clean infrastructure.
 3. **Scan `infra/`** (no Terraform yet: the step says so and passes). Checkov runs with
    `--soft-fail`; `tools/security/iac_policy.py gate` decides, the same split as ZAP and
@@ -63,6 +63,7 @@ Built-ins don't cover two of our requirements, found by writing the insecure fix
 |---|---|---|
 | `CKV_SEVA_1` | Ingress from `0.0.0.0/0` or `::/0` only on TCP 80/443 | Built-ins check single ports (22, 3389) or all ports; **Postgres 5432 open to the internet passed**. Covers inline `ingress`, `aws_security_group_rule` and `aws_vpc_security_group_ingress_rule` |
 | `CKV_SEVA_2` | No `aws_iam_access_key` | CKV_AWS_273 flags the IAM *user*; nothing flags the long-lived key itself (CR-1), whose secret Terraform also writes into state |
+| `CKV_SEVA_3` | A GitHub OIDC trust pins `sub` exactly: `StringEquals` on `repo:<owner>/<name>:<pull_request \| environment:… \| ref:…>`, no wildcards, and a trust without a `sub` fails | CKV_AWS_358 only sees a GitHub trust when the principal is a **literal** ARN. With the usual `identifiers = [aws_iam_openid_connect_provider.github.arn]` the reference doesn't resolve and **`repo:*` passed**. Ours keys on the claim in the condition. Covers `aws_iam_policy_document` and inline `assume_role_policy` |
 
 The folder needs an `__init__.py`. Without it Checkov logs "Cannot load any check here" at INFO and
 carries on: the custom checks silently never run, and the scan looks clean. The self-test caught
@@ -80,6 +81,7 @@ exactly that.
 | Inline `#checkov:skip=CKV_AWS_17:it is fine trust me` | **Blocked**: inline skip rejected |
 | Acceptance with a 5-character reason and a 2027 expiry | **Blocked** at step 1, both problems named |
 | First real Terraform (2026-10-14): 10 accepted findings still uploaded as open "error" alerts, so the Checkov check stayed red | Fixed: accepted findings are left out of the SARIF; an unaccepted `CKV_SEVA_1` still reaches code scanning |
+| `repo:*` in the bootstrap's plan-role trust, provider referenced by `.arn` (2026-10-14) | **Passed** CKV_AWS_358. Added CKV_SEVA_3 + 4 fixture expectations (one keeps the built-in's blind spot visible); the same change now **blocked** |
 | `trivy config .` before G6 was limited to Dockerfiles | Read the fixture: 21 Terraform failures in G6. Now 0 |
 
 ## Known gaps

@@ -63,3 +63,76 @@ id = "CKV2_AWS_5"
 resources = ["module.network.aws_security_group.edge", "module.network.aws_security_group.app", "module.network.aws_security_group.db"]
 ignoreUntil = 2026-11-14
 reason = "AppSec (Abhi), 2026-10-14: the security groups are attached by the edge box, app box and RDS in the compute and database rounds. Short expiry on purpose: if those rounds stall, this fails again."
+# --- M6 bootstrap: state backend and CI roles (ADR 0033). Proposed 2026-10-14; AppSec (Abhi) approves by merging the PR. ---
+
+[[accepted]]
+id = "CKV_AWS_356"
+resources = ["aws_iam_policy_document.apply"]
+ignoreUntil = 2027-01-12
+reason = "AppSec (Abhi), 2026-10-14: the Terraform apply role. Service-wide actions on '*' only where AWS has no resource-level permission at creation (VPC, subnet, instance, key IDs are generated); every '*' is commented in policies.tf (CR-5). Bounded by: the region guard (ap-south-1 only), IAM limited to the workload path with a mandatory permissions boundary, explicit denies on the state bucket and key, and assumption only from the approved GitHub environment."
+
+[[accepted]]
+id = "CKV_AWS_109"
+resources = ["aws_iam_policy_document.apply"]
+ignoreUntil = 2027-01-12
+reason = "AppSec (Abhi), 2026-10-14: the Terraform apply role. Service-wide actions on '*' only where AWS has no resource-level permission at creation (VPC, subnet, instance, key IDs are generated); every '*' is commented in policies.tf (CR-5). Bounded by: the region guard (ap-south-1 only), IAM limited to the workload path with a mandatory permissions boundary, explicit denies on the state bucket and key, and assumption only from the approved GitHub environment."
+
+[[accepted]]
+id = "CKV_AWS_111"
+resources = ["aws_iam_policy_document.apply"]
+ignoreUntil = 2027-01-12
+reason = "AppSec (Abhi), 2026-10-14: the Terraform apply role. Service-wide actions on '*' only where AWS has no resource-level permission at creation (VPC, subnet, instance, key IDs are generated); every '*' is commented in policies.tf (CR-5). Bounded by: the region guard (ap-south-1 only), IAM limited to the workload path with a mandatory permissions boundary, explicit denies on the state bucket and key, and assumption only from the approved GitHub environment."
+
+[[accepted]]
+id = "CKV_AWS_107"
+resources = ["aws_iam_policy_document.apply"]
+ignoreUntil = 2027-01-12
+reason = "AppSec (Abhi), 2026-10-14: ec2:* on the apply role includes ec2:GetPasswordData (Windows only; we run none) and ecr:* includes GetAuthorizationToken for our repositories, which apply needs to manage them. Same bounds as the apply role's other acceptances."
+
+[[accepted]]
+id = "CKV_AWS_356"
+resources = ["aws_iam_policy_document.workload_boundary"]
+ignoreUntil = 2027-01-12
+reason = "AppSec (Abhi), 2026-10-14: the permissions boundary is a ceiling, not a grant: each workload role's own policy names its resources. '*' only where the API has no resource (SSM agent channels, ecr:GetAuthorizationToken, log and metric writes)."
+
+[[accepted]]
+id = "CKV_AWS_111"
+resources = ["aws_iam_policy_document.workload_boundary"]
+ignoreUntil = 2027-01-12
+reason = "AppSec (Abhi), 2026-10-14: the permissions boundary is a ceiling, not a grant: each workload role's own policy names its resources. '*' only where the API has no resource (SSM agent channels, ecr:GetAuthorizationToken, log and metric writes)."
+
+[[accepted]]
+id = "CKV_AWS_356"
+resources = ["aws_iam_policy_document.state_key"]
+ignoreUntil = 2027-01-12
+reason = "AppSec (Abhi), 2026-10-14: state key policy root statement. In a key policy '*' means this key, and the account-root kms:* statement delegates use to IAM (AWS default); only the Terraform roles' policies grant it."
+
+[[accepted]]
+id = "CKV_AWS_109"
+resources = ["aws_iam_policy_document.state_key"]
+ignoreUntil = 2027-01-12
+reason = "AppSec (Abhi), 2026-10-14: state key policy root statement. In a key policy '*' means this key, and the account-root kms:* statement delegates use to IAM (AWS default); only the Terraform roles' policies grant it."
+
+[[accepted]]
+id = "CKV_AWS_111"
+resources = ["aws_iam_policy_document.state_key"]
+ignoreUntil = 2027-01-12
+reason = "AppSec (Abhi), 2026-10-14: state key policy root statement. In a key policy '*' means this key, and the account-root kms:* statement delegates use to IAM (AWS default); only the Terraform roles' policies grant it."
+
+[[accepted]]
+id = "CKV_AWS_144"
+resources = ["aws_s3_bucket.state"]
+ignoreUntil = 2027-01-12
+reason = "AppSec (Abhi), 2026-10-14: cross-region replication is forbidden by CR-2. State is protected by versioning (last 10 versions always kept) and prevent_destroy."
+
+[[accepted]]
+id = "CKV_AWS_18"
+resources = ["aws_s3_bucket.state"]
+ignoreUntil = 2027-01-12
+reason = "AppSec (Abhi), 2026-10-14: access logging needs a second bucket; for now who reads and writes state is limited to the two Terraform roles and administrators by IAM, and policy changes are in CloudTrail. Revisit with the central logging bucket."
+
+[[accepted]]
+id = "CKV2_AWS_62"
+resources = ["aws_s3_bucket.state"]
+ignoreUntil = 2027-01-12
+reason = "AppSec (Abhi), 2026-10-14: nothing consumes per-object events on the state bucket; state writes come from Terraform runs that are themselves logged in GitHub Actions."
