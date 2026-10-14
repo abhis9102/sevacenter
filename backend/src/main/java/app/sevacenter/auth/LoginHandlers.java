@@ -29,11 +29,13 @@ public class LoginHandlers implements AuthenticationSuccessHandler, Authenticati
     private final LoginThrottle throttle;
     private final TenantRepository tenants;
     private final JsonMapper json;
+    private final LockoutNotifier lockouts;
 
-    public LoginHandlers(LoginThrottle throttle, TenantRepository tenants, JsonMapper json) {
+    public LoginHandlers(LoginThrottle throttle, TenantRepository tenants, JsonMapper json, LockoutNotifier lockouts) {
         this.throttle = throttle;
         this.tenants = tenants;
         this.json = json;
+        this.lockouts = lockouts;
     }
 
     @Override
@@ -47,7 +49,9 @@ public class LoginHandlers implements AuthenticationSuccessHandler, Authenticati
     @Override
     public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
                                         AuthenticationException exception) throws IOException {
-        throttle.recordFailure(accountKey(request));
+        if (throttle.recordFailure(accountKey(request)) == LoginThrottle.MAX_FAILURES) {
+            lockouts.accountLocked(TenantContext.get(), request.getParameter(EMAIL_PARAM), request.getRemoteAddr());
+        }
         throttle.recordFailure(LoginThrottle.ipKey(request.getRemoteAddr()));
         write(response, HttpServletResponse.SC_UNAUTHORIZED, Map.of("error", "invalid_credentials"));
     }

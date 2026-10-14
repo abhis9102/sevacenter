@@ -21,7 +21,10 @@ locals {
     mandir_base     = var.mandir_base_domain
     app_ip          = local.app_ip
     app_cidr        = local.app_cidr
-    trusted_proxies = ".*" # the backend is reachable only from the frontend container on the app box
+    # X-Forwarded-For is believed only from the frontend container, on the pinned docker network
+    # (app-redeploy.sh). ".*" trusted any peer: harmless only while nothing forwarded the header.
+    trusted_proxies = "172\\.30\\.0\\.\\d{1,3}"
+    app_net_cidr    = "172.30.0.0/24"
   }
 
   # Run at every boot; retried until the dependencies (edge NAT, image pins) are there.

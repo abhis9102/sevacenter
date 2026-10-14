@@ -84,13 +84,24 @@ describe("API proxy headers", () => {
   });
   it("forwards only allowlisted request headers", () => {
     const out = upstreamRequestHeaders(
-      new Headers({ "x-forwarded-for": "1.2.3.4", authorization: "Basic x", host: "evil", accept: "application/json" }),
+      new Headers({ authorization: "Basic x", host: "evil", accept: "application/json" }),
       "a",
     );
     assert.equal(out.get("x-forwarded-for"), null);
     assert.equal(out.get("authorization"), null);
     assert.equal(out.get("host"), null);
     assert.equal(out.get("accept"), "application/json");
+  });
+  it("forwards only the edge-written client IP, never one the client chose", () => {
+    // Caddy appends the TCP peer last; anything to its left came from the client.
+    const out = upstreamRequestHeaders(new Headers({ "x-forwarded-for": "6.6.6.6, 203.0.113.7" }), "a");
+    assert.equal(out.get("x-forwarded-for"), "203.0.113.7");
+    assert.equal(upstreamRequestHeaders(new Headers({ "x-forwarded-for": "2001:db8::1" }), "a")
+      .get("x-forwarded-for"), "2001:db8::1");
+    for (const junk of ["", "evil.example", "1.2.3.4, <script>", "1.2.3.4\r\nX-Admin: 1", "unknown"]) {
+      assert.equal(upstreamRequestHeaders(new Headers({ "x-forwarded-for": junk.replace(/[\r\n]/g, " ") }), "a")
+        .get("x-forwarded-for"), null, junk);
+    }
   });
   it("keeps each Set-Cookie separate on the way back", () => {
     const up = new Headers();
