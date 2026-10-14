@@ -16,9 +16,10 @@ variable "alert_email" {
 }
 
 variable "monthly_budget_usd" {
+  # Credits left / days left on the account, rounded down: spending more runs out before the end.
   description = "Monthly spend that triggers alerts at 25/50/100% (and a forecast alert)"
   type        = number
-  default     = 40
+  default     = 30
 }
 
 variable "extra_allowed_domains" {
