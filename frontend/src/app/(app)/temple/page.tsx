@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { api } from "@/components/apiClient";
 import { useMe } from "@/components/Session";
@@ -8,6 +8,7 @@ import { useMandirHref } from "@/components/SiteProvider";
 import { Alert, Button, Card, PageHeader, TextField } from "@/components/ui";
 import { ApiError, describeError } from "@/lib/errors";
 import type { LunarCalendar } from "@/lib/panchang";
+import { templeImageUrl } from "@/lib/temple";
 import { hasRole } from "@/lib/types";
 
 type Status = "OPEN" | "CLOSED" | null;
@@ -23,6 +24,31 @@ interface Profile {
   calendar: LunarCalendar;
   status: Status;
   statusNote: string | null;
+  about: string | null;
+  history: string | null;
+  imageVersion: string | null;
+}
+
+const MAX_SIDE = 1600;
+
+/**
+ * Shrinks a phone photo in the browser before upload (the server limit is 2 MB). The server
+ * decodes and re-encodes whatever arrives anyway; this only keeps uploads small and fast.
+ */
+async function shrink(file: File): Promise<Blob> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("canvas unavailable");
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  return new Promise((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("encode failed"))), "image/jpeg", 0.85));
 }
 
 const MAX_AARTIS = 12;
@@ -34,7 +60,10 @@ export default function TempleSettingsPage() {
   const me = useMe();
   const mandirHref = useMandirHref("/");
   const canEdit = hasRole(me.role, "LEADER");
-  const [f, setF] = useState({ deity: "", address: "", helpline: "", timings: "", announcement: "" });
+  const [f, setF] = useState({ deity: "", address: "", helpline: "", timings: "", announcement: "", about: "", history: "" });
+  const [imageVersion, setImageVersion] = useState<string | null>(null);
+  const [imageBusy, setImageBusy] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
   const [hours, setHours] = useState({ morningOpen: "", morningClose: "", eveningOpen: "", eveningClose: "" });
   const [aartis, setAartis] = useState<{ name: string; at: string; description: string }[]>([]);
   const [calendar, setCalendar] = useState<LunarCalendar>("AMANTA");
@@ -47,7 +76,8 @@ export default function TempleSettingsPage() {
 
   function apply(p: Profile) {
     setF({ deity: p.deity ?? "", address: p.address ?? "", helpline: p.helpline ?? "", timings: p.timings ?? "",
-           announcement: p.announcement ?? "" });
+           announcement: p.announcement ?? "", about: p.about ?? "", history: p.history ?? "" });
+    setImageVersion(p.imageVersion);
     setHours({ morningOpen: hhmm(p.hours?.morningOpen), morningClose: hhmm(p.hours?.morningClose),
                eveningOpen: hhmm(p.hours?.eveningOpen), eveningClose: hhmm(p.hours?.eveningClose) });
     setAartis(p.aartis.map((a) => ({ name: a.name, at: hhmm(a.at), description: a.description ?? "" })));
@@ -90,6 +120,45 @@ export default function TempleSettingsPage() {
       setNotice({ tone: "danger", text: describeError(err) });
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setImageBusy(true);
+    setNotice(null);
+    try {
+      let blob: Blob;
+      try {
+        blob = await shrink(file);
+      } catch {
+        throw new Error("This photo couldn't be opened here. Save it as JPEG or PNG and try again.");
+      }
+      const form = new FormData();
+      form.append("image", blob, "temple.jpg");
+      const r = await api.request<{ imageVersion: string }>("/temple/image", { method: "PUT", multipart: form });
+      setImageVersion(r.imageVersion);
+      setNotice({ tone: "success", text: "Photo updated. It's live on your Mandir Center." });
+    } catch (err) {
+      setNotice({ tone: "danger", text: err instanceof ApiError ? describeError(err) : (err as Error).message });
+    } finally {
+      setImageBusy(false);
+    }
+  }
+
+  async function removePhoto() {
+    setImageBusy(true);
+    setNotice(null);
+    try {
+      await api.request("/temple/image", { method: "DELETE" });
+      setImageVersion(null);
+      setNotice({ tone: "success", text: "Photo removed." });
+    } catch (err) {
+      setNotice({ tone: "danger", text: describeError(err) });
+    } finally {
+      setImageBusy(false);
     }
   }
 
@@ -143,6 +212,32 @@ export default function TempleSettingsPage() {
         </div>
       </Card>
 
+      <Card className="flex flex-col gap-3">
+        <div>
+          <h2 className="text-base font-semibold">Temple photo</h2>
+          <p className="text-sm text-muted">
+            Shown at the top of your Mandir Center. A wide photo of the temple works best. PNG or JPEG; it is resized and
+            any location data in the photo is removed before it&apos;s published.
+          </p>
+        </div>
+        {imageVersion ? (
+          // eslint-disable-next-line @next/next/no-img-element -- our own re-encoded JPEG
+          <img src={templeImageUrl(imageVersion)} alt="Current temple photo"
+               className="aspect-[16/9] w-full max-w-xl rounded-[12px] border border-line object-cover" />
+        ) : <p className="text-sm text-muted">No photo yet.</p>}
+        {canEdit ? (
+          <div className="flex gap-2">
+            <input ref={fileInput} type="file" accept="image/png,image/jpeg" className="hidden" onChange={(e) => void onPhoto(e)} />
+            <Button type="button" variant="secondary" busy={imageBusy} onClick={() => fileInput.current?.click()}>
+              {imageVersion ? "Replace photo" : "Upload photo"}
+            </Button>
+            {imageVersion ? (
+              <Button type="button" variant="secondary" disabled={imageBusy} onClick={() => void removePhoto()}>Remove</Button>
+            ) : null}
+          </div>
+        ) : null}
+      </Card>
+
       <form onSubmit={onSave} className="flex flex-col gap-6">
         <Card className="flex flex-col gap-3">
           <h2 className="text-base font-semibold">Temple</h2>
@@ -165,6 +260,27 @@ export default function TempleSettingsPage() {
               <option value="PURNIMANTA">Purnimanta: months end on purnima (North India)</option>
             </select>
             <span className="text-xs text-muted">Used to name the month in the daily panchang.</span>
+          </label>
+        </Card>
+
+        <Card className="flex flex-col gap-3">
+          <div>
+            <h2 className="text-base font-semibold">About and history</h2>
+            <p className="text-sm text-muted">Shown on your Mandir Center as written. Plain text: line breaks are kept.</p>
+          </div>
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="font-medium">About the temple</span>
+            <textarea rows={5} maxLength={4000} value={f.about} onChange={set("about")} disabled={!canEdit}
+                      placeholder="Who the temple is dedicated to, what devotees can expect, festivals it is known for"
+                      className="rounded-[10px] border border-line bg-surface px-3 py-2" />
+            <span className="text-xs text-muted">{f.about.length} / 4000</span>
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="font-medium">History</span>
+            <textarea rows={7} maxLength={8000} value={f.history} onChange={set("history")} disabled={!canEdit}
+                      placeholder="When and by whom it was founded, renovations, stories devotees should know"
+                      className="rounded-[10px] border border-line bg-surface px-3 py-2" />
+            <span className="text-xs text-muted">{f.history.length} / 8000</span>
           </label>
         </Card>
 

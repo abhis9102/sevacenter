@@ -55,6 +55,9 @@ export interface Translations {
     panchang: { title: string; tithi: string; nakshatra: string; month: string; till: string; shukla: string;
       krishna: string; adhik: string; note: string };
     announcement: string;
+    about: string;
+    history: string;
+    photoAlt: string;
     quick: Record<"puja" | "donate" | "pass" | "sevak", { title: string; note: string }>;
     aartis: { title: string; subtitle: string; next: string };
     helpline: string;
@@ -386,6 +389,9 @@ export const DICTIONARIES: Record<Language, Translations> = {
       panchang: { title: "Today's panchang", tithi: "Tithi", nakshatra: "Nakshatra", month: "Month", till: "till",
         shukla: "Shukla paksha", krishna: "Krishna paksha", adhik: "Adhik", note: "Calculated for today, Lahiri ayanamsa" },
       announcement: "Announcement",
+      about: "About the temple",
+      history: "History",
+      photoAlt: "Photo of the temple",
       quick: {
         puja: { title: "Book a puja", note: "Sankalp in your family's name" },
         donate: { title: "Donate", note: "Annadanam, gau seva and more" },
@@ -739,6 +745,9 @@ export const DICTIONARIES: Record<Language, Translations> = {
       panchang: { title: "आज का पंचांग", tithi: "तिथि", nakshatra: "नक्षत्र", month: "मास", till: "तक",
         shukla: "शुक्ल पक्ष", krishna: "कृष्ण पक्ष", adhik: "अधिक", note: "आज के लिए गणना, लाहिरी अयनांश" },
       announcement: "सूचना",
+      about: "मंदिर के बारे में",
+      history: "इतिहास",
+      photoAlt: "मंदिर का चित्र",
       quick: {
         puja: { title: "पूजा बुक करें", note: "सपरिवार संकल्प" },
         donate: { title: "दान करें", note: "अन्नदान, गौ सेवा आदि" },
