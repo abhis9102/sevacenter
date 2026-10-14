@@ -188,7 +188,10 @@ data "aws_iam_policy_document" "apply" {
     resources = [
       "arn:aws:ecr:${var.region}:${local.account_id}:repository/${local.prefix}-*",
       "arn:aws:ssm:${var.region}:${local.account_id}:parameter/${local.prefix}/*",
+      "arn:aws:ssm:${var.region}:${local.account_id}:document/${local.prefix}-*",
       "arn:aws:secretsmanager:${var.region}:${local.account_id}:secret:${local.prefix}-*",
+      # RDS creates the master user's secret itself (manage_master_user_password), named rds!db-*.
+      "arn:aws:secretsmanager:${var.region}:${local.account_id}:secret:rds!*",
     ]
   }
 
@@ -205,6 +208,8 @@ data "aws_iam_policy_document" "apply" {
       "kms:GetKeyPolicy", "kms:GetKeyRotationStatus", "kms:ListResourceTags", "kms:PutKeyPolicy",
       "kms:ScheduleKeyDeletion", "kms:TagResource", "kms:UntagResource", "kms:UpdateAlias",
       "kms:Encrypt", "kms:Decrypt", "kms:GenerateDataKey", "kms:CreateGrant",
+      # EBS encryption under our key (instance volumes).
+      "kms:GenerateDataKeyWithoutPlaintext", "kms:ReEncryptFrom", "kms:ReEncryptTo",
     ]
     resources = [
       "arn:aws:kms:${var.region}:${local.account_id}:key/*",
@@ -320,10 +325,11 @@ data "aws_iam_policy_document" "workload_boundary" {
 
   statement {
     sid     = "UseKeysAndOwnSecrets"
-    actions = ["kms:Decrypt", "kms:Encrypt", "kms:GenerateDataKey", "kms:DescribeKey", "secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret", "ssm:GetParameter", "ssm:GetParameters"]
+    actions = ["kms:Decrypt", "kms:Encrypt", "kms:GenerateDataKey", "kms:DescribeKey", "secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret", "ssm:GetParameter", "ssm:GetParameters", "ssm:GetParametersByPath"]
     resources = [
       "arn:aws:kms:${var.region}:${local.account_id}:key/*",
       "arn:aws:secretsmanager:${var.region}:${local.account_id}:secret:${local.prefix}-*",
+      "arn:aws:secretsmanager:${var.region}:${local.account_id}:secret:rds!*", # the RDS-managed master secret
       "arn:aws:ssm:${var.region}:${local.account_id}:parameter/${local.prefix}/*",
     ]
   }
@@ -332,6 +338,18 @@ data "aws_iam_policy_document" "workload_boundary" {
     sid       = "ProjectBucketObjects"
     actions   = ["s3:GetObject", "s3:PutObject", "s3:ListBucket"]
     resources = ["arn:aws:s3:::${local.prefix}-*", "arn:aws:s3:::${local.prefix}-*/*"]
+  }
+
+  # Starting an instance whose volumes use our key needs a grant for EBS, only for an AWS service.
+  statement {
+    sid       = "GrantsForAwsServices"
+    actions   = ["kms:CreateGrant"]
+    resources = ["arn:aws:kms:${var.region}:${local.account_id}:key/*"]
+    condition {
+      test     = "Bool"
+      variable = "kms:GrantIsForAWSResource"
+      values   = ["true"]
+    }
   }
 
   # The night schedule (ADR 0032) stops and starts the boxes and the database.
