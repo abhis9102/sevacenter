@@ -14,8 +14,10 @@ its `/api` proxy, or staging's real configuration. It also adds minutes to every
 
 1. **Where:** DAST scans **staging after every deploy** (and on a schedule), the way most
    organisations scan their test environment. Active attacks on staging are accepted: it holds
-   only test and demo data. The PR-time scan is removed from the required checks once the staging
-   scan is proven, never before, so there is no window without DAST.
+   only test and demo data. The PR-time scan was planned to stay until the staging scan was
+   proven; on 2026-10-15 AppSec removed it from CI first (merge friction, and its ZAP start-up
+   was flaky), accepting a short window until the planted-flaw proof. `make dast` stays for local
+   runs.
 2. **What it is now:** a *detect* gate, not a *prevent* gate. A finding means a red run and a
    ticket; the change is already on staging and is fixed forward or reverted. Prevention comes
    back at promotion: when production exists, a staging scan with unaccepted findings blocks it.
