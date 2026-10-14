@@ -132,16 +132,21 @@ jobs:
             [ "$code" = "200" ] || { echo "::error::smoke test failed for $url ($code)"; exit 1; }
           done
 
-  # Attack what was just deployed (ADR 0035). Its own workflow so the scan job holds only the scan
-  # trust's credentials and no AWS role.
+  # Attack what was just deployed (ADR 0035). Started as its own run, not called as a reusable
+  # workflow: a called job didn't receive the staging-dast environment's secrets (DAST_TRUST came
+  # through empty), and a top-level run keeps those secrets in that environment only.
   dast:
-    name: DAST staging
+    name: Start DAST staging
     needs: deploy
     if: needs.deploy.outputs.deployed == 'true'
-    uses: $/.github/workflows/dast-staging.yml
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
-      contents: read
-      issues: write # the scan's ticket sync
-    secrets:
-      STAGING_STAFF_BASE_DOMAIN: ${{ secrets.STAGING_STAFF_BASE_DOMAIN }}
-      STAGING_MANDIR_BASE_DOMAIN: ${{ secrets.STAGING_MANDIR_BASE_DOMAIN }}
+      actions: write # workflow_dispatch of dast-staging.yml; GITHUB_TOKEN may start it
+    steps:
+      - name: Start the scan of what was just deployed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run dast-staging.yml --repo "$GITHUB_REPOSITORY" --ref main
+          echo "### DAST staging started: Actions → dast-staging (findings on that run's summary)" >> "$GITHUB_STEP_SUMMARY"

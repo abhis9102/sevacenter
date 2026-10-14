@@ -1,15 +1,9 @@
 name: dast-staging
 
 # DAST against staging (ADR 0035): active ZAP scans through the real edge, only on the dedicated
-# scan trust. Runs after every staging deploy (called by cd-staging), daily, and on demand.
+# scan trust. Runs after every staging deploy (started by cd-staging), daily, and on demand.
 # A detect gate: findings turn the run red and open tickets; the change is already on staging.
 on:
-  workflow_call:
-    secrets:
-      STAGING_STAFF_BASE_DOMAIN:
-        required: true
-      STAGING_MANDIR_BASE_DOMAIN:
-        required: true
   schedule:
     - cron: "30 4 * * *" # 10:00 IST: staging runs 08:00-23:00 IST
   workflow_dispatch: {}
