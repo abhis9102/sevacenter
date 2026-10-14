@@ -1,0 +1,80 @@
+#!/bin/bash
+# App box: (re)start the containers from the pinned image digests (ADR 0034). Runs at boot and
+# through the sevacenter-staging-redeploy SSM document, which is all the deploy role may run here.
+# Secrets are read at run time from SSM/Secrets Manager into a root-only file on tmpfs, never to
+# disk, never into Terraform.
+set -euo pipefail
+
+REGION=${region}
+REGISTRY=${account_id}.dkr.ecr.${region}.amazonaws.com
+P=/sevacenter/staging
+RUN=/run/sevacenter
+CA=/opt/sevacenter/rds-ca.pem
+
+param() { aws ssm get-parameter --region "$REGION" --name "$1" --with-decryption --query Parameter.Value --output text; }
+
+install -d -m 700 "$RUN"
+
+BACKEND=$(param $P/images/backend)
+FRONTEND=$(param $P/images/frontend)
+MAILPIT=$(param $P/images/mailpit)
+case "$BACKEND$FRONTEND$MAILPIT" in *unset*) echo "images not pinned yet: nothing to run"; exit 0;; esac
+
+# The RDS CA bundle, so the JDBC driver verifies the server certificate (CR-4, verify-full).
+if [ ! -s "$CA" ]; then
+  curl -fsS --retry 3 -o "$CA.tmp" "https://truststore.pki.rds.amazonaws.com/${region}/${region}-bundle.pem"
+  mv "$CA.tmp" "$CA"
+fi
+
+# Database: the owner (Flyway) from the RDS-managed secret; the runtime role's password and the
+# app keys from SecureString parameters under $P/app/.
+DB_ENDPOINT=$(param $P/db/endpoint)
+OWNER=$(aws secretsmanager get-secret-value --region "$REGION" --secret-id "$(param $P/db/master-secret-arn)" --query SecretString --output text)
+umask 077
+{
+  echo "DB_URL=jdbc:postgresql://$DB_ENDPOINT/sevacenter?sslmode=verify-full&sslrootcert=/certs/rds-ca.pem" # trufflehog:ignore (no credentials in the URL; they come from the env file lines below)
+  echo "DB_USERNAME=$(jq -r .username <<<"$OWNER")"
+  echo "DB_PASSWORD=$(jq -r .password <<<"$OWNER")"
+  aws ssm get-parameters-by-path --region "$REGION" --path $P/app/ --with-decryption \
+    --query 'Parameters[].[Name,Value]' --output text | while IFS=$'\t' read -r name value; do
+      echo "$${name##*/}=$value"
+    done
+} > "$RUN/app.env"
+unset OWNER
+
+aws ecr get-login-password --region "$REGION" | docker login --username AWS --password-stdin "$REGISTRY" >/dev/null
+docker pull -q "$BACKEND" >/dev/null && docker pull -q "$FRONTEND" >/dev/null && docker pull -q "$MAILPIT" >/dev/null
+docker network inspect app >/dev/null 2>&1 || docker network create app >/dev/null
+
+# Same hardening as compose: read-only root, no capabilities, no privilege escalation.
+HARDENED=(--network app --restart unless-stopped --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges:true)
+
+docker rm -f sevacenter-mail sevacenter-backend sevacenter-frontend >/dev/null 2>&1 || true
+
+docker run -d --name sevacenter-mail --network-alias mail --network app --restart unless-stopped \
+  --memory 96m "$MAILPIT" >/dev/null
+
+docker run -d --name sevacenter-backend --network-alias backend "$${HARDENED[@]}" --memory 512m \
+  --env-file "$RUN/app.env" \
+  -v "$CA:/certs/rds-ca.pem:ro" \
+  -e SPRING_PROFILES_ACTIVE=staging -e SPRING_MAIL_HOST=mail -e SPRING_MAIL_PORT=1025 \
+  -e SEVACENTER_MAIL_FROM=no-reply@${staff_base} \
+  -e "SEVACENTER_STAFF_URL=https://{slug}.${staff_base}" \
+  -e "SEVACENTER_TEMPLE_URL=https://{slug}.${mandir_base}" \
+  -e "TRUSTED_PROXIES=${trusted_proxies}" \
+  "$BACKEND" >/dev/null
+
+# The only published port, on the private address the edge box proxies to (security group:
+# edge box only).
+docker run -d --name sevacenter-frontend --network-alias frontend "$${HARDENED[@]}" --memory 320m \
+  -p ${app_ip}:3000:3000 \
+  -e SC_BACKEND_URL=http://backend:8080 \
+  -e "SC_TENANT_BASE_DOMAINS=${staff_base},${mandir_base}" \
+  -e "SC_STAFF_BASE_DOMAINS=${staff_base}" \
+  -e "SC_MANDIR_BASE_DOMAINS=${mandir_base}" \
+  "$FRONTEND" >/dev/null
+
+docker image prune -af --filter "until=168h" >/dev/null || true
+sleep 15
+docker ps --format '{{.Names}} {{.Status}}'
+echo "redeploy complete"

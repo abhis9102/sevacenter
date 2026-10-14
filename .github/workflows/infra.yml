@@ -1,0 +1,94 @@
+name: infra
+
+# Terraform through the pipeline (ADR 0033). Pull requests get a plan of every stack with the
+# read-only plan role; a merge to main applies staging with the apply role, but only after AppSec
+# approves the run in the `staging` environment (main only, required reviewer). The bootstrap
+# stack (the CI roles themselves) is planned here for review and applied only by a human.
+# G7 (Checkov) scans the same code in ci.yml before any of this.
+on:
+  pull_request:
+    paths:
+      - "infra/**"
+      - ".github/workflows/infra.yml"
+  push:
+    branches: [main]
+    paths:
+      - "infra/envs/staging/**"
+      - "infra/modules/**"
+      - ".github/workflows/infra.yml"
+  workflow_dispatch: {}
+
+permissions: {}
+
+concurrency:
+  group: infra-${{ github.event_name == 'pull_request' && github.ref || 'apply' }}
+  cancel-in-progress: false # never cancel an apply halfway
+
+env:
+  # hashicorp/terraform 1.13.3, by digest
+  TF_IMAGE: hashicorp/terraform@sha256:dfb1889a8ee74ada3ddacc48f89b8a0d69f3e114de3d8a2ce15f6a8d3dbfdbe2
+  AWS_REGION: ap-south-1
+
+jobs:
+  plan:
+    name: Plan (${{ matrix.stack }})
+    if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]' # Dependabot runs get no secrets
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      id-token: write # OIDC token for the plan role
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        stack: [staging, bootstrap]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: AWS credentials (plan role, read-only, via OIDC)
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ secrets.TF_PLAN_ROLE_ARN }}
+          aws-region: ap-south-1
+      - name: terraform plan
+        env:
+          STACK: ${{ matrix.stack }}
+          STATE_BUCKET: ${{ secrets.TF_STATE_BUCKET }}
+          TF_VAR_alert_email: ${{ secrets.STAGING_ALERT_EMAIL }}
+          TF_VAR_staff_base_domain: ${{ secrets.STAGING_STAFF_BASE_DOMAIN }}
+          TF_VAR_mandir_base_domain: ${{ secrets.STAGING_MANDIR_BASE_DOMAIN }}
+        run: tools/infra/terraform.sh plan
+      - name: Summary
+        if: ${{ !cancelled() }}
+        env:
+          STACK: ${{ matrix.stack }}
+        run: |
+          { echo "### terraform plan: $STACK"; grep -E '^(Plan:|No changes)' "tf-$STACK.txt" || echo "plan failed"; } >> "$GITHUB_STEP_SUMMARY"
+
+  apply:
+    name: Apply (staging)
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: staging # required reviewer + main only; the apply role trusts only this environment
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: AWS credentials (apply role, via OIDC)
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ secrets.TF_APPLY_ROLE_ARN }}
+          aws-region: ap-south-1
+      - name: terraform plan + apply
+        env:
+          STACK: staging
+          STATE_BUCKET: ${{ secrets.TF_STATE_BUCKET }}
+          TF_VAR_alert_email: ${{ secrets.STAGING_ALERT_EMAIL }}
+          TF_VAR_staff_base_domain: ${{ secrets.STAGING_STAFF_BASE_DOMAIN }}
+          TF_VAR_mandir_base_domain: ${{ secrets.STAGING_MANDIR_BASE_DOMAIN }}
+        run: tools/infra/terraform.sh apply
