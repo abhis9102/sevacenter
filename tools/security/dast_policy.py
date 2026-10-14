@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import os
 import pathlib
 import re
 import sys
@@ -94,6 +95,34 @@ def findings(report: dict, rules: list[dict]) -> list[dict]:
     return list({f["key"]: f for f in out}.values())
 
 
+def cell(value) -> str:
+    """Safe in a markdown table: paths and params come from attack requests, so no markup."""
+    text = re.sub(r"[`|<>\[\]\r\n]", " ", str(value or "-"))[:120]
+    return f"`{text}`" if text.strip() else "-"
+
+
+def summary(title: str, found: list[dict], threshold: int, n_accepted: int, coverage: str | None) -> str:
+    """Markdown for the run's summary page: the verdict and every finding, no download needed."""
+    counts = {r: sum(1 for f in found if f["risk"] == r) for r in ("high", "medium", "low")}
+    failing = [f for f in found if LEVEL[f["risk"]] >= threshold]
+    lines = [f"## {title}", "",
+             f"**{'❌ FAIL' if failing else '✅ PASS'}**: {counts['high']} high, {counts['medium']} medium, "
+             f"{counts['low']} low unaccepted; {n_accepted} accepted risk(s) in force; failing at "
+             f"{RISK[threshold]}+.", ""]
+    if coverage and pathlib.Path(coverage).exists():
+        cov = json.loads(pathlib.Path(coverage).read_text(encoding="utf-8"))
+        lines += ["Coverage (written by the scan, so the attacks got past auth, CSRF and validation): "
+                  + ", ".join(f"{n} {k}" for k, n in cov.get("created", {}).items()), ""]
+    if found:
+        lines += ["| Risk | Finding | Rule | Request | Param |", "|---|---|---|---|---|"]
+        for f in sorted(found, key=lambda x: (-LEVEL[x["risk"]], x["name"], x["path"])):
+            lines.append(f"| {f['risk']} | {cell(f['name'])} | {cell(f['pluginId'])} | "
+                         f"{cell(f['method'])} {cell(f['path'])} | {cell(f['param'])} |")
+        lines.append("")
+    lines += ["Full HTML reports: the run's report artifact. Tickets: issues labelled `dast`.", ""]
+    return "\n".join(lines)
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -102,6 +131,8 @@ def main() -> int:
     g.add_argument("--accepted", default=".zap/accepted.toml")
     g.add_argument("--fail-at", choices=["low", "medium", "high"], default="medium")
     g.add_argument("--out", help="write remaining Low+ findings (JSON) for ticketing")
+    g.add_argument("--summary", metavar="TITLE", help="also write a markdown summary to $GITHUB_STEP_SUMMARY")
+    g.add_argument("--coverage", help="coverage.json from the scan, shown in the summary")
     args = p.parse_args()
 
     rules, errors = load_accepted(args.accepted, dt.date.today())
@@ -123,6 +154,9 @@ def main() -> int:
         pathlib.Path(args.out).write_text(json.dumps(found, indent=2), encoding="utf-8")
     print(f"dast gate: {len(found)} unaccepted finding(s) (Low+), {len(rules)} accepted risk(s) "
           f"in force; failing at {args.fail_at}+")
+    if args.summary and os.environ.get("GITHUB_STEP_SUMMARY"):
+        with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
+            f.write(summary(args.summary, found, threshold, len(rules), args.coverage))
     for e in errors:
         print(f"::error::{e}")
     return 1 if errors else 0
