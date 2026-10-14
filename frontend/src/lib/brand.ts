@@ -22,6 +22,23 @@ export interface Site {
   mandirBase: string;
   /** true when staff and mandir base domains are the same set: no gating (dev/single-domain). */
   singleDomain: boolean;
+  /**
+   * A temple's own domain (ADR 0036): any real hostname that isn't ours. It serves only the public
+   * MandirCenter pages; the backend decides which trust (if any) it belongs to. The edge only gets
+   * a certificate for verified ones, so an unverified name never reaches us over HTTPS.
+   */
+  custom: boolean;
+}
+
+/** Never public or documentation-only; the same list the backend refuses (Hostnames.java). */
+const RESERVED_TLDS = new Set(["localhost", "local", "internal", "test", "example", "invalid", "lan", "home", "arpa", "onion"]);
+
+/** A plausible public hostname (not ours, not an IP, not a reserved name), lowercase, without port. */
+export function customHostname(host: string | null | undefined): string | null {
+  const h = hostnameOf(host ?? "");
+  if (!h || h.length > 253 || !/^[a-z0-9.-]+$/.test(h) || !h.includes(".")) return null;
+  if (/^[0-9.]+$/.test(h) || RESERVED_TLDS.has(h.slice(h.lastIndexOf(".") + 1))) return null;
+  return h;
 }
 
 export function staffBaseDomains(): readonly string[] {
@@ -67,5 +84,10 @@ export function siteForHost(host: string | null | undefined): Site {
     slugFromHost(h, staff) ??
     slugFromHost(h, mandir);
 
-  return { brand, slug, staffBase: staff[0] ?? "", mandirBase: mandir[0] ?? "", singleDomain };
+  const custom = !onStaff && !onMandir && customHostname(h) !== null;
+  if (custom) {
+    brand = "mandir";
+  }
+
+  return { brand, slug, staffBase: staff[0] ?? "", mandirBase: mandir[0] ?? "", singleDomain, custom };
 }

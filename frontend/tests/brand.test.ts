@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert";
 import { afterEach, describe, it } from "node:test";
 
-import { siteForHost } from "../src/lib/brand.js";
+import { customHostname, siteForHost } from "../src/lib/brand.js";
 
 const saved = { ...process.env };
 afterEach(() => {
@@ -53,5 +53,34 @@ describe("siteForHost (two-domain brand split)", () => {
     assert.equal(s.singleDomain, true);
     assert.equal(s.brand, null);
     assert.equal(s.slug, "demo");
+  });
+});
+
+describe("custom domains (ADR 0036)", () => {
+  it("a temple's own domain is a public MandirCenter host with no slug", () => {
+    twoDomain();
+    const s = siteForHost("www.shrisiddhivinayak.org");
+    assert.equal(s.custom, true);
+    assert.equal(s.brand, "mandir");
+    assert.equal(s.slug, null);
+  });
+  it("our own hosts are never custom", () => {
+    twoDomain();
+    for (const h of ["demo.stg-seva.example.com", "demo.stg-mandir.example.com", "stg-seva.example.com"]) {
+      assert.equal(siteForHost(h).custom, false, h);
+    }
+  });
+  it("an attacker's public domain gets no slug: the backend decides, and refuses unverified ones", () => {
+    twoDomain();
+    const s = siteForHost("demo.stg-mandir.attacker.org");
+    assert.equal(s.slug, null);
+    assert.equal(s.custom, true);
+  });
+  it("only plausible public hostnames count", () => {
+    assert.equal(customHostname("WWW.Temple.org:443"), "www.temple.org");
+    for (const h of ["localhost", "x.localhost", "127.0.0.1", "10.0.0.1:3000", "[::1]", "temple", "a b.org",
+      "evil.attacker.example", "x.internal", "", null]) {
+      assert.equal(customHostname(h), null, String(h));
+    }
   });
 });

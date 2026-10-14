@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { api } from "@/components/apiClient";
+import { CustomDomainCard } from "@/components/CustomDomainCard";
 import { useMe } from "@/components/Session";
 import { useMandirHref } from "@/components/SiteProvider";
 import { Alert, Button, Card, PageHeader, TextField } from "@/components/ui";
@@ -237,6 +238,8 @@ export default function TempleSettingsPage() {
           </div>
         ) : null}
       </Card>
+
+      {hasRole(me.role, "TRUST_ADMIN") ? <CustomDomainCard /> : null}
 
       <form onSubmit={onSave} className="flex flex-col gap-6">
         <Card className="flex flex-col gap-3">

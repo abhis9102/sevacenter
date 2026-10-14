@@ -2,8 +2,9 @@
 # certificate per host name the first time it's asked for, through the HTTP-01 challenge on port 80.
 # Port 80 otherwise only redirects to HTTPS (CR-4).
 #
-# The ask endpoint allows certificates only for our two base domains, or anyone pointing their DNS
-# at this address could make us request certificates for theirs and use up the rate limit.
+# The ask endpoint allows certificates only for our two base domains and for temples' own domains
+# that passed DNS ownership proof (ADR 0036; the backend keeps that list), or anyone pointing their
+# DNS at this address could make us request certificates for theirs and use up the rate limit.
 {
 	on_demand_tls {
 		ask http://127.0.0.1:9999/check
@@ -16,7 +17,11 @@ http://127.0.0.1:9999 {
 	handle @ours {
 		respond 200
 	}
-	respond "not our zone" 403
+	# A verified custom domain? The backend answers 200 only for active ones; anything else denies.
+	handle {
+		rewrite * /api/v1/public/custom-domains/allowed?domain={query.domain}
+		reverse_proxy ${app_ip}:3000
+	}
 }
 
 https:// {

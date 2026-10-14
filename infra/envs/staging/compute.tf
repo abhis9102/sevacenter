@@ -15,12 +15,12 @@ locals {
   app_cidr0 = "172.16.10.0/24"
 
   template_vars = {
-    region          = var.region
-    account_id      = data.aws_caller_identity.current.account_id
-    staff_base      = var.staff_base_domain
-    mandir_base     = var.mandir_base_domain
-    app_ip          = local.app_ip
-    app_cidr        = local.app_cidr
+    region      = var.region
+    account_id  = data.aws_caller_identity.current.account_id
+    staff_base  = var.staff_base_domain
+    mandir_base = var.mandir_base_domain
+    app_ip      = local.app_ip
+    app_cidr    = local.app_cidr
     # X-Forwarded-For is believed only from the frontend container, on the pinned docker network
     # (app-redeploy.sh). ".*" trusted any peer: harmless only while nothing forwarded the header.
     trusted_proxies = "172\\.30\\.0\\.\\d{1,3}"

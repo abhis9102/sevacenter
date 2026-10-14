@@ -31,7 +31,11 @@ const FORWARD_RESPONSE_HEADERS = [
 
 export const TENANT_HEADER = "X-Tenant-Slug";
 
-export function upstreamRequestHeaders(incoming: Headers, slug: string | null): Headers {
+/**
+ * @param customHost a temple's own domain (ADR 0036) when the Host names no slug: forwarded as
+ *   X-Tenant-Host for the backend to resolve (public API only; it fails closed for anything else).
+ */
+export function upstreamRequestHeaders(incoming: Headers, slug: string | null, customHost: string | null = null): Headers {
   const out = new Headers();
   for (const name of FORWARD_REQUEST_HEADERS) {
     const value = incoming.get(name);
@@ -41,6 +45,8 @@ export function upstreamRequestHeaders(incoming: Headers, slug: string | null): 
   }
   if (slug) {
     out.set(TENANT_HEADER, slug);
+  } else if (customHost) {
+    out.set("x-tenant-host", customHost);
   }
   const client = clientIp(incoming.get("x-forwarded-for"));
   if (client) {
