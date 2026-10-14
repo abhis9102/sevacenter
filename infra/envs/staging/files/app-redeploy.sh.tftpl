@@ -48,12 +48,16 @@ unset OWNER
 
 aws ecr get-login-password --region "$REGION" | docker login --username AWS --password-stdin "$REGISTRY" >/dev/null
 docker pull -q "$BACKEND" >/dev/null && docker pull -q "$FRONTEND" >/dev/null && docker pull -q "$MAILPIT" >/dev/null
-docker network inspect app >/dev/null 2>&1 || docker network create app >/dev/null
+# A fixed subnet, so the backend can trust X-Forwarded-For from the frontend container only
+# (TRUSTED_PROXIES). An older network without it is replaced (its containers are recreated below).
+docker rm -f sevacenter-mail sevacenter-backend sevacenter-frontend >/dev/null 2>&1 || true
+if [ "$(docker network inspect app --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}' 2>/dev/null)" != "${app_net_cidr}" ]; then
+  docker network rm app >/dev/null 2>&1 || true
+  docker network create --subnet "${app_net_cidr}" app >/dev/null
+fi
 
 # Same hardening as compose: read-only root, no capabilities, no privilege escalation.
 HARDENED=(--network app --restart unless-stopped --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges:true)
-
-docker rm -f sevacenter-mail sevacenter-backend sevacenter-frontend >/dev/null 2>&1 || true
 
 docker run -d --name sevacenter-mail --network-alias mail --network app --restart unless-stopped \
   --memory 96m "$MAILPIT" >/dev/null

@@ -4,6 +4,11 @@
  * The proxy forwards only an allowlist of headers in each direction. In particular the
  * client can't choose its tenant: any `X-Tenant-Slug` it sends is dropped and replaced by the
  * slug derived from the Host it actually connected to.
+ *
+ * The client IP (login throttle, rate limits, audit) is the rightmost `X-Forwarded-For` entry:
+ * the one the edge proxy (Caddy) wrote from the TCP peer. Anything a client wrote further left is
+ * dropped, so it can't pick its own IP. Without this every request reached the backend from this
+ * container's address, and the per-IP login limit locked out everyone at once.
  */
 
 const FORWARD_REQUEST_HEADERS = [
@@ -37,7 +42,20 @@ export function upstreamRequestHeaders(incoming: Headers, slug: string | null): 
   if (slug) {
     out.set(TENANT_HEADER, slug);
   }
+  const client = clientIp(incoming.get("x-forwarded-for"));
+  if (client) {
+    out.set("x-forwarded-for", client);
+  }
   return out;
+}
+
+/** The edge-appended (rightmost) address, if it is a plain IPv4/IPv6 literal; else null. */
+export function clientIp(forwardedFor: string | null): string | null {
+  const last = forwardedFor?.split(",").pop()?.trim() ?? "";
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(last) || (/^[0-9a-fA-F:.]{2,45}$/.test(last) && last.includes(":"))) {
+    return last;
+  }
+  return null;
 }
 
 export function downstreamResponseHeaders(upstream: Headers): Headers {

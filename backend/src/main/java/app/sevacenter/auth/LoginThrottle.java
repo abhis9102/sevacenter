@@ -18,7 +18,11 @@ import org.springframework.stereotype.Component;
  * <p>The IP limit is much higher because an IP is often shared: a mobile carrier's NAT puts many
  * devotees and staff behind one address, and a low limit would let anyone on it lock everyone
  * out. It exists to catch one address spraying many accounts. The client IP is the real one even
- * behind the load balancer (forwarded headers from trusted proxies only; application.yml).
+ * behind the proxies: Caddy writes it, the frontend's /api proxy forwards only that entry, and
+ * Tomcat believes X-Forwarded-For only from the trusted proxy (application.yml, TRUSTED_PROXIES).
+ * If that chain breaks, every client shares one address and the IP limit locks out everyone.
+ *
+ * <p>When an account reaches its limit, its owner is emailed (LockoutNotifier).
  *
  * <p>In-memory, so per instance; it moves to a shared store before running more than one task
  * (M6). Full rate limiting arrives in M4.
@@ -49,13 +53,14 @@ public class LoginThrottle {
         return f != null && !f.expired(now()) && f.count() >= limit;
     }
 
-    public void recordFailure(String key) {
+    /** Counts a failure; returns the count in the current window (== the limit exactly once per lock). */
+    public int recordFailure(String key) {
         Instant now = now();
         if (failures.size() >= MAX_TRACKED_KEYS) {
             failures.values().removeIf(f -> f.expired(now)); // bound memory under a spray attack
         }
-        failures.compute(key, (k, f) -> f == null || f.expired(now)
-                ? new Failures(1, now.plus(WINDOW)) : new Failures(f.count() + 1, f.windowEnd()));
+        return failures.compute(key, (k, f) -> f == null || f.expired(now)
+                ? new Failures(1, now.plus(WINDOW)) : new Failures(f.count() + 1, f.windowEnd())).count();
     }
 
     public void reset(String key) {
