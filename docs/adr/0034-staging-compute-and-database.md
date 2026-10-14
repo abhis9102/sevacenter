@@ -12,7 +12,7 @@ budget. This ADR fills it in and moves staging to ap-south-1.
 
 ## Decision
 
-**Edge box** (t3.nano, public subnet, Elastic IP):
+**Edge box** (t3.micro, public subnet, Elastic IP; free-plan accounts can launch only free-tier-eligible types):
 - Caddy terminates TLS (on-demand Let's Encrypt certificates, only for our two base domains), redirects 80 to 443, sends HSTS and proxies to the app box.
 - iptables NAT for the app tier: only TCP 443 from the app subnets is forwarded.
 
@@ -31,7 +31,7 @@ budget. This ADR fills it in and moves staging to ap-south-1.
 **Database:** RDS PostgreSQL 16, db.t4g.micro, private, encrypted with the environment key.
 - `rds.force_ssl = 1`, and the JDBC URL uses `sslmode=verify-full` against the RDS CA bundle (CR-4: Sydney's connection was encrypted but never verified).
 - The master password is generated and held by RDS in Secrets Manager, never in Terraform state. Flyway migrates as that owner; the app runs as `sevacenter_app` under forced RLS.
-- 7-day backups, deletion protection, slow-query log to an encrypted log group kept 180 days.
+- 1-day backups (the free plan's maximum; 7 days after the upgrade), deletion protection, slow-query log to an encrypted log group kept 180 days.
 
 **Images only from our ECR:**
 - Repositories are immutable-tag, scan-on-push and KMS-encrypted.

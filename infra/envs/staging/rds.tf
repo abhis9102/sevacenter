@@ -39,11 +39,10 @@ resource "aws_db_instance" "this" {
   manage_master_user_password   = true
   master_user_secret_kms_key_id = aws_kms_key.this.arn
 
-  allocated_storage     = 20
-  max_allocated_storage = 30 # small cap: autoscaling storage can't run up the bill
-  storage_type          = "gp3"
-  storage_encrypted     = true
-  kms_key_id            = aws_kms_key.this.arn
+  allocated_storage = 20 # the free plan's RDS limit; no storage autoscaling
+  storage_type      = "gp3"
+  storage_encrypted = true
+  kms_key_id        = aws_kms_key.this.arn
 
   db_subnet_group_name   = aws_db_subnet_group.this.name
   vpc_security_group_ids = [module.network.security_group_ids.db]
@@ -55,7 +54,7 @@ resource "aws_db_instance" "this" {
   iam_database_authentication_enabled = true
   enabled_cloudwatch_logs_exports     = ["postgresql"]
 
-  backup_retention_period    = 7
+  backup_retention_period    = 1             # the free plan's maximum; 7 days once the account is upgraded
   backup_window              = "20:00-20:30" # UTC = 01:30 IST, while staging sleeps
   maintenance_window         = "sun:21:00-sun:21:30"
   auto_minor_version_upgrade = true

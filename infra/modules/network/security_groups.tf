@@ -59,7 +59,7 @@ resource "aws_vpc_security_group_ingress_rule" "edge_nat_from_app" {
 
 resource "aws_vpc_security_group_egress_rule" "edge_https_out" {
   security_group_id = aws_security_group.edge.id
-  description       = "HTTPS out: NATed app traffic, OS updates, Let's Encrypt, SSM"
+  description       = "HTTPS out: NATed app traffic, OS updates, ACME certificates, SSM"
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "tcp"
   from_port         = 443
