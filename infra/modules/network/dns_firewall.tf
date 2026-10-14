@@ -32,6 +32,12 @@ resource "aws_route53_resolver_firewall_rule" "allow" {
   firewall_domain_list_id = aws_route53_resolver_firewall_domain_list.allowed.id
   firewall_rule_group_id  = aws_route53_resolver_firewall_rule_group.this.id
   priority                = 100
+  # Follow the CNAME chain of a name we allowed. By default every hop is checked against the list,
+  # and providers point their API names at CDN hosts they can rename at will
+  # (acme-v02.api.letsencrypt.org -> prod.api.letsencrypt.org -> <hash>.pacloudflare.com), so the
+  # allowed name still failed to resolve and the edge box couldn't get certificates. The decision
+  # stays on the name our code asked for, which is what this control is about.
+  firewall_domain_redirection_action = "TRUST_REDIRECTION_DOMAIN"
 }
 
 resource "aws_route53_resolver_firewall_rule" "block_rest" {
