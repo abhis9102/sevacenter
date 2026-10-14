@@ -112,7 +112,8 @@ data "aws_iam_policy_document" "plan_no_data" {
       "rds:DownloadCompleteDBLogFile", "rds:DownloadDBLogFilePortion",
       "secretsmanager:GetSecretValue",
       "sqs:ReceiveMessage",
-      "ssm:GetParameter", "ssm:GetParameterHistory", "ssm:GetParameters", "ssm:GetParametersByPath",
+      # Not ssm:GetParameter*: plan must read the public AMI parameter and refresh our own
+      # (non-secret) parameters. SecureStrings stay unreadable: kms:Decrypt is denied below.
     ]
     resources = ["*"]
   }
