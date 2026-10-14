@@ -12,11 +12,11 @@ terraform {
   }
 
   # Partial configuration: bucket and key are passed at `terraform init -backend-config=...`, so
-  # the state bucket's name (which carries the account ID) isn't committed. The bucket itself is
-  # the next round. use_lockfile = S3-native locking, no DynamoDB table.
+  # the state bucket's name (which carries the account ID) isn't committed (ADR 0033).
+  # use_lockfile = S3-native locking, no DynamoDB table. No `encrypt = true`: without a key ID it
+  # writes SSE-S3 over the bucket's KMS default (CR-4), and the bucket refuses such writes.
   backend "s3" {
     region       = "ap-south-1"
-    encrypt      = true
     use_lockfile = true
   }
 }
