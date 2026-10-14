@@ -8,16 +8,16 @@ handling, exposed endpoints, injection that really executes.
 
 | Piece | What |
 |---|---|
-| `tools/security/dast.sh` | Throwaway Postgres (same least-privilege init as dev) → the **built jar** (the one G4 signs) → OWASP ZAP **API scan, active, full Default Policy** (via `.zap/rules.tsv`), driven by our OpenAPI spec → coverage check. Same script in CI and locally (`make dast`). ~4 min. |
+| `tools/security/dast.sh` | Throwaway Postgres (same least-privilege init as dev) → the **built jar** (the one G4 signs) → OWASP ZAP **API scan, active, full Default Policy** (via `.zap/rules.tsv`), driven by our OpenAPI spec → coverage check. Local only now (`make dast`), ~4 min: a quick check before pushing an API change. |
 | `.zap/rules.tsv` | Passing any `-c` file switches `zap-api-scan.py` from **API-Minimal (23 active rules)** to the **Default Policy (all 48 installed)**. Without it we were running the minimal set. |
-| `dast` job (required check) | Runs the script on every PR, push and daily; uploads `dast-report` (HTML + JSON + app log). |
-| `tools/security/dast_policy.py gate` | **Medium/High → fail.** Low → warning (and a ticket on main). Informational → ignored. |
+| ~~`dast` job (required check)~~ | **Removed from CI on 2026-10-15** (ADR 0035): DAST now runs against staging after every deploy; see "Staging scan" below. |
+| `tools/security/dast_policy.py gate` | **Medium/High → fail.** Low → warning (and a ticket). Informational → ignored. Shared by the local and the staging scan. |
 | `.zap/accepted.toml` | Accepted risks: scoped to rule **and** param/uri, reason ≥ 20 chars, expiry ≤ 90 days. |
-| `dast-tickets` job (main) | Low+ unaccepted findings → tickets; auto-close when a later scan no longer finds them. |
+| Tickets | Low+ unaccepted findings → tickets from the staging scan; auto-close when a later scan no longer finds them. |
 | `SecurityRegressionTest` | Every DAST finding we fix becomes a test, so it can't silently regress. |
 
-Active scanning sends real attack payloads, so it **only ever targets this ephemeral environment**,
-never a shared or production deployment.
+Active scanning sends real attack payloads, so it only ever targets a throwaway environment (locally) or
+the dedicated scan trust on staging (ADR 0035), **never production**.
 
 ## Coverage: a scan that only sees 403s tests nothing
 
