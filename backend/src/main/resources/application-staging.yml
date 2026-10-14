@@ -36,3 +36,8 @@ sevacenter:
     # The frontend proxy is the only client and sets X-Tenant-Slug from the real Host. Backend is
     # network-isolated (see header above), so nothing else can set it.
     allow-header-override: true
+  # Fixed devotee login code for the DAST scan trust only (ADR 0035). Both set only through SSM on
+  # staging; unset = off. The app refuses to start with these outside staging/local.
+  scan-login:
+    trust: ${SEVACENTER_SCAN_TRUST:}
+    code: ${SEVACENTER_SCAN_OTP:}
