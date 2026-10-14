@@ -38,3 +38,4 @@ change a decision, add a new ADR that supersedes the old one.
 | [0030](0030-configured-public-urls.md) | Public URLs per environment: one template per brand, never from the request, required + validated at startup, frontend fails closed | Accepted |
 | [0031](0031-backend-container-image.md) | Backend image: multi-stage from clean source, distroless Debian 13 (scanned vs alternatives), digest-pinned + Dependabot, non-root, read-only rootfs | Accepted |
 | [0032](0032-network-lean-staging.md) | Network: three tiers in one AZ, edge box (TLS + NAT) instead of NAT gateway and ALB, DNS Firewall allowlist, flow logs 180 days, one KMS key | Accepted |
+| [0033](0033-terraform-state-and-ci-roles.md) | Terraform state (own KMS key, SSE-S3 refused) and CI roles: plan read-only without data reads and lock-only writes; apply behind an approved environment; permissions boundary on every created role | Accepted |

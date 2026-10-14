@@ -37,6 +37,60 @@ resource "aws_iam_role" "ci" {
   })
 }
 
+# CR-6: the same open trust written the usual way, with the provider by reference. The built-in
+# CKV_AWS_358 can't resolve the reference and passes it; CKV_SEVA_3 must catch it.
+resource "aws_iam_openid_connect_provider" "github" {
+  url            = "https://token.actions.githubusercontent.com"
+  client_id_list = ["sts.amazonaws.com"]
+}
+
+data "aws_iam_policy_document" "ci_trust_by_reference" {
+  statement {
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+    principals {
+      type        = "Federated"
+      identifiers = [aws_iam_openid_connect_provider.github.arn]
+    }
+    condition {
+      test     = "StringLike"
+      variable = "token.actions.githubusercontent.com:sub"
+      values   = ["repo:*"]
+    }
+  }
+}
+
+# A trust with only the audience checked: any repository's workflow gets in.
+data "aws_iam_policy_document" "ci_trust_no_sub" {
+  statement {
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+    principals {
+      type        = "Federated"
+      identifiers = [aws_iam_openid_connect_provider.github.arn]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+  }
+}
+
+# The correct form must pass.
+data "aws_iam_policy_document" "ci_trust_pinned" {
+  statement {
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+    principals {
+      type        = "Federated"
+      identifiers = [aws_iam_openid_connect_provider.github.arn]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:sub"
+      values   = ["repo:example/app:environment:staging"]
+    }
+  }
+}
+
 # CR-3 / CR-4: a public, unencrypted database.
 resource "aws_db_instance" "db" {
   identifier          = "sevacenter"

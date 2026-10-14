@@ -47,3 +47,4 @@ CLAUDE.local.md
 !*.tfvars.example
 *.tfplan
 crash.log
+*_override.tf
