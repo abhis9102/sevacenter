@@ -178,7 +178,10 @@ resource "aws_instance" "edge" {
     kms_key_id  = aws_kms_key.this.arn
   }
 
-  user_data = <<-EOT
+  # A change to the boot scripts replaces the box (it holds no data) rather than leaving the old
+  # script on disk: cloud-init runs once per instance.
+  user_data_replace_on_change = true
+  user_data                   = <<-EOT
     #cloud-config
     packages: [docker, iptables-nft]
     write_files:
@@ -239,7 +242,8 @@ resource "aws_instance" "app" {
     kms_key_id  = aws_kms_key.this.arn
   }
 
-  user_data = <<-EOT
+  user_data_replace_on_change = true
+  user_data                   = <<-EOT
     #cloud-config
     packages: [docker, jq]
     write_files:

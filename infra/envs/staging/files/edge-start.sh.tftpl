@@ -2,6 +2,10 @@
 # Edge box (ADR 0032/0034): NAT for the app tier, then Caddy for TLS. Runs at every boot.
 set -euo pipefail
 
+# Self-healing first boot: if cloud-init couldn't install the packages, install them now.
+if ! command -v docker >/dev/null; then dnf install -y -q docker iptables-nft; fi
+systemctl is-active -q docker || systemctl enable --now docker
+
 REGION=${region}
 REGISTRY=${account_id}.dkr.ecr.${region}.amazonaws.com
 
