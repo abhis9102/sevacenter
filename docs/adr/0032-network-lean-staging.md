@@ -35,7 +35,10 @@ the app tier's outbound HTTPS. About $7 a month, where the managed pair costs ab
   from the internet, on 80/443.
 - **DNS Firewall:** the VPC resolver answers only allowlisted names (AWS service endpoints,
   Let's Encrypt, Razorpay, plus `extra_allowed_domains`); everything else gets NODATA, and it fails
-  closed.
+  closed. An allowed name's CNAME chain is trusted (`TRUST_REDIRECTION_DOMAIN`): providers point
+  API names at CDN hosts they rename at will (`acme-v02.api.letsencrypt.org` ends at a
+  `pacloudflare.com` hash name), and checking every hop blocked certificate issuance. The decision
+  stays on the name our code asked for.
 - S3 gateway endpoint (free) for image layers, limited by policy to this account's buckets and
   ECR's layer bucket.
 - No interface endpoints yet: AWS API calls go through the edge box over TLS.
