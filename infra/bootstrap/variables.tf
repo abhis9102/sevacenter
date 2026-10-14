@@ -10,9 +10,12 @@ variable "region" {
 }
 
 variable "github_repository" {
-  description = "owner/name of the repository whose workflows may assume the CI roles"
+  # GitHub's immutable OIDC subject (repository setting `use_immutable_subject`): owner and
+  # repository carry their numeric IDs, so a renamed, deleted or re-created repository with the
+  # same name can't match these trusts. Check: gh api repos/<owner>/<repo>/actions/oidc/customization/sub
+  description = "Repository part of the OIDC sub claim, as GitHub issues it: owner@id/name@id"
   type        = string
-  default     = "abhis9102/sevacenter"
+  default     = "abhis9102@54002060/sevacenter@1402065755"
 }
 
 variable "apply_environment" {

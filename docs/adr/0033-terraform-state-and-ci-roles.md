@@ -41,6 +41,11 @@ protected from destroy.
 | Writes | lock files only (`*.tflock`), so it can't rewrite state | state; the services the stacks use; IAM only under `/sevacenter/workload/` |
 | Both | deny every regional action outside ap-south-1 (CR-2) | |
 
+**Note (2026-10-14, first run):** the repository uses GitHub's immutable OIDC subject, so `sub` is
+`repo:abhis9102@54002060/sevacenter@1402065755:<context>`, with the owner and repository IDs. The
+trusts pin that form; the name-only form above never matches. It's also stronger: a renamed or
+re-created repository with the same name can't assume the roles.
+
 **Environment protection does the "main only, human approved" part.** AWS matches only the
 token's `sub`, not its branch. The GitHub environment `staging` allows deployments from `main` only
 and requires AppSec's approval of each run.
