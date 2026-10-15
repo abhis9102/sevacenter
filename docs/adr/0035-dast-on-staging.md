@@ -38,6 +38,13 @@ its `/api` proxy, or staging's real configuration. It also adds minutes to every
    - every use is audited (`event=devotee_login_scan_code`), and the code is single-use like any
      other.
 
+**Amendment (2026-10-15): one code for every trust on staging.** Staging delivers login codes to
+Mailpit, so testers couldn't sign in to MandirCenter at all. AppSec decided that on staging
+`SEVACENTER_SCAN_TRUST=*` and `SEVACENTER_SCAN_OTP=123456`: any devotee on any staging trust can
+sign in with `123456` (after requesting a code; attempt cap and audit unchanged). Accepted because
+staging holds only test and demo data. Production can't start with either setting, and the setting
+goes away once real email/SMS delivery is live on staging.
+
 ## Consequences
 
 - Faster merges; the scan covers the edge, frontend and real configuration for the first time.

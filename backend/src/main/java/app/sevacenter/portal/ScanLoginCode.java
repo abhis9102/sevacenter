@@ -14,7 +14,9 @@ import org.springframework.stereotype.Component;
  * in to the devotee portal without reading an inbox. Fenced like a test account, not a backdoor:
  * <ul>
  *   <li>off unless both {@code SEVACENTER_SCAN_TRUST} and {@code SEVACENTER_SCAN_OTP} are set; no
- *       default code exists anywhere;</li>
+ *       default code exists anywhere. {@code SEVACENTER_SCAN_TRUST=*} means every trust: staging's
+ *       testers can sign in as any devotee there (test data only), since staging can't deliver
+ *       real codes;</li>
  *   <li>the app refuses to start with it set outside the staging/local profiles (relaxed binding
  *       means an env var could set it in production);</li>
  *   <li>accepted only on the scan trust, and only in place of a code that was really requested, so
@@ -26,6 +28,8 @@ import org.springframework.stereotype.Component;
 public class ScanLoginCode {
 
     static final String ALLOWED_PROFILES = "staging | local";
+    /** Every trust (staging testers), instead of one scan trust. */
+    static final String ALL_TRUSTS = "*";
 
     private final String trust;
     private final byte[] code;
@@ -59,6 +63,6 @@ public class ScanLoginCode {
         if (!enabled() || !MessageDigest.isEqual(code, candidate.getBytes(StandardCharsets.US_ASCII))) {
             return false;
         }
-        return tenants.findById(tenantId).map(t -> trust.equals(t.getSlug())).orElse(false);
+        return tenants.findById(tenantId).map(t -> ALL_TRUSTS.equals(trust) || trust.equals(t.getSlug())).orElse(false);
     }
 }
