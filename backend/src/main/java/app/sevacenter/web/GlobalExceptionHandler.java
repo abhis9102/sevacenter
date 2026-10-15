@@ -62,6 +62,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "already_in_household"));
     }
 
+    @ExceptionHandler(app.sevacenter.temple.GalleryController.PhotoNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> onPhotoNotFound() {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
+    }
+
     @ExceptionHandler(DevoteeService.DevoteeNotFoundException.class)
     public ResponseEntity<Map<String, Object>> onDevoteeNotFound() {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));

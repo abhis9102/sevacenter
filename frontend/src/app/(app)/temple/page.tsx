@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 
 import { api } from "@/components/apiClient";
+import { AboutPhotos } from "@/components/AboutPhotos";
 import { CustomDomainCard } from "@/components/CustomDomainCard";
 import { useMe } from "@/components/Session";
 import { useMandirHref } from "@/components/SiteProvider";
 import { Alert, Button, Card, PageHeader, TextField } from "@/components/ui";
 import { ApiError, describeError } from "@/lib/errors";
 import type { LunarCalendar } from "@/lib/panchang";
+import { shrink } from "@/lib/imageShrink";
 import { templeImageUrl } from "@/lib/temple";
 import { hasRole } from "@/lib/types";
 
@@ -30,27 +32,7 @@ interface Profile {
   imageVersion: string | null;
 }
 
-const MAX_SIDE = 1600;
 
-/**
- * Shrinks a phone photo in the browser before upload (the server limit is 2 MB). The server
- * decodes and re-encodes whatever arrives anyway; this only keeps uploads small and fast.
- */
-async function shrink(file: File): Promise<Blob> {
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("canvas unavailable");
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  bitmap.close();
-  return new Promise((resolve, reject) =>
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("encode failed"))), "image/jpeg", 0.85));
-}
 
 const MAX_AARTIS = 12;
 const hhmm = (t: string | null | undefined) => (t ? t.slice(0, 5) : "");
@@ -269,7 +251,7 @@ export default function TempleSettingsPage() {
         <Card className="flex flex-col gap-3">
           <div>
             <h2 className="text-base font-semibold">About and history</h2>
-            <p className="text-sm text-muted">Shown on your Mandir Center as written. Plain text: line breaks are kept.</p>
+            <p className="text-sm text-muted">Shown on your Mandir Center&apos;s About page as written (plain text, line breaks kept), with any photos you add here.</p>
           </div>
           <label className="flex flex-col gap-1 text-sm">
             <span className="font-medium">About the temple</span>
@@ -278,6 +260,7 @@ export default function TempleSettingsPage() {
                       className="rounded-[10px] border border-line bg-surface px-3 py-2" />
             <span className="text-xs text-muted">{f.about.length} / 4000</span>
           </label>
+          <AboutPhotos section="ABOUT" canEdit={canEdit} />
           <label className="flex flex-col gap-1 text-sm">
             <span className="font-medium">History</span>
             <textarea rows={7} maxLength={8000} value={f.history} onChange={set("history")} disabled={!canEdit}
@@ -285,6 +268,7 @@ export default function TempleSettingsPage() {
                       className="rounded-[10px] border border-line bg-surface px-3 py-2" />
             <span className="text-xs text-muted">{f.history.length} / 8000</span>
           </label>
+          <AboutPhotos section="HISTORY" canEdit={canEdit} />
         </Card>
 
         <Card className="flex flex-col gap-3">

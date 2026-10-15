@@ -7,7 +7,7 @@ import { MandirIcon, type MandirIconName } from "@/components/MandirIcons";
 import { MandirShell, useNow, useTemple } from "@/components/MandirShell";
 import { Card, Spinner } from "@/components/ui";
 import { clock, nextAarti } from "@/lib/darshan";
-import { templeImageUrl } from "@/lib/temple";
+import { hasAboutPage, templeImageUrl } from "@/lib/temple";
 import { MONTHS, NAKSHATRAS, panchang, tithiName, type LunarCalendar } from "@/lib/panchang";
 
 /**
@@ -57,6 +57,9 @@ function TempleHome() {
               </p>
             ) : null}
             {temple.address ? <p className="mt-1 text-sm text-muted">{temple.address}</p> : null}
+            {hasAboutPage(temple) ? (
+              <Link href="/about" className="mt-3 inline-block text-sm font-semibold text-primary-strong">{t.mandir.aboutPage.link} →</Link>
+            ) : null}
           </div>
           {now ? <PanchangCard at={now} calendar={temple.calendar} /> : null}
         </div>
@@ -86,23 +89,6 @@ function TempleHome() {
           </Link>
         ))}
       </div>
-
-      {temple.about || temple.history ? (
-        <div className={`grid gap-4 ${temple.about && temple.history ? "lg:grid-cols-2" : ""}`}>
-          {temple.about ? (
-            <Card className="flex flex-col gap-2 p-6">
-              <h3 className="text-lg font-semibold">{t.mandir.about}</h3>
-              <p className="whitespace-pre-line text-sm leading-relaxed">{temple.about}</p>
-            </Card>
-          ) : null}
-          {temple.history ? (
-            <Card className="flex flex-col gap-2 p-6">
-              <h3 className="text-lg font-semibold">{t.mandir.history}</h3>
-              <p className="whitespace-pre-line text-sm leading-relaxed">{temple.history}</p>
-            </Card>
-          ) : null}
-        </div>
-      ) : null}
 
       {temple.aartis.length > 0 ? (
         <Card className="flex flex-col gap-4 p-6">
