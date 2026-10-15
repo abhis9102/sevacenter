@@ -97,7 +97,7 @@ export default function PaymentsPage() {
         ) : settings === null ? (
           <p className="text-sm text-muted">Not connected yet. Devotees can&apos;t donate online until you connect.</p>
         ) : null}
-        <form onSubmit={onSave} className="flex flex-col gap-3">
+        <form method="post" onSubmit={onSave} className="flex flex-col gap-3">
           <TextField label="Razorpay key id" placeholder="rzp_test_… or rzp_live_…" value={keyId}
                      onChange={(e) => setKeyId(e.target.value)} error={fieldErrors.keyId} autoComplete="off" />
           <TextField label="Razorpay key secret" type="password" value={keySecret}

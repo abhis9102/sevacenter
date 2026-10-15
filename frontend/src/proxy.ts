@@ -29,6 +29,11 @@ export function proxy(request: NextRequest) {
 
   // Brand gate first: a cross-brand redirect needs no CSP of its own.
   const site = siteForHost(request.headers.get("host"));
+  // A trust's staff host has no home page: straight to sign-in. Done here, not in the page, so the
+  // 307 carries no body (a page-level redirect streamed the app shell with it: DAST "big redirect").
+  if (!site.singleDomain && site.brand === "staff" && site.slug && path === "/") {
+    return NextResponse.redirect(new URL("/login", request.nextUrl), 307);
+  }
   if (!site.singleDomain && site.brand) {
     const crossTo = (base: string) => {
       const url = request.nextUrl.clone();

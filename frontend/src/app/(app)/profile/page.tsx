@@ -267,7 +267,7 @@ export default function ProfilePage() {
             {nameNotice ? <Alert tone="success">{nameNotice}</Alert> : null}
             {nameError ? <Alert tone="danger">{nameError}</Alert> : null}
 
-            <form onSubmit={onSaveName} className="flex flex-col gap-4">
+            <form method="post" onSubmit={onSaveName} className="flex flex-col gap-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <dt className="text-xs uppercase tracking-wide text-muted">{t.profile.account.email}</dt>
@@ -387,7 +387,7 @@ export default function ProfilePage() {
           {passwordNotice ? <Alert tone="success">{passwordNotice}</Alert> : null}
           {passwordError ? <Alert tone="danger">{passwordError}</Alert> : null}
 
-          <form onSubmit={onChangePassword} className="flex flex-col gap-4" noValidate>
+          <form method="post" onSubmit={onChangePassword} className="flex flex-col gap-4" noValidate>
             <TextField
               label={t.profile.security.currentPassword}
               type="password"
@@ -441,7 +441,7 @@ export default function ProfilePage() {
           {notifyNotice ? <Alert tone="success">{notifyNotice}</Alert> : null}
           {notifyError ? <Alert tone="danger">{notifyError}</Alert> : null}
 
-          <form onSubmit={onSaveNotifications} className="flex flex-col gap-4">
+          <form method="post" onSubmit={onSaveNotifications} className="flex flex-col gap-4">
             <label className="flex items-start gap-3 rounded-[10px] border border-line p-3 hover:bg-surface-2 cursor-pointer">
               <input
                 type="checkbox"

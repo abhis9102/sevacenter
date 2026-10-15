@@ -174,7 +174,8 @@ runs after every staging deploy (called by `cd-staging`), daily at 10:00 IST, an
 | Coverage | Both sessions must survive, and the staff pass must have created devotees and donations (counted through the staff API: staging's database isn't reachable from CI). |
 | Spec | `docs/api/openapi.json`, the API contract (`OpenApiContractTest` fails if it drifts): staging doesn't serve `/v3/api-docs`. |
 | Load | Two threads per host, at most 2 minutes per rule and 20 per pass: staging is one small box. |
-| Gate + tickets | Same `dast_policy.py` and `.zap/accepted.toml`. Tickets are scoped (`--scope staging`, `[dast-staging]`): each scan only ever closes its own. |
+| Gate + tickets | Same `dast_policy.py` and `.zap/accepted.toml`. Tickets are scoped (`--scope staging`, `[dast-staging]`): each scan only ever closes its own. Staging tickets are **one per rule**, listing the affected requests, and writes are paced with retry: one ticket per request opened 81 issues and hit GitHub's content-creation limit. |
+| Deploys | A staging deploy **cancels a running scan** first: a redeploy restarts the backend, and the first scan got 27 × 502 and a lost session from three deploys landing mid-scan. The scan started after the deploy tests the new build. |
 
 **Where it runs:** environment `staging-dast` (main only, no reviewer) holds only the scan trust's
 credentials, and the job has no AWS role: it attacks over HTTPS like any outsider. Staging sleeps
@@ -184,6 +185,18 @@ credentials, and the job has no AWS role: it attacks over HTTPS like any outside
 is already on staging and is fixed forward or reverted. Prevention returns at promotion: a staging
 scan with unaccepted findings will block production. The CI scan stays required until the staging
 scan has been proven against a planted flaw.
+
+### First staging scan (2026-10-15): what it found
+
+| Finding | Verdict | Fix |
+|---|---|---|
+| High: SQL injection on `devotee-login/code` `contact` | False positive, reproduced: both boolean payloads get the identical 400 | Scoped acceptance |
+| Medium: "SQL source disclosure" in the devotee export | False positive: ZAP's own stored payloads returned as data | Scoped acceptance |
+| 27 × 502, staff session died, no donations created | Pipeline: three deploys restarted the backend mid-scan (coverage check caught it) | Deploy cancels a running scan |
+| 20 × two HSTS headers (Caddy + Next.js): browsers used the weaker first one | Real | Edge sets one (2 years, includeSubDomains) |
+| Login form submitted as GET before JS loads: password in the URL (seen in the crawl) | Real | `method="post"` on every form with a secret; `forms.test.ts` |
+| Big redirect: page-level 307 streamed the app shell | Real (harmless content) | Redirect at the edge proxy, empty body |
+| Unexpected content type on non-API paths; COEP missing | By design | Scoped acceptances |
 
 ## Known gaps
 

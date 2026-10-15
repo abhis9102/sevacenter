@@ -23,7 +23,11 @@ https:// {
 	tls {
 		on_demand
 	}
-	header Strict-Transport-Security "max-age=31536000"
+	# One HSTS header, set here for every response (the app's own copy is dropped): two headers
+	# meant browsers obeyed only the first, weaker one (staging DAST, 2026-10-15).
+	header Strict-Transport-Security "max-age=63072000; includeSubDomains"
 	encode gzip
-	reverse_proxy ${app_ip}:3000
+	reverse_proxy ${app_ip}:3000 {
+		header_down -Strict-Transport-Security
+	}
 }

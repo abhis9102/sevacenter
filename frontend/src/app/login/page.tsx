@@ -81,7 +81,7 @@ function LoginForm() {
 
   return (
     <AuthFrame title={t.auth.signIn}>
-      <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
+      <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
         {params.get("setup") === "done" ? (
           <Alert tone="success">{t.auth.setupDone}</Alert>
         ) : null}

@@ -140,7 +140,7 @@ export default function RegisterPage() {
 
               {error ? <Alert tone="danger">{error}</Alert> : null}
 
-              <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
+              <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
                 <TextField
                   label={t.auth.register.trustName}
                   placeholder={t.auth.register.trustNamePlaceholder}
