@@ -46,7 +46,8 @@ export interface Translations {
   };
   mandir: {
     tagline: string;
-    tabs: { home: string; pujas: string; donate: string; utsavs: string; sevak: string; groups: string; myMandir: string };
+    tabs: { home: string; about: string; pujas: string; donate: string; utsavs: string; sevak: string; groups: string; myMandir: string };
+    aboutPage: { title: string; subtitle: string; link: string; empty: string };
     groups: {
       title: string; subtitle: string; none: string; meets: string; where: string; members: string;
       join: string; request: string; pending: string; joined: string; leave: string; full: string;
@@ -392,7 +393,8 @@ export const DICTIONARIES: Record<Language, Translations> = {
 
     mandir: {
       tagline: "Darshan, puja, seva and utsav",
-      tabs: { home: "Home", pujas: "Pujas", donate: "Donate", utsavs: "Utsavs", sevak: "Sevak", groups: "Groups", myMandir: "My Mandir" },
+      tabs: { home: "Home", about: "About", pujas: "Pujas", donate: "Donate", utsavs: "Utsavs", sevak: "Sevak", groups: "Groups", myMandir: "My Mandir" },
+      aboutPage: { title: "About the temple", subtitle: "Who we are, and the story of this mandir", link: "About the temple", empty: "The temple hasn't written its story yet." },
       groups: {
         title: "Groups", subtitle: "Satsang, bhajan, youth and study groups you can be part of",
         none: "No groups are open to join right now.", meets: "Meets", where: "Where", members: "members",
@@ -765,7 +767,8 @@ export const DICTIONARIES: Record<Language, Translations> = {
 
     mandir: {
       tagline: "दर्शन, पूजा, सेवा एवं उत्सव",
-      tabs: { home: "मुख्य", pujas: "पूजा", donate: "दान", utsavs: "उत्सव", sevak: "सेवक", groups: "समूह", myMandir: "मेरा मंदिर" },
+      tabs: { home: "मुख्य", about: "परिचय", pujas: "पूजा", donate: "दान", utsavs: "उत्सव", sevak: "सेवक", groups: "समूह", myMandir: "मेरा मंदिर" },
+      aboutPage: { title: "मंदिर परिचय", subtitle: "हमारे बारे में, और इस मंदिर की कहानी", link: "मंदिर परिचय", empty: "मंदिर ने अभी अपना परिचय नहीं लिखा है।" },
       groups: {
         title: "समूह", subtitle: "सत्संग, भजन, युवा और अध्ययन समूह जिनसे आप जुड़ सकते हैं",
         none: "अभी कोई समूह जुड़ने के लिए खुला नहीं है।", meets: "मिलन", where: "स्थान", members: "सदस्य",

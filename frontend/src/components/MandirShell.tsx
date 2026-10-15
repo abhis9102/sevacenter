@@ -7,6 +7,7 @@ import { createContext, useContext, useEffect, useState, useSyncExternalStore } 
 import { api } from "@/components/apiClient";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { useLanguage } from "@/components/LanguageProvider";
+import { hasAboutPage } from "@/lib/temple";
 import { MandirIcon, type MandirIconName } from "@/components/MandirIcons";
 import { MandirLogo } from "@/components/MandirLogo";
 import { useStaffHref } from "@/components/SiteProvider";
@@ -74,6 +75,7 @@ export function MandirShell({ children }: { children: React.ReactNode }) {
 
   const tabs: Array<{ href: string; label: string; icon: MandirIconName; show: boolean }> = [
     { href: "/", label: t.mandir.tabs.home, icon: "home", show: true },
+    { href: "/about", label: t.mandir.tabs.about, icon: "info", show: !!temple && hasAboutPage(temple) },
     { href: "/book-puja", label: t.mandir.tabs.pujas, icon: "puja", show: !!temple?.pujaBooking },
     { href: "/donate", label: t.mandir.tabs.donate, icon: "donate", show: !!temple?.onlineDonations },
     { href: "/upcoming", label: t.mandir.tabs.utsavs, icon: "utsav", show: !!temple?.upcomingEvents },

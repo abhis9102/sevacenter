@@ -14,7 +14,7 @@ const STAFF_PREFIXES = [
   "/pujas", "/staff", "/volunteers", "/groups", "/temple", "/audit",
   "/login", "/register", "/setup", "/reset-password", "/forgot-password",
 ];
-const MANDIR_PREFIXES = ["/donate", "/book-puja", "/sevak", "/my-seva", "/upcoming", "/community"];
+const MANDIR_PREFIXES = ["/donate", "/book-puja", "/sevak", "/my-seva", "/upcoming", "/community", "/about"];
 
 function hasPrefix(path: string, prefixes: readonly string[]): boolean {
   return prefixes.some((p) => path === p || path.startsWith(`${p}/`));

@@ -266,6 +266,17 @@
         },
         "type" : "object"
       },
+      "CaptionRequest" : {
+        "properties" : {
+          "caption" : {
+            "example" : "The garbhagriha after the 2019 renovation",
+            "maxLength" : 200,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "ChangePasswordRequest" : {
         "properties" : {
           "currentPassword" : {
@@ -1724,6 +1735,33 @@
         },
         "type" : "object"
       },
+      "Photo" : {
+        "properties" : {
+          "caption" : {
+            "type" : "string"
+          },
+          "height" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "section" : {
+            "enum" : [ "ABOUT", "HISTORY" ],
+            "type" : "string"
+          },
+          "version" : {
+            "type" : "string"
+          },
+          "width" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "PriestAssignment" : {
         "properties" : {
           "priestId" : {
@@ -2034,6 +2072,10 @@
           },
           "deity" : {
             "type" : "string"
+          },
+          "gallery" : {
+            "description" : "The About page has photos",
+            "type" : "boolean"
           },
           "groups" : {
             "description" : "At least one group is listed for devotees to join",
@@ -2892,7 +2934,7 @@
   "paths" : {
     "/api/v1/audit" : {
       "get" : {
-        "operationId" : "list_7",
+        "operationId" : "list_8",
         "parameters" : [ {
           "in" : "query",
           "name" : "page",
@@ -3074,7 +3116,7 @@
     },
     "/api/v1/custom-domains/{id}" : {
       "delete" : {
-        "operationId" : "remove_3",
+        "operationId" : "remove_4",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -4169,7 +4211,7 @@
     },
     "/api/v1/groups/{id}/members/{memberId}" : {
       "delete" : {
-        "operationId" : "remove_2",
+        "operationId" : "remove_3",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -5409,6 +5451,62 @@
         "tags" : [ "temple-controller" ]
       }
     },
+    "/api/v1/public/temple/gallery" : {
+      "get" : {
+        "operationId" : "list_7",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/Photo"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "gallery-controller" ]
+      }
+    },
+    "/api/v1/public/temple/gallery/{id}" : {
+      "get" : {
+        "operationId" : "image",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "v",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "format" : "byte",
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "gallery-controller" ]
+      }
+    },
     "/api/v1/public/temple/image" : {
       "get" : {
         "operationId" : "publicImage",
@@ -5936,7 +6034,7 @@
     },
     "/api/v1/sevaks/{id}" : {
       "delete" : {
-        "operationId" : "remove_1",
+        "operationId" : "remove_2",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -6087,6 +6185,111 @@
           }
         },
         "tags" : [ "temple-controller" ]
+      }
+    },
+    "/api/v1/temple/gallery" : {
+      "post" : {
+        "operationId" : "upload_1",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "section",
+          "required" : true,
+          "schema" : {
+            "enum" : [ "ABOUT", "HISTORY" ],
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "caption",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "properties" : {
+                  "image" : {
+                    "format" : "binary",
+                    "type" : "string"
+                  }
+                },
+                "required" : [ "image" ],
+                "type" : "object"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Photo"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "gallery-controller" ]
+      }
+    },
+    "/api/v1/temple/gallery/{id}" : {
+      "delete" : {
+        "operationId" : "remove_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "gallery-controller" ]
+      },
+      "put" : {
+        "operationId" : "recaption",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CaptionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Photo"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "gallery-controller" ]
       }
     },
     "/api/v1/temple/image" : {

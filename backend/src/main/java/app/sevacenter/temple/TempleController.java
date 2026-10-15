@@ -51,14 +51,16 @@ public class TempleController {
     private final AuditTrail auditTrail;
     private final TempleImageRepository images;
     private final app.sevacenter.group.GroupService groups;
+    private final GalleryImageRepository gallery;
     private final Clock clock = Clock.system(DonationService.IST);
 
     public TempleController(TempleProfileRepository profiles, TempleAartiRepository aartis, TenantRepository tenants, OnlineDonationService payments,
                             EventService events, PujaService pujas, AuditTrail auditTrail, TempleImageRepository images,
-                            app.sevacenter.group.GroupService groups) {
+                            app.sevacenter.group.GroupService groups, GalleryImageRepository gallery) {
         this.auditTrail = auditTrail;
         this.images = images;
         this.groups = groups;
+        this.gallery = gallery;
         this.profiles = profiles;
         this.aartis = aartis;
         this.tenants = tenants;
@@ -85,6 +87,7 @@ public class TempleController {
                 payments.settings().isPresent(), !events.upcoming().isEmpty(), !pujas.publicCatalog().isEmpty(),
                 p == null ? null : p.getAbout(), p == null ? null : p.getHistory(),
                 !groups.listed().isEmpty(),
+                gallery.count() > 0,
                 images.versionOf(tenantId).orElse(null)));
     }
 
@@ -248,6 +251,7 @@ public class TempleController {
                                boolean onlineDonations, boolean upcomingEvents, boolean pujaBooking,
                                String about, String history,
                                @Schema(description = "At least one group is listed for devotees to join") boolean groups,
+                               @Schema(description = "The About page has photos") boolean gallery,
                                @Schema(description = "Photo: GET /public/temple/image?v={imageVersion}; null when none")
                                String imageVersion) { }
 }
