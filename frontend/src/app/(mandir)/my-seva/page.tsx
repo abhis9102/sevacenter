@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { api } from "@/components/apiClient";
+import { FamilyAndGroupsCard } from "@/components/FamilyAndGroupsCard";
 import { MandirPageTitle, useMandirText } from "@/components/MandirShell";
 import { Alert, Badge, Button, Card, TextField } from "@/components/ui";
 import { displayPhone, type Channel, type DevoteeProfile, type MySeva } from "@/lib/devotee";
@@ -56,6 +57,7 @@ export default function MySevaPage() {
         <div className="grid items-start gap-6 lg:grid-cols-[1fr_22rem]">
           <div className="flex flex-col gap-4"><SevaView seva={seva} /></div>
           <aside className="flex flex-col gap-4">
+            <FamilyAndGroupsCard />
             <ProfileCard profile={seva.profile} onSaved={update} />
             <ContactsCard seva={seva} onLinked={update} />
           </aside>

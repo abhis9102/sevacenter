@@ -10,6 +10,7 @@ import { MaskedNote } from "@/components/MaskedNote";
 import { useLanguage } from "@/components/LanguageProvider";
 import { useMe } from "@/components/Session";
 import { CounterBookingDialog, IssuePassDialog, RegisterSevakDialog } from "@/components/StaffDialogs";
+import { HouseholdCard } from "@/components/HouseholdCard";
 import { EmptyState, Pill, StatCard, useView, ViewSwitcher } from "@/components/staff";
 import { Alert, Button, Card, Dialog, SelectField, Spinner, TextField } from "@/components/ui";
 import { ApiError, describeError } from "@/lib/errors";
@@ -261,6 +262,7 @@ function DevoteeDetail() {
                 </dl>
                 <p className="mt-4 border-t border-line pt-3 text-xs text-muted">Kept under the Digital Personal Data Protection Act, 2023, with the consent recorded above.</p>
               </Card>
+              <HouseholdCard devotee={devotee} canEdit={canEdit && !devotee.masked} />
               {activity ? (
                 <div className="grid gap-3 sm:grid-cols-3 lg:col-span-3">
                   {activity.donations ? (

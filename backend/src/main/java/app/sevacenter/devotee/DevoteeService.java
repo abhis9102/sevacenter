@@ -81,10 +81,19 @@ public class DevoteeService {
         Devotee devotee = get(id);
         auditTrail.record(AuditAction.DEVOTEE_ERASED, "devotee", id, null);
         if (devotees.hasDonations(id)) {
+            devotees.leaveHousehold(id); // deleted records leave by ON DELETE CASCADE
             devotee.anonymise(staffId, now());
         } else {
             devotees.delete(devotee);
         }
+    }
+
+    /** Devotee records matching any of a signed-in devotee's verified contacts (ADR 0038). */
+    @Transactional(readOnly = true)
+    public java.util.List<Devotee> forContacts(java.util.List<String> contacts) {
+        return contacts.stream().flatMap(c -> devotees.forContact(c).stream())
+                .collect(java.util.stream.Collectors.toMap(Devotee::getId, d -> d, (x, y) -> x,
+                        java.util.LinkedHashMap::new)).values().stream().toList();
     }
 
     static Devotee.Details normalise(Devotee.Details d) {

@@ -52,6 +52,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "group_full"));
     }
 
+    @ExceptionHandler(app.sevacenter.household.HouseholdService.NotFoundException.class)
+    public ResponseEntity<Map<String, Object>> onHouseholdNotFound() {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
+    }
+
+    @ExceptionHandler(app.sevacenter.household.HouseholdService.AlreadyInAHouseholdException.class)
+    public ResponseEntity<Map<String, Object>> onAlreadyInAHousehold() {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "already_in_household"));
+    }
+
     @ExceptionHandler(DevoteeService.DevoteeNotFoundException.class)
     public ResponseEntity<Map<String, Object>> onDevoteeNotFound() {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));

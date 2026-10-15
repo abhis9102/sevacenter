@@ -28,6 +28,18 @@ public interface DevoteeRepository extends JpaRepository<Devotee, Long> {
 
     java.util.List<Devotee> findAllByErasedAtIsNull(org.springframework.data.domain.Sort sort);
 
+    /**
+     * The devotee records a verified contact belongs to (ADR 0038): the same exact-match rule My
+     * Mandir uses for staff-recorded donations (phone or email).
+     */
+    @Query("select d from Devotee d where (d.phone = ?1 or d.email = ?1) and d.erasedAt is null order by d.id")
+    java.util.List<Devotee> forContact(String contact);
+
+    /** Erasure: an anonymised record keeps its ledger rows but leaves its household (ADR 0038). */
+    @org.springframework.data.jpa.repository.Modifying
+    @Query(value = "delete from household_member where devotee_id = ?1", nativeQuery = true)
+    void leaveHousehold(long devoteeId);
+
     /** Whether the ledger references this devotee (then erasure anonymises instead of deleting). */
     @Query(value = "select exists (select 1 from donation where devotee_id = ?1)", nativeQuery = true)
     boolean hasDonations(long devoteeId);
