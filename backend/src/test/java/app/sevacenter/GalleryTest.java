@@ -94,6 +94,31 @@ class GalleryTest {
         mvc.perform(on(b, get("/api/v1/public/temple/gallery/" + id))).andExpect(status().isNotFound());
     }
 
+    @Test
+    void aHiddenSectionsTextAndPhotosLeaveTheSiteButStaffStillSeeThem() throws Exception {
+        long id = json.readTree(upload(a, admin, "HISTORY", "Old gate", png()).andReturn().getResponse().getContentAsString())
+                .at("/id").asLong();
+        String profile = mvc.perform(on(a, get("/api/v1/temple")).session(admin)).andReturn().getResponse().getContentAsString();
+        String withHistory = profile.replaceFirst("\"history\":null", "\"history\":\"Founded in 1720.\"")
+                .replaceFirst("\"showHistory\":true", "\"showHistory\":false");
+        mvc.perform(on(a, org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/v1/temple"))
+                .session(admin).with(csrf()).contentType(org.springframework.http.MediaType.APPLICATION_JSON).content(withHistory))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.showHistory").value(false));
+
+        mvc.perform(on(a, get("/api/v1/public/temple"))).andExpect(jsonPath("$.history").isEmpty())
+                .andExpect(jsonPath("$.gallery").value(false));
+        mvc.perform(on(a, get("/api/v1/public/temple/gallery"))).andExpect(jsonPath("$.length()").value(0));
+        mvc.perform(on(a, get("/api/v1/public/temple/gallery/" + id))).andExpect(status().isNotFound());
+        mvc.perform(on(a, get("/api/v1/temple/gallery")).session(admin)).andExpect(jsonPath("$.length()").value(1));
+        mvc.perform(on(a, get("/api/v1/temple/gallery/" + id)).session(admin)).andExpect(status().isOk());
+
+        // A save that doesn't mention the toggles (the main temple page) keeps them as they are.
+        String noToggles = withHistory.replaceAll(",\"showAbout\":(true|false)", "").replaceAll(",\"showHistory\":(true|false)", "");
+        mvc.perform(on(a, org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/v1/temple"))
+                .session(admin).with(csrf()).contentType(org.springframework.http.MediaType.APPLICATION_JSON).content(noToggles))
+                .andExpect(jsonPath("$.showHistory").value(false)).andExpect(jsonPath("$.showAbout").value(true));
+    }
+
     private ResultActions upload(String slug, MockHttpSession session, String section, String caption, byte[] bytes)
             throws Exception {
         var r = multipart("/api/v1/temple/gallery").file(new MockMultipartFile("image", "p.png", "image/png", bytes))

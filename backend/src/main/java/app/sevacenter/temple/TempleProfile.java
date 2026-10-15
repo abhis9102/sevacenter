@@ -25,6 +25,10 @@ public class TempleProfile {
     private String announcement;
     private String about;
     private String history;
+    @Column(name = "show_about", nullable = false)
+    private boolean showAbout = true;
+    @Column(name = "show_history", nullable = false)
+    private boolean showHistory = true;
 
     @Column(name = "morning_open")
     private LocalTime morningOpen;
@@ -73,6 +77,16 @@ public class TempleProfile {
         this.history = history;
     }
 
+    /** null keeps the current setting: a save that doesn't know these fields never flips them. */
+    void visibility(Boolean showAbout, Boolean showHistory) {
+        if (showAbout != null) {
+            this.showAbout = showAbout;
+        }
+        if (showHistory != null) {
+            this.showHistory = showHistory;
+        }
+    }
+
     void schedule(LocalTime morningOpen, LocalTime morningClose, LocalTime eveningOpen, LocalTime eveningClose,
                   String calendar) {
         this.morningOpen = morningOpen;
@@ -100,6 +114,8 @@ public class TempleProfile {
     public String getTimings() { return timings; }
     public String getAbout() { return about; }
     public String getHistory() { return history; }
+    public boolean isShowAbout() { return showAbout; }
+    public boolean isShowHistory() { return showHistory; }
 
     public String getAnnouncement() { return announcement; }
     public OffsetDateTime getUpdatedAt() { return updatedAt; }

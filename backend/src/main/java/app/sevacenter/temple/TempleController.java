@@ -85,9 +85,9 @@ public class TempleController {
                 status(p, today), p == null ? null : p.noteFor(today),
                 p == null ? LunarCalendar.AMANTA : LunarCalendar.valueOf(p.getCalendar()),
                 payments.settings().isPresent(), !events.upcoming().isEmpty(), !pujas.publicCatalog().isEmpty(),
-                p == null ? null : p.getAbout(), p == null ? null : p.getHistory(),
+                p == null || !p.isShowAbout() ? null : p.getAbout(), p == null || !p.isShowHistory() ? null : p.getHistory(),
                 !groups.listed().isEmpty(),
-                gallery.count() > 0,
+                gallery.summaries().stream().anyMatch(g -> visible(p, GalleryImage.Section.valueOf(g.getSection()))),
                 images.versionOf(tenantId).orElse(null)));
     }
 
@@ -109,6 +109,7 @@ public class TempleController {
         p.schedule(h.morningOpen(), h.morningClose(), h.eveningOpen(), h.eveningClose(),
                 (r.calendar() == null ? LunarCalendar.AMANTA : r.calendar()).name());
         p.story(clean(r.about()), clean(r.history()));
+        p.visibility(r.showAbout(), r.showHistory());
         profiles.save(p);
         aartis.deleteForTenant(tenantId);
         aartis.flush();
@@ -142,13 +143,18 @@ public class TempleController {
     private Profile profile(TempleProfile p) {
         if (p == null) {
             return new Profile(null, null, null, null, null, null, List.of(), LunarCalendar.AMANTA, null, null, null, null,
-                    images.versionOf(TenantContext.get()).orElse(null));
+                    images.versionOf(TenantContext.get()).orElse(null), true, true);
         }
         LocalDate today = LocalDate.now(clock);
         return new Profile(p.getDeity(), p.getAddress(), p.getHelpline(), p.getTimings(), p.getAnnouncement(), hours(p),
                 timetable(), LunarCalendar.valueOf(p.getCalendar()),
                 status(p, today), p.noteFor(today), p.getAbout(), p.getHistory(),
-                images.versionOf(TenantContext.get()).orElse(null));
+                images.versionOf(TenantContext.get()).orElse(null), p.isShowAbout(), p.isShowHistory());
+    }
+
+    /** Whether a section of the About page is shown on MandirCenter (shown when unset). */
+    static boolean visible(TempleProfile p, GalleryImage.Section section) {
+        return p == null || (section == GalleryImage.Section.ABOUT ? p.isShowAbout() : p.isShowHistory());
     }
 
     private static DarshanStatus status(TempleProfile p, LocalDate today) {
@@ -242,7 +248,11 @@ public class TempleController {
             @Schema(description = "The temple's history, plain text", example = "Built in 1720 by ...")
             @Size(max = 8000) String history,
             @Schema(description = "Set with PUT /temple/image; null when there is no photo",
-                    accessMode = Schema.AccessMode.READ_ONLY) String imageVersion) { }
+                    accessMode = Schema.AccessMode.READ_ONLY) String imageVersion,
+            @Schema(description = "Show the About section (text + photos) on MandirCenter; null keeps the setting")
+            Boolean showAbout,
+            @Schema(description = "Show the History section (text + photos) on MandirCenter; null keeps the setting")
+            Boolean showHistory) { }
 
     /** Public: the temple's own words plus which services it actually offers right now. */
     public record PublicTemple(String trustName, String deity, String address, String helpline, String timings,

@@ -2000,6 +2000,14 @@
             "readOnly" : true,
             "type" : "string"
           },
+          "showAbout" : {
+            "description" : "Show the About section (text + photos) on MandirCenter; null keeps the setting",
+            "type" : "boolean"
+          },
+          "showHistory" : {
+            "description" : "Show the History section (text + photos) on MandirCenter; null keeps the setting",
+            "type" : "boolean"
+          },
           "status" : {
             "description" : "Read-only here: set with PUT /temple/status",
             "enum" : [ "OPEN", "CLOSED" ],
@@ -4142,7 +4150,7 @@
         "tags" : [ "event-image-controller" ]
       },
       "get" : {
-        "operationId" : "staffImage",
+        "operationId" : "staffImage_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -6840,6 +6848,25 @@
       }
     },
     "/api/v1/temple/gallery" : {
+      "get" : {
+        "operationId" : "staffList",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/Photo"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "gallery-controller" ]
+      },
       "post" : {
         "operationId" : "upload_2",
         "parameters" : [ {
@@ -6904,6 +6931,32 @@
         "responses" : {
           "204" : {
             "description" : "No Content"
+          }
+        },
+        "tags" : [ "gallery-controller" ]
+      },
+      "get" : {
+        "operationId" : "staffImage",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "format" : "byte",
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "OK"
           }
         },
         "tags" : [ "gallery-controller" ]
