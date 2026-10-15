@@ -42,6 +42,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
     }
 
+    @ExceptionHandler(app.sevacenter.group.GroupService.NotFoundException.class)
+    public ResponseEntity<Map<String, Object>> onGroupNotFound() {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
+    }
+
+    @ExceptionHandler(app.sevacenter.group.GroupService.GroupFullException.class)
+    public ResponseEntity<Map<String, Object>> onGroupFull() {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "group_full"));
+    }
+
     @ExceptionHandler(DevoteeService.DevoteeNotFoundException.class)
     public ResponseEntity<Map<String, Object>> onDevoteeNotFound() {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));

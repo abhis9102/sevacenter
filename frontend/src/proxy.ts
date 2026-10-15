@@ -11,10 +11,10 @@ import { buildCsp } from "@/lib/securityHeaders";
  */
 const STAFF_PREFIXES = [
   "/dashboard", "/devotees", "/donations", "/events", "/payments", "/profile",
-  "/pujas", "/staff", "/volunteers", "/temple", "/audit",
+  "/pujas", "/staff", "/volunteers", "/groups", "/temple", "/audit",
   "/login", "/register", "/setup", "/reset-password", "/forgot-password",
 ];
-const MANDIR_PREFIXES = ["/donate", "/book-puja", "/sevak", "/my-seva", "/upcoming"];
+const MANDIR_PREFIXES = ["/donate", "/book-puja", "/sevak", "/my-seva", "/upcoming", "/community"];
 
 function hasPrefix(path: string, prefixes: readonly string[]): boolean {
   return prefixes.some((p) => path === p || path.startsWith(`${p}/`));

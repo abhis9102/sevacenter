@@ -54,6 +54,23 @@
         },
         "type" : "object"
       },
+      "AddMember" : {
+        "properties" : {
+          "channel" : {
+            "enum" : [ "EMAIL", "SMS" ],
+            "example" : "EMAIL",
+            "type" : "string"
+          },
+          "contact" : {
+            "example" : "lakshmi@example.org",
+            "maxLength" : 254,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "channel", "contact" ],
+        "type" : "object"
+      },
       "AddRequest" : {
         "properties" : {
           "hostname" : {
@@ -968,6 +985,105 @@
         },
         "type" : "object"
       },
+      "GroupRequest" : {
+        "properties" : {
+          "active" : {
+            "type" : "boolean"
+          },
+          "capacity" : {
+            "example" : 40,
+            "format" : "int32",
+            "maximum" : 10000,
+            "minimum" : 1,
+            "type" : "integer"
+          },
+          "category" : {
+            "enum" : [ "SATSANG", "BHAJAN", "YOUTH", "WOMEN", "STUDY", "SEVA", "OTHER" ],
+            "example" : "SATSANG",
+            "type" : "string"
+          },
+          "description" : {
+            "example" : "Bhajans and a short pravachan, all welcome",
+            "maxLength" : 1000,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "joinPolicy" : {
+            "enum" : [ "OPEN", "APPROVAL" ],
+            "example" : "OPEN",
+            "type" : "string"
+          },
+          "location" : {
+            "example" : "Temple hall, first floor",
+            "maxLength" : 200,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "meets" : {
+            "example" : "Every Sunday, 6:00 pm",
+            "maxLength" : 200,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "name" : {
+            "example" : "Sunday Satsang",
+            "maxLength" : 80,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "visibility" : {
+            "enum" : [ "PUBLIC", "PRIVATE" ],
+            "example" : "PUBLIC",
+            "type" : "string"
+          }
+        },
+        "required" : [ "category", "joinPolicy", "name", "visibility" ],
+        "type" : "object"
+      },
+      "GroupResponse" : {
+        "properties" : {
+          "active" : {
+            "type" : "boolean"
+          },
+          "capacity" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "category" : {
+            "enum" : [ "SATSANG", "BHAJAN", "YOUTH", "WOMEN", "STUDY", "SEVA", "OTHER" ],
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "joinPolicy" : {
+            "enum" : [ "OPEN", "APPROVAL" ],
+            "type" : "string"
+          },
+          "location" : {
+            "type" : "string"
+          },
+          "meets" : {
+            "type" : "string"
+          },
+          "members" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "visibility" : {
+            "enum" : [ "PUBLIC", "PRIVATE" ],
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "Hours" : {
         "properties" : {
           "eveningClose" : {
@@ -1034,7 +1150,7 @@
       "Item" : {
         "properties" : {
           "action" : {
-            "enum" : [ "USER_INVITED", "USER_ROLE_CHANGED", "USER_DEACTIVATED", "USER_DELETED", "USER_SETUP_LINK_REISSUED", "USER_RESET_LINK_ISSUED", "USER_ACCESS_CHANGED", "DEVOTEE_CREATED", "DEVOTEE_UPDATED", "DEVOTEE_ERASED", "DEVOTEES_IMPORTED", "DEVOTEES_EXPORTED", "DONATION_RECORDED", "DONATION_REVERSED", "RECEIPT_ISSUED", "TRUST_PROFILE_SAVED", "PAYMENT_SETTINGS_SAVED", "FUND_SAVED", "EVENT_STATUS_CHANGED", "PUJA_SAVED", "PUJA_BOOKING_CANCELLED", "SEVAK_REVIEWED", "TEMPLE_PAGE_SAVED", "PUJA_BOOKED_AT_COUNTER", "PASS_ISSUED_AT_COUNTER", "PRIEST_SAVED", "PRIEST_ASSIGNED", "SEVA_TEAM_SAVED", "SEVA_TEAM_DELETED", "SEVAK_REGISTERED", "SEVAK_ASSIGNED", "SEVAK_REMOVED", "EVENT_DELETED", "PUJA_DELETED", "ACCOUNT_LOCKED", "CUSTOM_DOMAIN_ADDED", "CUSTOM_DOMAIN_VERIFIED", "CUSTOM_DOMAIN_REMOVED", "CUSTOM_DOMAIN_DEACTIVATED" ],
+            "enum" : [ "USER_INVITED", "USER_ROLE_CHANGED", "USER_DEACTIVATED", "USER_DELETED", "USER_SETUP_LINK_REISSUED", "USER_RESET_LINK_ISSUED", "USER_ACCESS_CHANGED", "DEVOTEE_CREATED", "DEVOTEE_UPDATED", "DEVOTEE_ERASED", "DEVOTEES_IMPORTED", "DEVOTEES_EXPORTED", "DONATION_RECORDED", "DONATION_REVERSED", "RECEIPT_ISSUED", "TRUST_PROFILE_SAVED", "PAYMENT_SETTINGS_SAVED", "FUND_SAVED", "EVENT_STATUS_CHANGED", "PUJA_SAVED", "PUJA_BOOKING_CANCELLED", "SEVAK_REVIEWED", "TEMPLE_PAGE_SAVED", "PUJA_BOOKED_AT_COUNTER", "PASS_ISSUED_AT_COUNTER", "PRIEST_SAVED", "PRIEST_ASSIGNED", "SEVA_TEAM_SAVED", "SEVA_TEAM_DELETED", "SEVAK_REGISTERED", "SEVAK_ASSIGNED", "SEVAK_REMOVED", "EVENT_DELETED", "PUJA_DELETED", "ACCOUNT_LOCKED", "CUSTOM_DOMAIN_ADDED", "CUSTOM_DOMAIN_VERIFIED", "CUSTOM_DOMAIN_REMOVED", "CUSTOM_DOMAIN_DEACTIVATED", "GROUP_SAVED", "GROUP_DELETED", "GROUP_MEMBER_ADDED", "GROUP_MEMBER_APPROVED", "GROUP_MEMBER_REMOVED" ],
             "type" : "string"
           },
           "actor" : {
@@ -1088,6 +1204,37 @@
           "userId" : {
             "format" : "int64",
             "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "MemberResponse" : {
+        "properties" : {
+          "channel" : {
+            "enum" : [ "EMAIL", "SMS" ],
+            "type" : "string"
+          },
+          "contact" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "joinedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "requestedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "PENDING", "ACTIVE" ],
+            "type" : "string"
           }
         },
         "type" : "object"
@@ -1157,6 +1304,32 @@
             "type" : "string"
           },
           "contact" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "MyGroup" : {
+        "properties" : {
+          "category" : {
+            "enum" : [ "SATSANG", "BHAJAN", "YOUTH", "WOMEN", "STUDY", "SEVA", "OTHER" ],
+            "type" : "string"
+          },
+          "groupId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "location" : {
+            "type" : "string"
+          },
+          "meets" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "PENDING", "ACTIVE" ],
             "type" : "string"
           }
         },
@@ -1643,6 +1816,42 @@
         },
         "type" : "object"
       },
+      "PublicGroup" : {
+        "properties" : {
+          "category" : {
+            "enum" : [ "SATSANG", "BHAJAN", "YOUTH", "WOMEN", "STUDY", "SEVA", "OTHER" ],
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "full" : {
+            "type" : "boolean"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "joinPolicy" : {
+            "enum" : [ "OPEN", "APPROVAL" ],
+            "type" : "string"
+          },
+          "location" : {
+            "type" : "string"
+          },
+          "meets" : {
+            "type" : "string"
+          },
+          "members" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "name" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "PublicTemple" : {
         "properties" : {
           "aartis" : {
@@ -1666,6 +1875,10 @@
           },
           "deity" : {
             "type" : "string"
+          },
+          "groups" : {
+            "description" : "At least one group is listed for devotees to join",
+            "type" : "boolean"
           },
           "helpline" : {
             "type" : "string"
@@ -2509,7 +2722,7 @@
   "paths" : {
     "/api/v1/audit" : {
       "get" : {
-        "operationId" : "list_6",
+        "operationId" : "list_7",
         "parameters" : [ {
           "in" : "query",
           "name" : "page",
@@ -2533,7 +2746,7 @@
           "name" : "action",
           "required" : false,
           "schema" : {
-            "enum" : [ "USER_INVITED", "USER_ROLE_CHANGED", "USER_DEACTIVATED", "USER_DELETED", "USER_SETUP_LINK_REISSUED", "USER_RESET_LINK_ISSUED", "USER_ACCESS_CHANGED", "DEVOTEE_CREATED", "DEVOTEE_UPDATED", "DEVOTEE_ERASED", "DEVOTEES_IMPORTED", "DEVOTEES_EXPORTED", "DONATION_RECORDED", "DONATION_REVERSED", "RECEIPT_ISSUED", "TRUST_PROFILE_SAVED", "PAYMENT_SETTINGS_SAVED", "FUND_SAVED", "EVENT_STATUS_CHANGED", "PUJA_SAVED", "PUJA_BOOKING_CANCELLED", "SEVAK_REVIEWED", "TEMPLE_PAGE_SAVED", "PUJA_BOOKED_AT_COUNTER", "PASS_ISSUED_AT_COUNTER", "PRIEST_SAVED", "PRIEST_ASSIGNED", "SEVA_TEAM_SAVED", "SEVA_TEAM_DELETED", "SEVAK_REGISTERED", "SEVAK_ASSIGNED", "SEVAK_REMOVED", "EVENT_DELETED", "PUJA_DELETED", "ACCOUNT_LOCKED", "CUSTOM_DOMAIN_ADDED", "CUSTOM_DOMAIN_VERIFIED", "CUSTOM_DOMAIN_REMOVED", "CUSTOM_DOMAIN_DEACTIVATED" ],
+            "enum" : [ "USER_INVITED", "USER_ROLE_CHANGED", "USER_DEACTIVATED", "USER_DELETED", "USER_SETUP_LINK_REISSUED", "USER_RESET_LINK_ISSUED", "USER_ACCESS_CHANGED", "DEVOTEE_CREATED", "DEVOTEE_UPDATED", "DEVOTEE_ERASED", "DEVOTEES_IMPORTED", "DEVOTEES_EXPORTED", "DONATION_RECORDED", "DONATION_REVERSED", "RECEIPT_ISSUED", "TRUST_PROFILE_SAVED", "PAYMENT_SETTINGS_SAVED", "FUND_SAVED", "EVENT_STATUS_CHANGED", "PUJA_SAVED", "PUJA_BOOKING_CANCELLED", "SEVAK_REVIEWED", "TEMPLE_PAGE_SAVED", "PUJA_BOOKED_AT_COUNTER", "PASS_ISSUED_AT_COUNTER", "PRIEST_SAVED", "PRIEST_ASSIGNED", "SEVA_TEAM_SAVED", "SEVA_TEAM_DELETED", "SEVAK_REGISTERED", "SEVAK_ASSIGNED", "SEVAK_REMOVED", "EVENT_DELETED", "PUJA_DELETED", "ACCOUNT_LOCKED", "CUSTOM_DOMAIN_ADDED", "CUSTOM_DOMAIN_VERIFIED", "CUSTOM_DOMAIN_REMOVED", "CUSTOM_DOMAIN_DEACTIVATED", "GROUP_SAVED", "GROUP_DELETED", "GROUP_MEMBER_ADDED", "GROUP_MEMBER_APPROVED", "GROUP_MEMBER_REMOVED" ],
             "type" : "string"
           }
         } ],
@@ -2647,7 +2860,7 @@
     },
     "/api/v1/custom-domains" : {
       "get" : {
-        "operationId" : "list_4",
+        "operationId" : "list_5",
         "responses" : {
           "200" : {
             "content" : {
@@ -2663,7 +2876,7 @@
         "tags" : [ "custom-domain-controller" ]
       },
       "post" : {
-        "operationId" : "add",
+        "operationId" : "add_1",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -2691,7 +2904,7 @@
     },
     "/api/v1/custom-domains/{id}" : {
       "delete" : {
-        "operationId" : "remove_2",
+        "operationId" : "remove_3",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -2780,7 +2993,7 @@
         "tags" : [ "devotee-controller" ]
       },
       "post" : {
-        "operationId" : "create_4",
+        "operationId" : "create_5",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -2910,7 +3123,7 @@
         "tags" : [ "devotee-controller" ]
       },
       "put" : {
-        "operationId" : "update_3",
+        "operationId" : "update_4",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -2974,7 +3187,7 @@
     },
     "/api/v1/donation-funds" : {
       "get" : {
-        "operationId" : "list_3",
+        "operationId" : "list_4",
         "responses" : {
           "200" : {
             "content" : {
@@ -2993,7 +3206,7 @@
         "tags" : [ "fund-controller" ]
       },
       "post" : {
-        "operationId" : "create_3",
+        "operationId" : "create_4",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -3021,7 +3234,7 @@
     },
     "/api/v1/donation-funds/{id}" : {
       "put" : {
-        "operationId" : "update_2",
+        "operationId" : "update_3",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -3298,7 +3511,7 @@
     },
     "/api/v1/events" : {
       "get" : {
-        "operationId" : "list_2",
+        "operationId" : "list_3",
         "responses" : {
           "200" : {
             "content" : {
@@ -3317,7 +3530,7 @@
         "tags" : [ "event-controller" ]
       },
       "post" : {
-        "operationId" : "create_2",
+        "operationId" : "create_3",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -3345,7 +3558,7 @@
     },
     "/api/v1/events/{id}" : {
       "delete" : {
-        "operationId" : "delete_1",
+        "operationId" : "delete_2",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -3363,7 +3576,7 @@
         "tags" : [ "event-controller" ]
       },
       "put" : {
-        "operationId" : "update_1",
+        "operationId" : "update_2",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -3589,6 +3802,238 @@
         "tags" : [ "event-controller" ]
       }
     },
+    "/api/v1/groups" : {
+      "get" : {
+        "operationId" : "list_2",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/GroupResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "group-controller" ]
+      },
+      "post" : {
+        "operationId" : "create_2",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/GroupRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GroupResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "group-controller" ]
+      }
+    },
+    "/api/v1/groups/{id}" : {
+      "delete" : {
+        "operationId" : "delete_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "group-controller" ]
+      },
+      "put" : {
+        "operationId" : "update_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/GroupRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GroupResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "group-controller" ]
+      }
+    },
+    "/api/v1/groups/{id}/members" : {
+      "get" : {
+        "operationId" : "members",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/MemberResponse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "group-controller" ]
+      },
+      "post" : {
+        "operationId" : "add",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AddMember"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "additionalProperties" : { },
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "group-controller" ]
+      }
+    },
+    "/api/v1/groups/{id}/members/{memberId}" : {
+      "delete" : {
+        "operationId" : "remove_2",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "path",
+          "name" : "memberId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "group-controller" ]
+      }
+    },
+    "/api/v1/groups/{id}/members/{memberId}/approve" : {
+      "post" : {
+        "operationId" : "approve_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "path",
+          "name" : "memberId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "additionalProperties" : { },
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "group-controller" ]
+      }
+    },
     "/api/v1/me" : {
       "get" : {
         "operationId" : "me_1",
@@ -3758,6 +4203,96 @@
           }
         },
         "tags" : [ "portal-controller" ]
+      }
+    },
+    "/api/v1/portal/groups" : {
+      "get" : {
+        "operationId" : "mine",
+        "parameters" : [ {
+          "in" : "cookie",
+          "name" : "SC_DEVOTEE",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/MyGroup"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "group-controller" ]
+      }
+    },
+    "/api/v1/portal/groups/{id}" : {
+      "delete" : {
+        "operationId" : "leave",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "cookie",
+          "name" : "SC_DEVOTEE",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "group-controller" ]
+      }
+    },
+    "/api/v1/portal/groups/{id}/join" : {
+      "post" : {
+        "operationId" : "join",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "cookie",
+          "name" : "SC_DEVOTEE",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MyGroup"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "group-controller" ]
       }
     },
     "/api/v1/portal/logout" : {
@@ -4297,6 +4832,27 @@
         "tags" : [ "public-event-controller" ]
       }
     },
+    "/api/v1/public/groups" : {
+      "get" : {
+        "operationId" : "listed",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/PublicGroup"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "group-controller" ]
+      }
+    },
     "/api/v1/public/pujas" : {
       "get" : {
         "operationId" : "publicCatalog",
@@ -4679,7 +5235,7 @@
     },
     "/api/v1/receipts" : {
       "get" : {
-        "operationId" : "list_5",
+        "operationId" : "list_6",
         "parameters" : [ {
           "in" : "query",
           "name" : "fy",
@@ -5248,7 +5804,7 @@
     },
     "/api/v1/users/{id}" : {
       "delete" : {
-        "operationId" : "delete_2",
+        "operationId" : "delete_3",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",

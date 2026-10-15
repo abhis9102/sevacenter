@@ -256,6 +256,25 @@ public class DevoteeLoginService {
         return a;
     }
 
+    /**
+     * The devotee account behind a phone or email on this trust, if that contact ever signed in to
+     * MandirCenter (staff adding someone to a private group). Follows account merges.
+     */
+    @Transactional(readOnly = true)
+    public Optional<DevoteeAccount> accountFor(OtpChannel channel, String rawContact) {
+        String contact = normalise(channel, rawContact);
+        return contacts.findByChannelAndContact(channel, contact)
+                .flatMap(c -> accounts.findById(c.getAccountId()))
+                .or(() -> accounts.findByChannelAndContact(channel, contact))
+                .map(this::current);
+    }
+
+    /** An account by id on this trust (RLS), following merges. */
+    @Transactional(readOnly = true)
+    public Optional<DevoteeAccount> account(long id) {
+        return accounts.findById(id).map(this::current);
+    }
+
     /** The logged-in account for a session cookie on this trust's host, if the session is live. */
     @Transactional(readOnly = true)
     public Optional<DevoteeAccount> resolve(String token) {
