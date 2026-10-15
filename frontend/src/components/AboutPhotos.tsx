@@ -6,7 +6,7 @@ import { api } from "@/components/apiClient";
 import { Alert, Button } from "@/components/ui";
 import { ApiError, describeError } from "@/lib/errors";
 import { shrink } from "@/lib/imageShrink";
-import { galleryImageUrl, type GalleryPhoto } from "@/lib/temple";
+import type { GalleryPhoto } from "@/lib/temple";
 
 const MAX = 12;
 
@@ -17,7 +17,8 @@ export function AboutPhotos({ section, canEdit }: { section: GalleryPhoto["secti
   const [error, setError] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
 
-  const load = useCallback(() => api.get<GalleryPhoto[]>("/public/temple/gallery")
+  // Staff list: includes photos of a section hidden from MandirCenter.
+  const load = useCallback(() => api.get<GalleryPhoto[]>("/temple/gallery")
     .then((all) => setPhotos(all.filter((p) => p.section === section))).catch(() => undefined), [section]);
   useEffect(() => {
     void load();
@@ -68,7 +69,7 @@ export function AboutPhotos({ section, canEdit }: { section: GalleryPhoto["secti
         {photos.map((p) => (
           <div key={p.id} className="flex flex-col gap-1">
             {/* eslint-disable-next-line @next/next/no-img-element -- our own re-encoded JPEG */}
-            <img src={galleryImageUrl(p)} alt={p.caption ?? "Photo"} className="aspect-[4/3] w-full rounded-[10px] border border-line object-cover" />
+            <img src={`/api/v1/temple/gallery/${p.id}?v=${encodeURIComponent(p.version)}`} alt={p.caption ?? "Photo"} className="aspect-[4/3] w-full rounded-[10px] border border-line object-cover" />
             {canEdit ? (
               <>
                 <input aria-label="Caption" defaultValue={p.caption ?? ""} maxLength={200} placeholder="Caption (optional)"

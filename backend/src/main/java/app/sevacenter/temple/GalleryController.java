@@ -46,9 +46,12 @@ public class GalleryController {
     private final GalleryImageRepository gallery;
     private final TempleImageProcessor processor;
     private final AuditTrail auditTrail;
+    private final TempleProfileRepository profiles;
     private final Clock clock = Clock.system(DonationService.IST);
 
-    public GalleryController(GalleryImageRepository gallery, TempleImageProcessor processor, AuditTrail auditTrail) {
+    public GalleryController(GalleryImageRepository gallery, TempleImageProcessor processor, AuditTrail auditTrail,
+                             TempleProfileRepository profiles) {
+        this.profiles = profiles;
         this.gallery = gallery;
         this.processor = processor;
         this.auditTrail = auditTrail;
@@ -92,14 +95,34 @@ public class GalleryController {
         });
     }
 
-    /** Staff and public alike: the list (no bytes). */
+    /** Public: photos of the sections shown on MandirCenter (no bytes). */
     @GetMapping("/api/v1/public/temple/gallery")
     @Transactional(readOnly = true)
     public ResponseEntity<List<Photo>> list() {
         if (TenantContext.get() == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(gallery.summaries().stream().map(Photo::of).toList());
+        TempleProfile p = profiles.findById(TenantContext.get()).orElse(null);
+        return ResponseEntity.ok(gallery.summaries().stream().map(Photo::of)
+                .filter(ph -> TempleController.visible(p, ph.section())).toList());
+    }
+
+    /** Staff: every photo, hidden sections included (Mandir Center module). */
+    @GetMapping("/api/v1/temple/gallery")
+    @PreAuthorize("hasRole('MEMBER')")
+    @Transactional(readOnly = true)
+    public List<Photo> staffList() {
+        return gallery.summaries().stream().map(Photo::of).toList();
+    }
+
+    /** Staff preview of any photo, hidden sections included. */
+    @GetMapping("/api/v1/temple/gallery/{id:\\d+}")
+    @PreAuthorize("hasRole('MEMBER')")
+    @Transactional(readOnly = true)
+    public ResponseEntity<byte[]> staffImage(@PathVariable long id) {
+        return gallery.findById(id).map(g -> ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG)
+                        .cacheControl(CacheControl.noCache().cachePrivate()).body(g.getData()))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     /** Our own JPEG; long-cached only at the versioned URL the page uses. */
@@ -109,7 +132,8 @@ public class GalleryController {
         if (TenantContext.get() == null) {
             return ResponseEntity.notFound().build();
         }
-        return gallery.findById(id).map(g -> ResponseEntity.ok()
+        TempleProfile p = profiles.findById(TenantContext.get()).orElse(null);
+        return gallery.findById(id).filter(g -> TempleController.visible(p, g.getSection())).map(g -> ResponseEntity.ok()
                         .contentType(MediaType.IMAGE_JPEG)
                         .cacheControl(g.getVersion().equals(v)
                                 ? CacheControl.maxAge(Duration.ofDays(30)).cachePublic().immutable()
