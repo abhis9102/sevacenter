@@ -56,6 +56,11 @@ export interface Translations {
     };
     family: {
       title: string; groupsTitle: string; gotra: string; none: string; office: string; noGroups: string; browse: string;
+      start: string; startNote: string; yourName: string; familyName: string; startButton: string;
+      addChild: string; childName: string; dob: string; add: string; edit: string; save: string; remove: string; leave: string;
+      invite: string; inviteNote: string; contactLabel: string; byEmail: string; byPhone: string; send: string; cancel: string;
+      invited: string; invitationsTitle: string; invitedYou: (family: string, relation: string) => string; accept: string;
+      decline: string; you: string; confirmLeave: string;
       relations: Record<"HEAD" | "SPOUSE" | "CHILD" | "PARENT" | "SIBLING" | "GRANDPARENT" | "GRANDCHILD" | "OTHER", string>;
     };
     signIn: string;
@@ -407,6 +412,15 @@ export const DICTIONARIES: Record<Language, Translations> = {
         title: "My family", groupsTitle: "My groups", gotra: "Gotra",
         none: "Your family isn't linked yet.", office: "The temple office keeps your family details: ask them to add or change anyone.",
         noGroups: "You haven't joined a group yet.", browse: "Browse groups",
+        start: "Start my family", startNote: "Add your family once; the temple uses it for sankalp and family pujas.",
+        yourName: "Your name", familyName: "Family name", startButton: "Start my family",
+        addChild: "Add a child", childName: "Child's name", dob: "Date of birth", add: "Add", edit: "Edit", save: "Save",
+        remove: "Remove", leave: "Leave this family",
+        invite: "Invite an adult", inviteNote: "They join when they sign in with this phone or email and accept.",
+        contactLabel: "Their email or mobile", byEmail: "Email", byPhone: "Mobile", send: "Send invite", cancel: "Cancel",
+        invited: "Invited", invitationsTitle: "Family invitations",
+        invitedYou: (family, relation) => `You're invited to join ${family} as ${relation}.`,
+        accept: "Accept", decline: "Decline", you: "you", confirmLeave: "Leave this family?",
         relations: { HEAD: "Head of family", SPOUSE: "Spouse", CHILD: "Child", PARENT: "Parent", SIBLING: "Sibling",
           GRANDPARENT: "Grandparent", GRANDCHILD: "Grandchild", OTHER: "Family" },
       },
@@ -781,6 +795,15 @@ export const DICTIONARIES: Record<Language, Translations> = {
         title: "मेरा परिवार", groupsTitle: "मेरे समूह", gotra: "गोत्र",
         none: "आपका परिवार अभी जुड़ा नहीं है।", office: "परिवार का विवरण मंदिर कार्यालय रखता है: किसी को जोड़ने या बदलने के लिए उनसे कहें।",
         noGroups: "आप अभी किसी समूह से नहीं जुड़े हैं।", browse: "समूह देखें",
+        start: "अपना परिवार जोड़ें", startNote: "परिवार एक बार जोड़ें; मंदिर इसे संकल्प और पारिवारिक पूजा के लिए उपयोग करता है।",
+        yourName: "आपका नाम", familyName: "परिवार का नाम", startButton: "परिवार जोड़ें",
+        addChild: "संतान जोड़ें", childName: "संतान का नाम", dob: "जन्म तिथि", add: "जोड़ें", edit: "बदलें", save: "सहेजें",
+        remove: "हटाएँ", leave: "यह परिवार छोड़ें",
+        invite: "किसी वयस्क को आमंत्रित करें", inviteNote: "वे इस फ़ोन या ईमेल से साइन इन करके स्वीकार करने पर जुड़ेंगे।",
+        contactLabel: "उनका ईमेल या मोबाइल", byEmail: "ईमेल", byPhone: "मोबाइल", send: "आमंत्रण भेजें", cancel: "रद्द करें",
+        invited: "आमंत्रित", invitationsTitle: "पारिवारिक आमंत्रण",
+        invitedYou: (family, relation) => `आपको ${family} में ${relation} के रूप में जुड़ने का आमंत्रण है।`,
+        accept: "स्वीकार करें", decline: "अस्वीकार करें", you: "आप", confirmLeave: "यह परिवार छोड़ें?",
         relations: { HEAD: "परिवार प्रमुख", SPOUSE: "जीवनसाथी", CHILD: "संतान", PARENT: "माता/पिता", SIBLING: "भाई/बहन",
           GRANDPARENT: "दादा/दादी", GRANDCHILD: "पोता/पोती", OTHER: "परिवार" },
       },

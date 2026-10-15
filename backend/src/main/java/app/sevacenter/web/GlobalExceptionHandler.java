@@ -67,6 +67,21 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
     }
 
+    @ExceptionHandler(app.sevacenter.household.FamilyService.NotFoundException.class)
+    public ResponseEntity<Map<String, Object>> onFamilyNotFound() {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
+    }
+
+    @ExceptionHandler(app.sevacenter.household.FamilyService.NotAllowedException.class)
+    public ResponseEntity<Map<String, Object>> onFamilyNotAllowed() {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "not_allowed"));
+    }
+
+    @ExceptionHandler(app.sevacenter.household.FamilyService.AlreadyInAHouseholdException.class)
+    public ResponseEntity<Map<String, Object>> onFamilyAlreadyIn() {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "already_in_household"));
+    }
+
     @ExceptionHandler(DevoteeService.DevoteeNotFoundException.class)
     public ResponseEntity<Map<String, Object>> onDevoteeNotFound() {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));

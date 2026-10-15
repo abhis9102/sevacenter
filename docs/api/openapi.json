@@ -24,6 +24,17 @@
         "required" : [ "at", "name" ],
         "type" : "object"
       },
+      "AcceptRequest" : {
+        "properties" : {
+          "yourName" : {
+            "example" : "Sunita Kulkarni",
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "Activity" : {
         "properties" : {
           "devoteeId" : {
@@ -342,6 +353,28 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "ChildRequest" : {
+        "properties" : {
+          "dateOfBirth" : {
+            "example" : "2015-06-01",
+            "format" : "date",
+            "type" : "string"
+          },
+          "fullName" : {
+            "example" : "Aarav Kulkarni",
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "relation" : {
+            "enum" : [ "HEAD", "SPOUSE", "CHILD", "PARENT", "SIBLING", "GRANDPARENT", "GRANDCHILD", "OTHER" ],
+            "example" : "CHILD",
+            "type" : "string"
+          }
+        },
+        "required" : [ "fullName" ],
         "type" : "object"
       },
       "CodeRequest" : {
@@ -1280,6 +1313,44 @@
         },
         "type" : "object"
       },
+      "Invitation" : {
+        "properties" : {
+          "familyName" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "relation" : {
+            "enum" : [ "HEAD", "SPOUSE", "CHILD", "PARENT", "SIBLING", "GRANDPARENT", "GRANDCHILD", "OTHER" ],
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "InviteRequest" : {
+        "properties" : {
+          "channel" : {
+            "enum" : [ "EMAIL", "SMS" ],
+            "example" : "EMAIL",
+            "type" : "string"
+          },
+          "contact" : {
+            "example" : "sunita@example.org",
+            "maxLength" : 254,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "relation" : {
+            "enum" : [ "HEAD", "SPOUSE", "CHILD", "PARENT", "SIBLING", "GRANDPARENT", "GRANDCHILD", "OTHER" ],
+            "example" : "SPOUSE",
+            "type" : "string"
+          }
+        },
+        "required" : [ "channel", "contact", "relation" ],
+        "type" : "object"
+      },
       "IssueRequest" : {
         "properties" : {
           "donorAddress" : {
@@ -1301,7 +1372,7 @@
       "Item" : {
         "properties" : {
           "action" : {
-            "enum" : [ "USER_INVITED", "USER_ROLE_CHANGED", "USER_DEACTIVATED", "USER_DELETED", "USER_SETUP_LINK_REISSUED", "USER_RESET_LINK_ISSUED", "USER_ACCESS_CHANGED", "DEVOTEE_CREATED", "DEVOTEE_UPDATED", "DEVOTEE_ERASED", "DEVOTEES_IMPORTED", "DEVOTEES_EXPORTED", "DONATION_RECORDED", "DONATION_REVERSED", "RECEIPT_ISSUED", "TRUST_PROFILE_SAVED", "PAYMENT_SETTINGS_SAVED", "FUND_SAVED", "EVENT_STATUS_CHANGED", "PUJA_SAVED", "PUJA_BOOKING_CANCELLED", "SEVAK_REVIEWED", "TEMPLE_PAGE_SAVED", "PUJA_BOOKED_AT_COUNTER", "PASS_ISSUED_AT_COUNTER", "PRIEST_SAVED", "PRIEST_ASSIGNED", "SEVA_TEAM_SAVED", "SEVA_TEAM_DELETED", "SEVAK_REGISTERED", "SEVAK_ASSIGNED", "SEVAK_REMOVED", "EVENT_DELETED", "PUJA_DELETED", "ACCOUNT_LOCKED", "CUSTOM_DOMAIN_ADDED", "CUSTOM_DOMAIN_VERIFIED", "CUSTOM_DOMAIN_REMOVED", "CUSTOM_DOMAIN_DEACTIVATED", "GROUP_SAVED", "GROUP_DELETED", "GROUP_MEMBER_ADDED", "GROUP_MEMBER_APPROVED", "GROUP_MEMBER_REMOVED", "HOUSEHOLD_SAVED", "HOUSEHOLD_DELETED", "HOUSEHOLD_MEMBER_ADDED", "HOUSEHOLD_MEMBER_REMOVED", "EVENT_IMAGE_SAVED" ],
+            "enum" : [ "USER_INVITED", "USER_ROLE_CHANGED", "USER_DEACTIVATED", "USER_DELETED", "USER_SETUP_LINK_REISSUED", "USER_RESET_LINK_ISSUED", "USER_ACCESS_CHANGED", "DEVOTEE_CREATED", "DEVOTEE_UPDATED", "DEVOTEE_ERASED", "DEVOTEES_IMPORTED", "DEVOTEES_EXPORTED", "DONATION_RECORDED", "DONATION_REVERSED", "RECEIPT_ISSUED", "TRUST_PROFILE_SAVED", "PAYMENT_SETTINGS_SAVED", "FUND_SAVED", "EVENT_STATUS_CHANGED", "PUJA_SAVED", "PUJA_BOOKING_CANCELLED", "SEVAK_REVIEWED", "TEMPLE_PAGE_SAVED", "PUJA_BOOKED_AT_COUNTER", "PASS_ISSUED_AT_COUNTER", "PRIEST_SAVED", "PRIEST_ASSIGNED", "SEVA_TEAM_SAVED", "SEVA_TEAM_DELETED", "SEVAK_REGISTERED", "SEVAK_ASSIGNED", "SEVAK_REMOVED", "EVENT_DELETED", "PUJA_DELETED", "ACCOUNT_LOCKED", "CUSTOM_DOMAIN_ADDED", "CUSTOM_DOMAIN_VERIFIED", "CUSTOM_DOMAIN_REMOVED", "CUSTOM_DOMAIN_DEACTIVATED", "GROUP_SAVED", "GROUP_DELETED", "GROUP_MEMBER_ADDED", "GROUP_MEMBER_APPROVED", "GROUP_MEMBER_REMOVED", "HOUSEHOLD_SAVED", "HOUSEHOLD_DELETED", "HOUSEHOLD_MEMBER_ADDED", "HOUSEHOLD_MEMBER_REMOVED", "EVENT_IMAGE_SAVED", "HOUSEHOLD_INVITE_SENT" ],
             "type" : "string"
           },
           "actor" : {
@@ -1355,6 +1426,42 @@
           "userId" : {
             "format" : "int64",
             "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "Member" : {
+        "properties" : {
+          "canEdit" : {
+            "type" : "boolean"
+          },
+          "canRemove" : {
+            "type" : "boolean"
+          },
+          "child" : {
+            "type" : "boolean"
+          },
+          "dateOfBirth" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "devoteeId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "me" : {
+            "type" : "boolean"
+          },
+          "memberId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "relation" : {
+            "enum" : [ "HEAD", "SPOUSE", "CHILD", "PARENT", "SIBLING", "GRANDPARENT", "GRANDCHILD", "OTHER" ],
+            "type" : "string"
           }
         },
         "type" : "object"
@@ -2520,6 +2627,30 @@
         "required" : [ "reason" ],
         "type" : "object"
       },
+      "SentInvite" : {
+        "properties" : {
+          "channel" : {
+            "enum" : [ "EMAIL", "SMS" ],
+            "type" : "string"
+          },
+          "contact" : {
+            "type" : "string"
+          },
+          "expiresAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "relation" : {
+            "enum" : [ "HEAD", "SPOUSE", "CHILD", "PARENT", "SIBLING", "GRANDPARENT", "GRANDCHILD", "OTHER" ],
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "SettingsRequest" : {
         "properties" : {
           "keyId" : {
@@ -2722,6 +2853,30 @@
         },
         "type" : "object"
       },
+      "StartRequest" : {
+        "properties" : {
+          "familyName" : {
+            "example" : "Kulkarni family",
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "gotra" : {
+            "example" : "Kashyap",
+            "maxLength" : 60,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "yourName" : {
+            "example" : "Ramesh Kulkarni",
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "familyName" ],
+        "type" : "object"
+      },
       "StatusRequest" : {
         "properties" : {
           "note" : {
@@ -2922,6 +3077,46 @@
         },
         "required" : [ "channel" ],
         "type" : "object"
+      },
+      "View" : {
+        "properties" : {
+          "canManage" : {
+            "type" : "boolean"
+          },
+          "gotra" : {
+            "type" : "string"
+          },
+          "householdId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "invitations" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Invitation"
+            },
+            "type" : "array"
+          },
+          "members" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Member"
+            },
+            "type" : "array"
+          },
+          "myRelation" : {
+            "enum" : [ "HEAD", "SPOUSE", "CHILD", "PARENT", "SIBLING", "GRANDPARENT", "GRANDCHILD", "OTHER" ],
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "sentInvites" : {
+            "items" : {
+              "$ref" : "#/components/schemas/SentInvite"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
       }
     }
   },
@@ -2964,7 +3159,7 @@
           "name" : "action",
           "required" : false,
           "schema" : {
-            "enum" : [ "USER_INVITED", "USER_ROLE_CHANGED", "USER_DEACTIVATED", "USER_DELETED", "USER_SETUP_LINK_REISSUED", "USER_RESET_LINK_ISSUED", "USER_ACCESS_CHANGED", "DEVOTEE_CREATED", "DEVOTEE_UPDATED", "DEVOTEE_ERASED", "DEVOTEES_IMPORTED", "DEVOTEES_EXPORTED", "DONATION_RECORDED", "DONATION_REVERSED", "RECEIPT_ISSUED", "TRUST_PROFILE_SAVED", "PAYMENT_SETTINGS_SAVED", "FUND_SAVED", "EVENT_STATUS_CHANGED", "PUJA_SAVED", "PUJA_BOOKING_CANCELLED", "SEVAK_REVIEWED", "TEMPLE_PAGE_SAVED", "PUJA_BOOKED_AT_COUNTER", "PASS_ISSUED_AT_COUNTER", "PRIEST_SAVED", "PRIEST_ASSIGNED", "SEVA_TEAM_SAVED", "SEVA_TEAM_DELETED", "SEVAK_REGISTERED", "SEVAK_ASSIGNED", "SEVAK_REMOVED", "EVENT_DELETED", "PUJA_DELETED", "ACCOUNT_LOCKED", "CUSTOM_DOMAIN_ADDED", "CUSTOM_DOMAIN_VERIFIED", "CUSTOM_DOMAIN_REMOVED", "CUSTOM_DOMAIN_DEACTIVATED", "GROUP_SAVED", "GROUP_DELETED", "GROUP_MEMBER_ADDED", "GROUP_MEMBER_APPROVED", "GROUP_MEMBER_REMOVED", "HOUSEHOLD_SAVED", "HOUSEHOLD_DELETED", "HOUSEHOLD_MEMBER_ADDED", "HOUSEHOLD_MEMBER_REMOVED", "EVENT_IMAGE_SAVED" ],
+            "enum" : [ "USER_INVITED", "USER_ROLE_CHANGED", "USER_DEACTIVATED", "USER_DELETED", "USER_SETUP_LINK_REISSUED", "USER_RESET_LINK_ISSUED", "USER_ACCESS_CHANGED", "DEVOTEE_CREATED", "DEVOTEE_UPDATED", "DEVOTEE_ERASED", "DEVOTEES_IMPORTED", "DEVOTEES_EXPORTED", "DONATION_RECORDED", "DONATION_REVERSED", "RECEIPT_ISSUED", "TRUST_PROFILE_SAVED", "PAYMENT_SETTINGS_SAVED", "FUND_SAVED", "EVENT_STATUS_CHANGED", "PUJA_SAVED", "PUJA_BOOKING_CANCELLED", "SEVAK_REVIEWED", "TEMPLE_PAGE_SAVED", "PUJA_BOOKED_AT_COUNTER", "PASS_ISSUED_AT_COUNTER", "PRIEST_SAVED", "PRIEST_ASSIGNED", "SEVA_TEAM_SAVED", "SEVA_TEAM_DELETED", "SEVAK_REGISTERED", "SEVAK_ASSIGNED", "SEVAK_REMOVED", "EVENT_DELETED", "PUJA_DELETED", "ACCOUNT_LOCKED", "CUSTOM_DOMAIN_ADDED", "CUSTOM_DOMAIN_VERIFIED", "CUSTOM_DOMAIN_REMOVED", "CUSTOM_DOMAIN_DEACTIVATED", "GROUP_SAVED", "GROUP_DELETED", "GROUP_MEMBER_ADDED", "GROUP_MEMBER_APPROVED", "GROUP_MEMBER_REMOVED", "HOUSEHOLD_SAVED", "HOUSEHOLD_DELETED", "HOUSEHOLD_MEMBER_ADDED", "HOUSEHOLD_MEMBER_REMOVED", "EVENT_IMAGE_SAVED", "HOUSEHOLD_INVITE_SENT" ],
             "type" : "string"
           }
         } ],
@@ -3122,7 +3317,7 @@
     },
     "/api/v1/custom-domains/{id}" : {
       "delete" : {
-        "operationId" : "remove_5",
+        "operationId" : "remove_6",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -3922,7 +4117,7 @@
     },
     "/api/v1/events/{id}/image" : {
       "delete" : {
-        "operationId" : "remove_2",
+        "operationId" : "remove_3",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -4307,7 +4502,7 @@
     },
     "/api/v1/groups/{id}/members/{memberId}" : {
       "delete" : {
-        "operationId" : "remove_4",
+        "operationId" : "remove_5",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -4767,6 +4962,325 @@
           }
         },
         "tags" : [ "portal-controller" ]
+      }
+    },
+    "/api/v1/portal/family" : {
+      "get" : {
+        "operationId" : "view",
+        "parameters" : [ {
+          "in" : "cookie",
+          "name" : "SC_DEVOTEE",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/View"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "family-controller" ]
+      },
+      "post" : {
+        "operationId" : "start",
+        "parameters" : [ {
+          "in" : "cookie",
+          "name" : "SC_DEVOTEE",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/StartRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/View"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "family-controller" ]
+      }
+    },
+    "/api/v1/portal/family/children" : {
+      "post" : {
+        "operationId" : "addChild",
+        "parameters" : [ {
+          "in" : "cookie",
+          "name" : "SC_DEVOTEE",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ChildRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/View"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "family-controller" ]
+      }
+    },
+    "/api/v1/portal/family/invitations/{id}/accept" : {
+      "post" : {
+        "operationId" : "accept",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "cookie",
+          "name" : "SC_DEVOTEE",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AcceptRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/View"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "family-controller" ]
+      }
+    },
+    "/api/v1/portal/family/invitations/{id}/decline" : {
+      "post" : {
+        "operationId" : "decline_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "cookie",
+          "name" : "SC_DEVOTEE",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/View"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "family-controller" ]
+      }
+    },
+    "/api/v1/portal/family/invites" : {
+      "post" : {
+        "operationId" : "invite",
+        "parameters" : [ {
+          "in" : "cookie",
+          "name" : "SC_DEVOTEE",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/InviteRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/View"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "family-controller" ]
+      }
+    },
+    "/api/v1/portal/family/invites/{id}" : {
+      "delete" : {
+        "operationId" : "cancelInvite",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "cookie",
+          "name" : "SC_DEVOTEE",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/View"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "family-controller" ]
+      }
+    },
+    "/api/v1/portal/family/members/{memberId}" : {
+      "delete" : {
+        "operationId" : "remove_2",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "memberId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "cookie",
+          "name" : "SC_DEVOTEE",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/View"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "family-controller" ]
+      },
+      "put" : {
+        "operationId" : "editChild",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "memberId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "cookie",
+          "name" : "SC_DEVOTEE",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ChildRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/View"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "family-controller" ]
       }
     },
     "/api/v1/portal/groups" : {
@@ -6165,7 +6679,7 @@
     },
     "/api/v1/sevaks/{id}" : {
       "delete" : {
-        "operationId" : "remove_3",
+        "operationId" : "remove_4",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",

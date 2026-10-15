@@ -299,6 +299,11 @@ public class DevoteeLoginService {
         });
     }
 
+    /** A phone (E.164, Indian mobile) or email, normalised exactly as login stores it. */
+    public static String normaliseContact(OtpChannel channel, String raw) {
+        return normalise(channel, raw);
+    }
+
     static String normalise(OtpChannel channel, String raw) {
         if (channel == null) {
             throw new InvalidFieldException("channel", "channel must be EMAIL or SMS");
