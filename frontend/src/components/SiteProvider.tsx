@@ -37,6 +37,15 @@ function hrefFor(base: string, slug: string | null, singleDomain: boolean, path:
   return `${proto}//${host}${path}`;
 }
 
+/**
+ * Absolute URL on the bare staff domain (no trust), e.g. registering a new trust: a trust's own
+ * host is the wrong place for that. Relative in single-domain mode.
+ */
+export function useStaffRootHref(path = "/"): string {
+  const s = useSite();
+  return hrefFor(s.staffBase, null, s.singleDomain, path);
+}
+
 /** Absolute URL to the MandirCenter (public) side for the current trust; relative in single-domain mode. */
 export function useMandirHref(path = "/"): string {
   const s = useSite();
