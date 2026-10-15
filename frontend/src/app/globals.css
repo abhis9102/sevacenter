@@ -199,3 +199,17 @@ dialog::backdrop {
     transition-duration: 0.01ms !important;
   }
 }
+
+/*
+ * A row of tabs that stays on one line and swipes sideways when it doesn't fit (phones), instead
+ * of wrapping into ragged lines. No scrollbar; the active tab is scrolled into view by
+ * useActiveInView.
+ */
+@utility scroll-row {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

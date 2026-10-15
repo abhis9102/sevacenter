@@ -162,7 +162,7 @@ export default function DevoteesPage() {
 
       {data ? (
         <>
-          <Card className="overflow-x-auto p-0">
+          <Card className="relative overflow-x-auto p-0">
             {data.items.length === 0 ? (
               <p className="px-4 py-10 text-center text-muted">
                 {q ? t.devotees.emptyState : t.devotees.emptyState}

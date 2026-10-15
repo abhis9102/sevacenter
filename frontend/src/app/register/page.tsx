@@ -168,13 +168,13 @@ export default function RegisterPage() {
                       placeholder="e.g. siddheshwar"
                       value={slug}
                       onChange={(e) => onSlugChange(e.target.value)}
-                      className="w-full bg-transparent px-3 py-2 text-sm font-mono text-fg placeholder:text-muted/60 focus:outline-none"
+                      className="min-w-[7rem] flex-1 bg-transparent px-3 py-2 text-sm font-mono text-fg placeholder:text-muted/60 focus:outline-none"
                     />
-                    <span className="pr-3 text-xs font-mono text-muted select-none">
+                    <span className="min-w-0 truncate pr-3 text-xs font-mono text-muted select-none">
                       {base ? `.${base}` : null}
                     </span>
                   </div>
-                  <p className="text-xs text-muted font-mono">
+                  <p className="break-all text-xs text-muted font-mono">
                     {base.startsWith("localhost") ? "http" : "https"}://{portalHost}
                   </p>
                   <p className="text-xs text-muted">{t.auth.register.subdomainHelp}</p>

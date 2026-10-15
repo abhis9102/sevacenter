@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { Button, Dialog } from "@/components/ui";
+import { useActiveInView } from "@/components/useActiveInView";
 
 /**
  * Shared pieces of the staff screens (docs/design/navigation.md): a title with its category pill
@@ -50,14 +51,16 @@ export function ViewSwitcher<T extends string>({ views, current, label }: {
   label: string;
 }) {
   const pathname = usePathname();
+  const row = useActiveInView<HTMLElement>(current);
   return (
-    <nav aria-label={label} className="inline-flex flex-wrap gap-1 rounded-[12px] border border-line bg-surface-2 p-1">
+    <nav ref={row} aria-label={label}
+         className="scroll-row flex max-w-full gap-1 rounded-[12px] border border-line bg-surface-2 p-1 sm:inline-flex sm:flex-wrap">
       {views.map((v, i) => (
         <Link
           key={v.id}
           href={i === 0 ? pathname : `${pathname}?view=${v.id}`}
           aria-current={current === v.id ? "page" : undefined}
-          className={`rounded-[9px] px-3 py-1.5 text-sm font-semibold transition-colors ${
+          className={`shrink-0 whitespace-nowrap rounded-[9px] px-3 py-1.5 text-sm font-semibold transition-colors ${
             current === v.id ? "bg-surface text-primary-strong shadow-xs" : "text-muted hover:text-fg"
           }`}
         >
