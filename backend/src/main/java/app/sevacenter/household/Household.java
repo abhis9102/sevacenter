@@ -28,14 +28,25 @@ public class Household {
     private String state;
     private String pincode;
     private String notes;
-    @Column(name = "created_by", nullable = false)
+    @Column(name = "created_by")
     private Long createdBy;
+    /** Set instead of createdBy when a devotee started the household in My Mandir (ADR 0039). */
+    @Column(name = "created_by_account")
+    private Long createdByAccount;
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
     protected Household() { }
+
+    static Household startedByDevotee(long tenantId, long accountId, OffsetDateTime now) {
+        Household h = new Household();
+        h.tenantId = tenantId;
+        h.createdByAccount = accountId;
+        h.createdAt = now;
+        return h;
+    }
 
     Household(long tenantId, long staffId, OffsetDateTime now) {
         this.tenantId = tenantId;

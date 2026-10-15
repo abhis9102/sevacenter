@@ -29,6 +29,9 @@ public class HouseholdMember {
     private String relation;
     @Column(name = "added_at", nullable = false)
     private OffsetDateTime addedAt;
+    /** The devotee account that added this member in My Mandir; null when staff did. */
+    @Column(name = "added_by_account")
+    private Long addedByAccount;
 
     protected HouseholdMember() { }
 
@@ -38,6 +41,10 @@ public class HouseholdMember {
         this.devoteeId = devoteeId;
         this.relation = relation.name();
         this.addedAt = now;
+    }
+
+    void addedBy(Long accountId) {
+        this.addedByAccount = accountId;
     }
 
     void relation(Relation r) {

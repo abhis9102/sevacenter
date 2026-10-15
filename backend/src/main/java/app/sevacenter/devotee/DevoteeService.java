@@ -88,6 +88,23 @@ public class DevoteeService {
         }
     }
 
+    /** A record a devotee creates in My Mandir: their own or their child's (ADR 0039). Audited, no staff actor. */
+    @Transactional
+    public Devotee createByDevotee(Devotee.Details details, long accountId) {
+        Devotee saved = devotees.save(Devotee.selfRegistered(currentTenant(), normalise(details), accountId, now()));
+        auditTrail.record(AuditAction.DEVOTEE_CREATED, "devotee", saved.getId(), "by devotee " + accountId);
+        return saved;
+    }
+
+    /** A devotee's edit in My Mandir (own or child's record; the caller checks which). Audited. */
+    @Transactional
+    public Devotee updateByDevotee(long id, Devotee.Details details, long accountId) {
+        Devotee devotee = get(id);
+        devotee.updateByDevotee(normalise(details), accountId, now());
+        auditTrail.record(AuditAction.DEVOTEE_UPDATED, "devotee", id, "by devotee " + accountId);
+        return devotee;
+    }
+
     /** Devotee records matching any of a signed-in devotee's verified contacts (ADR 0038). */
     @Transactional(readOnly = true)
     public java.util.List<Devotee> forContacts(java.util.List<String> contacts) {

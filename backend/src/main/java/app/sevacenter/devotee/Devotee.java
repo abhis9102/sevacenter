@@ -50,14 +50,19 @@ public class Devotee {
     @Column(name = "consent_given_at", nullable = false, updatable = false)
     private OffsetDateTime consentGivenAt;
 
-    @Column(name = "consent_recorded_by", nullable = false, updatable = false)
+    @Column(name = "consent_recorded_by", updatable = false)
     private Long consentRecordedBy;
 
-    @Column(name = "created_by", nullable = false, updatable = false)
+    @Column(name = "created_by", updatable = false)
     private Long createdBy;
+    /** Set instead of createdBy when a devotee created the record in My Mandir (ADR 0039). */
+    @Column(name = "created_by_account", updatable = false)
+    private Long createdByAccount;
 
-    @Column(name = "updated_by", nullable = false)
+    @Column(name = "updated_by")
     private Long updatedBy;
+    @Column(name = "updated_by_account")
+    private Long updatedByAccount;
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private OffsetDateTime createdAt;
@@ -89,8 +94,35 @@ public class Devotee {
         update(details, staffId, now);
     }
 
+    /**
+     * A record a devotee created in My Mandir (ADR 0039): their own, or their child's (the parent
+     * adding a minor is the parental consent). Consent is ONLINE_FORM, recorded by their account.
+     */
+    public static Devotee selfRegistered(Long tenantId, Details details, long accountId, OffsetDateTime now) {
+        Devotee d = new Devotee();
+        d.tenantId = tenantId;
+        d.consentSource = ConsentSource.ONLINE_FORM;
+        d.consentGivenAt = now;
+        d.createdByAccount = accountId;
+        d.updateByDevotee(details, accountId, now);
+        return d;
+    }
+
+    /** An edit made by a devotee in My Mandir (their own or their child's record). */
+    public void updateByDevotee(Details d, long accountId, OffsetDateTime now) {
+        apply(d, now);
+        this.updatedBy = null;
+        this.updatedByAccount = accountId;
+    }
+
     /** Replaces the editable fields. Tenant, consent and creation data never change. */
     public void update(Details d, Long staffId, OffsetDateTime now) {
+        apply(d, now);
+        this.updatedBy = staffId;
+        this.updatedByAccount = null;
+    }
+
+    private void apply(Details d, OffsetDateTime now) {
         this.fullName = d.fullName();
         this.phone = d.phone();
         this.email = d.email();
@@ -99,7 +131,6 @@ public class Devotee {
         this.state = d.state();
         this.pincode = d.pincode();
         this.dateOfBirth = d.dateOfBirth();
-        this.updatedBy = staffId;
         this.updatedAt = now;
     }
 
@@ -120,4 +151,5 @@ public class Devotee {
     public OffsetDateTime getConsentGivenAt() { return consentGivenAt; }
     public OffsetDateTime getCreatedAt() { return createdAt; }
     public OffsetDateTime getUpdatedAt() { return updatedAt; }
+    public Long getCreatedByAccount() { return createdByAccount; }
 }
