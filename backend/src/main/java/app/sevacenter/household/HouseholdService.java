@@ -48,7 +48,7 @@ public class HouseholdService {
 
     @Transactional(readOnly = true)
     public List<Household> search(String q) {
-        return households.search(q == null ? "" : q.strip(), PageRequest.of(0, 20));
+        return households.search(q == null ? "" : q.strip(), PageRequest.of(0, 50));
     }
 
     @Transactional(readOnly = true)

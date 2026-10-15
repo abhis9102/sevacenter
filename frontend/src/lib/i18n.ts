@@ -30,6 +30,7 @@ export interface Translations {
     events: string;
     volunteers: string;
     groups: string;
+    households: string;
     pujas: string;
     temple: string;
     home: string;
@@ -40,7 +41,7 @@ export interface Translations {
     menuTitle: string;
     mandirCenter: string;
     newTab: string;
-    describe: Record<"dashboard" | "devotees" | "donations" | "payments" | "pujas" | "events" | "volunteers" | "groups" | "mandir"
+    describe: Record<"dashboard" | "devotees" | "households" | "donations" | "payments" | "pujas" | "events" | "volunteers" | "groups" | "mandir"
       | "staff" | "audit", string>;
     sections: Record<"dashboard" | "people" | "finance" | "worship" | "mandir" | "admin", { name: string; description: string }>;
   };
@@ -363,6 +364,7 @@ export const DICTIONARIES: Record<Language, Translations> = {
       events: "Utsavs & Passes",
       volunteers: "Sevak Hub",
       groups: "Groups",
+      households: "Households",
       pujas: "Pujas & Sankalp",
       temple: "Mandir Center",
       home: "Home",
@@ -382,6 +384,7 @@ export const DICTIONARIES: Record<Language, Translations> = {
         events: "Utsavs, darshan passes and gate check-in",
         volunteers: "Seva teams, shifts and volunteers",
         groups: "Satsang, bhajan and youth groups, and who's in them",
+        households: "Families: who belongs together, family gotra and giving",
         mandir: "Your public Mandir Center: darshan, aartis, notices",
         staff: "Staff, roles and module access",
         audit: "Every staff action, as it happened",
@@ -746,6 +749,7 @@ export const DICTIONARIES: Record<Language, Translations> = {
       events: "उत्सव एवं पास (Utsavs)",
       volunteers: "सेवक केंद्र (Sevak Hub)",
       groups: "समूह (Groups)",
+      households: "परिवार (Households)",
       pujas: "पूजा एवं संकल्प (Pujas)",
       temple: "मंदिर सेंटर (Mandir Center)",
       home: "मुख्य पृष्ठ",
@@ -765,6 +769,7 @@ export const DICTIONARIES: Record<Language, Translations> = {
         events: "उत्सव, दर्शन पास और प्रवेश जाँच",
         volunteers: "सेवा दल, पालियाँ और सेवक",
         groups: "सत्संग, भजन और युवा समूह, और उनके सदस्य",
+        households: "परिवार: कौन साथ है, पारिवारिक गोत्र और दान",
         mandir: "आपका सार्वजनिक मंदिर सेंटर: दर्शन, आरती, सूचना",
         staff: "कर्मचारी, भूमिकाएँ और अनुमतियाँ",
         audit: "कर्मचारियों की हर कार्रवाई का रिकॉर्ड",
