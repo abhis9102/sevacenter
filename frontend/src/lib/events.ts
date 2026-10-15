@@ -12,6 +12,8 @@ export interface StaffEvent {
   seatsTaken: number;
   status: EventStatus;
   registrationOpen: boolean;
+  /** Cover photo version; null when the event has none. */
+  imageVersion: string | null;
 }
 
 export interface EventPass {
@@ -34,7 +36,12 @@ export interface PublicEvent {
   endsAt: string;
   placesLeft: number | null;
   registrationOpen: boolean;
+  imageVersion: string | null;
 }
+
+/** A published event's cover photo (versioned URL: long-cached, changes with the photo). */
+export const eventImageUrl = (id: number, version: string) =>
+  `/api/v1/public/events/${id}/image?v=${encodeURIComponent(version)}`;
 
 export interface PassIssued {
   passCode: string;

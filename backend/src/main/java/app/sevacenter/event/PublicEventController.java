@@ -29,9 +29,11 @@ public class PublicEventController {
 
     private final EventService service;
     private final RateLimiter rateLimiter;
+    private final EventImageRepository images;
 
-    public PublicEventController(EventService service, RateLimiter rateLimiter) {
+    public PublicEventController(EventService service, RateLimiter rateLimiter, EventImageRepository images) {
         this.service = service;
+        this.images = images;
         this.rateLimiter = rateLimiter;
     }
 
@@ -40,7 +42,7 @@ public class PublicEventController {
         if (TenantContext.get() == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(service.upcoming().stream().map(e -> PublicEvent.of(e, service.seatsTaken(e.getId()))).toList());
+        return ResponseEntity.ok(service.upcoming().stream().map(e -> PublicEvent.of(e, service.seatsTaken(e.getId()), images.versionOf(e.getId()).orElse(null))).toList());
     }
 
     @PostMapping("/api/v1/public/events/{id:\\d+}/register")
@@ -60,11 +62,11 @@ public class PublicEventController {
 
     /** What the public may know: no registrations, just how many places are left. */
     public record PublicEvent(long id, String title, String description, OffsetDateTime startsAt, OffsetDateTime endsAt,
-                              Long placesLeft, boolean registrationOpen) {
-        static PublicEvent of(Event e, long taken) {
+                              Long placesLeft, boolean registrationOpen, String imageVersion) {
+        static PublicEvent of(Event e, long taken, String imageVersion) {
             Long left = e.getCapacity() == null ? null : Math.max(0, e.getCapacity() - taken);
             return new PublicEvent(e.getId(), e.getTitle(), e.getDescription(), e.getStartsAt(), e.getEndsAt(), left,
-                    e.takesRegistrations(OffsetDateTime.now()));
+                    e.takesRegistrations(OffsetDateTime.now()), imageVersion);
         }
     }
 

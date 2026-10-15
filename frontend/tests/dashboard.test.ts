@@ -5,7 +5,7 @@ import { istDate, upcomingEvents } from "../src/lib/dashboard.js";
 import type { StaffEvent } from "../src/lib/events.js";
 
 const ev = (id: number, status: StaffEvent["status"], startsAt: string, endsAt: string): StaffEvent => ({
-  id, title: `E${id}`, description: null, startsAt, endsAt, capacity: null, seatsTaken: 0, status, registrationOpen: true,
+  id, title: `E${id}`, description: null, startsAt, endsAt, capacity: null, seatsTaken: 0, status, registrationOpen: true, imageVersion: null,
 });
 
 describe("dashboard", () => {
