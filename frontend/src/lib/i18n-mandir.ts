@@ -61,6 +61,11 @@ const en = {
     submitFree: "Book",
     submitPaid: (amount: string) => `Pay ₹${amount} & book`,
     takenNote: (ref: string) => `If money was taken, the temple's records will pick it up; keep reference ${ref}.`,
+    howToPay: "How would you like to pay the dakshina?",
+    payOnline: "Pay online now",
+    payAtTemple: "Pay at the temple (cash, UPI or card at the counter)",
+    submitAtTemple: (amount: string) => `Book · pay ₹${amount} at the temple`,
+    payAtCounter: (amount: string) => `Please pay ₹${amount} at the temple counter before the puja, showing this booking code.`,
   },
   utsav: {
     title: "Utsavs & darshan passes",
@@ -216,6 +221,11 @@ const hi: MandirText = {
     submitFree: "बुक करें",
     submitPaid: (amount) => `₹${amount} भुगतान कर बुक करें`,
     takenNote: (ref) => `यदि राशि कट गई है तो मंदिर के रिकॉर्ड में आ जाएगी; संदर्भ ${ref} संभाल कर रखें।`,
+    howToPay: "दक्षिणा कैसे देना चाहेंगे?",
+    payOnline: "अभी ऑनलाइन भुगतान करें",
+    payAtTemple: "मंदिर में भुगतान करें (काउंटर पर नकद, UPI या कार्ड)",
+    submitAtTemple: (amount) => `बुक करें · ₹${amount} मंदिर में दें`,
+    payAtCounter: (amount) => `कृपया पूजा से पहले मंदिर काउंटर पर यह बुकिंग कोड दिखाकर ₹${amount} जमा करें।`,
   },
   utsav: {
     title: "उत्सव एवं दर्शन पास",

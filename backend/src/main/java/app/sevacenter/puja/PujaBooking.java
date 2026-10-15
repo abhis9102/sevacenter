@@ -82,11 +82,15 @@ public class PujaBooking {
     @Column(name = "booked_by", updatable = false)
     private Long bookedBy;
 
-    @Column(name = "counter_mode", updatable = false)
+    /** Set when booked at the counter, or when a pay-at-temple dakshina is collected (later). */
+    @Column(name = "counter_mode")
     private String counterMode;
 
-    @Column(name = "counter_reference", updatable = false)
+    @Column(name = "counter_reference")
     private String counterReference;
+    /** Staff who collected the dakshina of a pay-at-temple booking. */
+    @jakarta.persistence.Column(name = "collected_by")
+    private Long collectedBy;
 
     protected PujaBooking() { }
 
@@ -121,6 +125,20 @@ public class PujaBooking {
 
     void assignPriest(Long priestId) {
         this.priestId = priestId;
+    }
+
+    /** Booked online, dakshina to be paid at the temple: reserved, not yet confirmed. */
+    void payAtTemple() {
+        this.status = "PAY_AT_TEMPLE";
+    }
+
+    /** Staff collected the dakshina at the counter: confirmed, with a counter payment record. */
+    void collect(long staffId, String mode, String reference) {
+        this.status = "CONFIRMED";
+        this.collectedBy = staffId;
+        this.counterMode = mode;
+        this.counterReference = reference;
+        this.paymentRef = "TEMPLE-" + bookingCode;
     }
 
     void confirmPaid(String paymentRef) {

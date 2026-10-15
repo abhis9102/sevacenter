@@ -13,6 +13,7 @@ import { hasRole } from "@/lib/types";
 
 const STATUS = {
   AWAITING_PAYMENT: { tone: "warning", label: "Awaiting payment" },
+  PAY_AT_TEMPLE: { tone: "warning", label: "Pay at temple" },
   CONFIRMED: { tone: "primary", label: "Confirmed" },
   PERFORMED: { tone: "success", label: "Performed" },
   CANCELLED: { tone: "neutral", label: "Cancelled" },
@@ -37,6 +38,9 @@ export default function PujasPage() {
   const [editing, setEditing] = useState<Puja | "new" | null>(null);
   const [booking, setBooking] = useState(false);
   const [cancelling, setCancelling] = useState<PujaBooking | null>(null);
+  const [collecting, setCollecting] = useState<PujaBooking | null>(null);
+  const [collectMode, setCollectMode] = useState("CASH");
+  const [collectRef, setCollectRef] = useState("");
   const [deleting, setDeleting] = useState<Puja | null>(null);
 
   const load = useCallback(async () => {
@@ -65,6 +69,21 @@ export default function PujasPage() {
       await api.request(`/puja-bookings/${b.id}/${action}`, { method: "POST" });
       setNotice({ tone: "success", text: action === "performed" ? `${b.pujaName} for ${b.devoteeName} marked performed.`
         : `${b.pujaName} for ${b.devoteeName} cancelled.` });
+      await load();
+    } catch (err) {
+      setNotice({ tone: "danger", text: describeError(err) });
+    }
+  }
+
+  async function collect(e: React.FormEvent) {
+    e.preventDefault();
+    if (!collecting) return;
+    try {
+      await api.request(`/puja-bookings/${collecting.id}/collect`, { method: "POST",
+        json: { mode: collectMode, reference: collectRef.trim() || null } });
+      setNotice({ tone: "success", text: `₹${collecting.amount} collected for ${collecting.pujaName} (${collecting.devoteeName}); it's confirmed.` });
+      setCollecting(null);
+      setCollectRef("");
       await load();
     } catch (err) {
       setNotice({ tone: "danger", text: describeError(err) });
@@ -173,7 +192,7 @@ export default function PujasPage() {
                       {isLeader && (b.phone || b.email) ? <div><dt className="text-xs font-semibold text-muted">Contact</dt><dd>{b.phone ?? b.email}</dd></div> : null}
                       <div>
                         <dt className="text-xs font-semibold text-muted">Priest</dt>
-                        {isLeader && (b.status === "CONFIRMED" || b.status === "AWAITING_PAYMENT") && priests ? (
+                        {isLeader && (b.status === "CONFIRMED" || b.status === "AWAITING_PAYMENT" || b.status === "PAY_AT_TEMPLE") && priests ? (
                           <dd>
                             <select aria-label={`Priest for ${b.devoteeName}`} value={b.priestId ?? ""}
                                     onChange={(e) => void assign(b, e.target.value)}
@@ -190,7 +209,8 @@ export default function PujasPage() {
                   </div>
                   <div className="flex shrink-0 gap-2 sm:flex-col">
                     {b.status === "CONFIRMED" ? <Button onClick={() => void act(b, "performed")}>Mark performed</Button> : null}
-                    {isLeader && (b.status === "CONFIRMED" || b.status === "AWAITING_PAYMENT") ? (
+                    {isLeader && b.status === "PAY_AT_TEMPLE" ? <Button onClick={() => setCollecting(b)}>Collect ₹{b.amount}</Button> : null}
+                    {isLeader && (b.status === "CONFIRMED" || b.status === "AWAITING_PAYMENT" || b.status === "PAY_AT_TEMPLE") ? (
                       <Button variant="secondary" onClick={() => setCancelling(b)}>Cancel</Button>
                     ) : null}
                   </div>
@@ -289,6 +309,25 @@ export default function PujasPage() {
                                 setNotice({ tone: "success", text: `${b.pujaName} booked for ${b.devoteeName} on ${b.pujaDate} (code ${b.bookingCode}).` });
                                 void load(); }} />
       ) : null}
+      <Dialog open={collecting !== null} onClose={() => setCollecting(null)} title="Collect dakshina">
+        {collecting ? (
+          <form method="post" onSubmit={(e) => void collect(e)} className="flex flex-col gap-3 text-sm">
+            <p>{collecting.pujaName} for <span className="font-semibold">{collecting.devoteeName}</span>, booking{" "}
+              <code>{collecting.bookingCode}</code>: <span className="font-semibold">₹{collecting.amount}</span></p>
+            <label className="flex flex-col gap-1">
+              <span className="font-medium">Paid by</span>
+              <select value={collectMode} onChange={(e) => setCollectMode(e.target.value)}
+                      className="rounded-[10px] border border-line bg-surface px-3 py-2">
+                <option value="CASH">Cash</option><option value="UPI">UPI</option><option value="CARD">Card</option>
+                <option value="CHEQUE">Cheque</option><option value="BANK_TRANSFER">Bank transfer</option>
+              </select>
+            </label>
+            <TextField label="Reference (optional)" placeholder="UPI / cheque number" value={collectRef} maxLength={64}
+                       onChange={(e) => setCollectRef(e.target.value)} />
+            <div><Button type="submit">Mark ₹{collecting.amount} received</Button></div>
+          </form>
+        ) : null}
+      </Dialog>
       <ConfirmDialog open={cancelling !== null} title="Cancel this puja?" confirm="Cancel puja"
                      onClose={() => setCancelling(null)}
                      onConfirm={() => { const b = cancelling; setCancelling(null); if (b) void act(b, "cancel"); }}>
