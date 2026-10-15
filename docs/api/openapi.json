@@ -944,6 +944,9 @@
             "format" : "int64",
             "type" : "integer"
           },
+          "imageVersion" : {
+            "type" : "string"
+          },
           "registrationOpen" : {
             "type" : "boolean"
           },
@@ -1298,7 +1301,7 @@
       "Item" : {
         "properties" : {
           "action" : {
-            "enum" : [ "USER_INVITED", "USER_ROLE_CHANGED", "USER_DEACTIVATED", "USER_DELETED", "USER_SETUP_LINK_REISSUED", "USER_RESET_LINK_ISSUED", "USER_ACCESS_CHANGED", "DEVOTEE_CREATED", "DEVOTEE_UPDATED", "DEVOTEE_ERASED", "DEVOTEES_IMPORTED", "DEVOTEES_EXPORTED", "DONATION_RECORDED", "DONATION_REVERSED", "RECEIPT_ISSUED", "TRUST_PROFILE_SAVED", "PAYMENT_SETTINGS_SAVED", "FUND_SAVED", "EVENT_STATUS_CHANGED", "PUJA_SAVED", "PUJA_BOOKING_CANCELLED", "SEVAK_REVIEWED", "TEMPLE_PAGE_SAVED", "PUJA_BOOKED_AT_COUNTER", "PASS_ISSUED_AT_COUNTER", "PRIEST_SAVED", "PRIEST_ASSIGNED", "SEVA_TEAM_SAVED", "SEVA_TEAM_DELETED", "SEVAK_REGISTERED", "SEVAK_ASSIGNED", "SEVAK_REMOVED", "EVENT_DELETED", "PUJA_DELETED", "ACCOUNT_LOCKED", "CUSTOM_DOMAIN_ADDED", "CUSTOM_DOMAIN_VERIFIED", "CUSTOM_DOMAIN_REMOVED", "CUSTOM_DOMAIN_DEACTIVATED", "GROUP_SAVED", "GROUP_DELETED", "GROUP_MEMBER_ADDED", "GROUP_MEMBER_APPROVED", "GROUP_MEMBER_REMOVED", "HOUSEHOLD_SAVED", "HOUSEHOLD_DELETED", "HOUSEHOLD_MEMBER_ADDED", "HOUSEHOLD_MEMBER_REMOVED" ],
+            "enum" : [ "USER_INVITED", "USER_ROLE_CHANGED", "USER_DEACTIVATED", "USER_DELETED", "USER_SETUP_LINK_REISSUED", "USER_RESET_LINK_ISSUED", "USER_ACCESS_CHANGED", "DEVOTEE_CREATED", "DEVOTEE_UPDATED", "DEVOTEE_ERASED", "DEVOTEES_IMPORTED", "DEVOTEES_EXPORTED", "DONATION_RECORDED", "DONATION_REVERSED", "RECEIPT_ISSUED", "TRUST_PROFILE_SAVED", "PAYMENT_SETTINGS_SAVED", "FUND_SAVED", "EVENT_STATUS_CHANGED", "PUJA_SAVED", "PUJA_BOOKING_CANCELLED", "SEVAK_REVIEWED", "TEMPLE_PAGE_SAVED", "PUJA_BOOKED_AT_COUNTER", "PASS_ISSUED_AT_COUNTER", "PRIEST_SAVED", "PRIEST_ASSIGNED", "SEVA_TEAM_SAVED", "SEVA_TEAM_DELETED", "SEVAK_REGISTERED", "SEVAK_ASSIGNED", "SEVAK_REMOVED", "EVENT_DELETED", "PUJA_DELETED", "ACCOUNT_LOCKED", "CUSTOM_DOMAIN_ADDED", "CUSTOM_DOMAIN_VERIFIED", "CUSTOM_DOMAIN_REMOVED", "CUSTOM_DOMAIN_DEACTIVATED", "GROUP_SAVED", "GROUP_DELETED", "GROUP_MEMBER_ADDED", "GROUP_MEMBER_APPROVED", "GROUP_MEMBER_REMOVED", "HOUSEHOLD_SAVED", "HOUSEHOLD_DELETED", "HOUSEHOLD_MEMBER_ADDED", "HOUSEHOLD_MEMBER_REMOVED", "EVENT_IMAGE_SAVED" ],
             "type" : "string"
           },
           "actor" : {
@@ -1983,6 +1986,9 @@
           "id" : {
             "format" : "int64",
             "type" : "integer"
+          },
+          "imageVersion" : {
+            "type" : "string"
           },
           "placesLeft" : {
             "format" : "int64",
@@ -2958,7 +2964,7 @@
           "name" : "action",
           "required" : false,
           "schema" : {
-            "enum" : [ "USER_INVITED", "USER_ROLE_CHANGED", "USER_DEACTIVATED", "USER_DELETED", "USER_SETUP_LINK_REISSUED", "USER_RESET_LINK_ISSUED", "USER_ACCESS_CHANGED", "DEVOTEE_CREATED", "DEVOTEE_UPDATED", "DEVOTEE_ERASED", "DEVOTEES_IMPORTED", "DEVOTEES_EXPORTED", "DONATION_RECORDED", "DONATION_REVERSED", "RECEIPT_ISSUED", "TRUST_PROFILE_SAVED", "PAYMENT_SETTINGS_SAVED", "FUND_SAVED", "EVENT_STATUS_CHANGED", "PUJA_SAVED", "PUJA_BOOKING_CANCELLED", "SEVAK_REVIEWED", "TEMPLE_PAGE_SAVED", "PUJA_BOOKED_AT_COUNTER", "PASS_ISSUED_AT_COUNTER", "PRIEST_SAVED", "PRIEST_ASSIGNED", "SEVA_TEAM_SAVED", "SEVA_TEAM_DELETED", "SEVAK_REGISTERED", "SEVAK_ASSIGNED", "SEVAK_REMOVED", "EVENT_DELETED", "PUJA_DELETED", "ACCOUNT_LOCKED", "CUSTOM_DOMAIN_ADDED", "CUSTOM_DOMAIN_VERIFIED", "CUSTOM_DOMAIN_REMOVED", "CUSTOM_DOMAIN_DEACTIVATED", "GROUP_SAVED", "GROUP_DELETED", "GROUP_MEMBER_ADDED", "GROUP_MEMBER_APPROVED", "GROUP_MEMBER_REMOVED", "HOUSEHOLD_SAVED", "HOUSEHOLD_DELETED", "HOUSEHOLD_MEMBER_ADDED", "HOUSEHOLD_MEMBER_REMOVED" ],
+            "enum" : [ "USER_INVITED", "USER_ROLE_CHANGED", "USER_DEACTIVATED", "USER_DELETED", "USER_SETUP_LINK_REISSUED", "USER_RESET_LINK_ISSUED", "USER_ACCESS_CHANGED", "DEVOTEE_CREATED", "DEVOTEE_UPDATED", "DEVOTEE_ERASED", "DEVOTEES_IMPORTED", "DEVOTEES_EXPORTED", "DONATION_RECORDED", "DONATION_REVERSED", "RECEIPT_ISSUED", "TRUST_PROFILE_SAVED", "PAYMENT_SETTINGS_SAVED", "FUND_SAVED", "EVENT_STATUS_CHANGED", "PUJA_SAVED", "PUJA_BOOKING_CANCELLED", "SEVAK_REVIEWED", "TEMPLE_PAGE_SAVED", "PUJA_BOOKED_AT_COUNTER", "PASS_ISSUED_AT_COUNTER", "PRIEST_SAVED", "PRIEST_ASSIGNED", "SEVA_TEAM_SAVED", "SEVA_TEAM_DELETED", "SEVAK_REGISTERED", "SEVAK_ASSIGNED", "SEVAK_REMOVED", "EVENT_DELETED", "PUJA_DELETED", "ACCOUNT_LOCKED", "CUSTOM_DOMAIN_ADDED", "CUSTOM_DOMAIN_VERIFIED", "CUSTOM_DOMAIN_REMOVED", "CUSTOM_DOMAIN_DEACTIVATED", "GROUP_SAVED", "GROUP_DELETED", "GROUP_MEMBER_ADDED", "GROUP_MEMBER_APPROVED", "GROUP_MEMBER_REMOVED", "HOUSEHOLD_SAVED", "HOUSEHOLD_DELETED", "HOUSEHOLD_MEMBER_ADDED", "HOUSEHOLD_MEMBER_REMOVED", "EVENT_IMAGE_SAVED" ],
             "type" : "string"
           }
         } ],
@@ -3116,7 +3122,7 @@
     },
     "/api/v1/custom-domains/{id}" : {
       "delete" : {
-        "operationId" : "remove_4",
+        "operationId" : "remove_5",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -3914,6 +3920,96 @@
         "tags" : [ "event-controller" ]
       }
     },
+    "/api/v1/events/{id}/image" : {
+      "delete" : {
+        "operationId" : "remove_2",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "event-image-controller" ]
+      },
+      "get" : {
+        "operationId" : "staffImage",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "format" : "byte",
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "event-image-controller" ]
+      },
+      "put" : {
+        "operationId" : "upload_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "properties" : {
+                  "image" : {
+                    "format" : "binary",
+                    "type" : "string"
+                  }
+                },
+                "required" : [ "image" ],
+                "type" : "object"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "additionalProperties" : {
+                    "type" : "string"
+                  },
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "event-image-controller" ]
+      }
+    },
     "/api/v1/events/{id}/passes" : {
       "get" : {
         "operationId" : "passes",
@@ -4211,7 +4307,7 @@
     },
     "/api/v1/groups/{id}/members/{memberId}" : {
       "delete" : {
-        "operationId" : "remove_3",
+        "operationId" : "remove_4",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -5289,6 +5385,41 @@
         "tags" : [ "public-event-controller" ]
       }
     },
+    "/api/v1/public/events/{id}/image" : {
+      "get" : {
+        "operationId" : "publicImage_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "v",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "format" : "byte",
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "event-image-controller" ]
+      }
+    },
     "/api/v1/public/events/{id}/register" : {
       "post" : {
         "operationId" : "register_2",
@@ -6034,7 +6165,7 @@
     },
     "/api/v1/sevaks/{id}" : {
       "delete" : {
-        "operationId" : "remove_2",
+        "operationId" : "remove_3",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -6189,7 +6320,7 @@
     },
     "/api/v1/temple/gallery" : {
       "post" : {
-        "operationId" : "upload_1",
+        "operationId" : "upload_2",
         "parameters" : [ {
           "in" : "query",
           "name" : "section",

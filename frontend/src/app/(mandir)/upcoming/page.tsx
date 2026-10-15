@@ -7,7 +7,7 @@ import { MandirPageTitle, useDevotee, useMandirText } from "@/components/MandirS
 import { prefill } from "@/lib/devotee";
 import { Alert, Button, Card, TextField } from "@/components/ui";
 import { ApiError, describeError } from "@/lib/errors";
-import { formatIst, formatPassCode, type PassIssued, type PublicEvent } from "@/lib/events";
+import { eventImageUrl, formatIst, formatPassCode, type PassIssued, type PublicEvent } from "@/lib/events";
 
 /**
  * Public events on the trust's own host (ADR 0014). Devotees register (no sign-in) and get a pass
@@ -49,7 +49,13 @@ export default function UpcomingPage() {
             const day = d.toLocaleDateString("en-IN", { day: "numeric", timeZone: "Asia/Kolkata" });
             const month = d.toLocaleDateString("en-IN", { month: "short", timeZone: "Asia/Kolkata" });
             return (
-              <Card key={e.id} className="flex gap-4">
+              <Card key={e.id} className="flex flex-col gap-4">
+                {e.imageVersion ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- our own re-encoded JPEG
+                  <img src={eventImageUrl(e.id, e.imageVersion)} alt={e.title} loading="lazy"
+                       className="aspect-[16/9] w-full rounded-[12px] border border-line object-cover" />
+                ) : null}
+                <div className="flex gap-4">
                 <div className="flex size-16 shrink-0 flex-col items-center justify-center rounded-[12px] bg-gradient-to-br from-primary to-kumkum text-white shadow-xs">
                   <span className="text-2xl font-semibold leading-none">{day}</span>
                   <span className="text-xs font-semibold uppercase">{month}</span>
@@ -69,6 +75,7 @@ export default function UpcomingPage() {
                       <span className="text-xs text-muted">{tx.utsav.closed}</span>
                     )}
                   </div>
+                </div>
                 </div>
               </Card>
             );
