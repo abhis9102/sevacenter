@@ -35,7 +35,8 @@ public class ModuleAccessInterceptor implements HandlerInterceptor {
             Map.entry("/api/v1/seva-teams", StaffModule.VOLUNTEERS),
             Map.entry("/api/v1/temple", StaffModule.TEMPLE),
             Map.entry("/api/v1/custom-domains", StaffModule.TEMPLE),
-            Map.entry("/api/v1/groups", StaffModule.GROUPS));
+            Map.entry("/api/v1/groups", StaffModule.GROUPS),
+            Map.entry("/api/v1/households", StaffModule.DEVOTEES));
 
     /** Staff paths that are deliberately not modules: account, admin-only (by role), public, portal. */
     static final List<String> NOT_MODULES = List.of("/api/v1/users", "/api/v1/me", "/api/v1/profile",

@@ -53,6 +53,10 @@ export interface Translations {
       signIn: string; mine: string; askToJoin: string;
       categories: Record<"SATSANG" | "BHAJAN" | "YOUTH" | "WOMEN" | "STUDY" | "SEVA" | "OTHER", string>;
     };
+    family: {
+      title: string; groupsTitle: string; gotra: string; none: string; office: string; noGroups: string; browse: string;
+      relations: Record<"HEAD" | "SPOUSE" | "CHILD" | "PARENT" | "SIBLING" | "GRANDPARENT" | "GRANDCHILD" | "OTHER", string>;
+    };
     signIn: string;
     openNow: string;
     closedNow: string;
@@ -396,6 +400,13 @@ export const DICTIONARIES: Record<Language, Translations> = {
         full: "Full", signIn: "Sign in to join", mine: "My groups", askToJoin: "A group leader approves new members",
         categories: { SATSANG: "Satsang", BHAJAN: "Bhajan mandali", YOUTH: "Youth", WOMEN: "Mahila mandal",
           STUDY: "Study circle", SEVA: "Seva", OTHER: "Group" },
+      },
+      family: {
+        title: "My family", groupsTitle: "My groups", gotra: "Gotra",
+        none: "Your family isn't linked yet.", office: "The temple office keeps your family details: ask them to add or change anyone.",
+        noGroups: "You haven't joined a group yet.", browse: "Browse groups",
+        relations: { HEAD: "Head of family", SPOUSE: "Spouse", CHILD: "Child", PARENT: "Parent", SIBLING: "Sibling",
+          GRANDPARENT: "Grandparent", GRANDCHILD: "Grandchild", OTHER: "Family" },
       },
       signIn: "Devotee sign in",
       openNow: "Open for darshan",
@@ -762,6 +773,13 @@ export const DICTIONARIES: Record<Language, Translations> = {
         full: "भरा हुआ", signIn: "जुड़ने के लिए साइन इन करें", mine: "मेरे समूह", askToJoin: "समूह प्रमुख नए सदस्यों को स्वीकृति देते हैं",
         categories: { SATSANG: "सत्संग", BHAJAN: "भजन मंडली", YOUTH: "युवा", WOMEN: "महिला मंडल",
           STUDY: "अध्ययन मंडल", SEVA: "सेवा", OTHER: "समूह" },
+      },
+      family: {
+        title: "मेरा परिवार", groupsTitle: "मेरे समूह", gotra: "गोत्र",
+        none: "आपका परिवार अभी जुड़ा नहीं है।", office: "परिवार का विवरण मंदिर कार्यालय रखता है: किसी को जोड़ने या बदलने के लिए उनसे कहें।",
+        noGroups: "आप अभी किसी समूह से नहीं जुड़े हैं।", browse: "समूह देखें",
+        relations: { HEAD: "परिवार प्रमुख", SPOUSE: "जीवनसाथी", CHILD: "संतान", PARENT: "माता/पिता", SIBLING: "भाई/बहन",
+          GRANDPARENT: "दादा/दादी", GRANDCHILD: "पोता/पोती", OTHER: "परिवार" },
       },
       signIn: "भक्त लॉगिन",
       openNow: "दर्शन खुले हैं",
