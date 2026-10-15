@@ -23,7 +23,7 @@ export interface PujaBooking {
   phone: string | null;
   email: string | null;
   amount: string;
-  status: "AWAITING_PAYMENT" | "CONFIRMED" | "PERFORMED" | "CANCELLED";
+  status: "AWAITING_PAYMENT" | "PAY_AT_TEMPLE" | "CONFIRMED" | "PERFORMED" | "CANCELLED";
   /** Booked by staff at the counter (ADR 0026), and how a paid one was paid. */
   counter: boolean;
   counterMode: string | null;

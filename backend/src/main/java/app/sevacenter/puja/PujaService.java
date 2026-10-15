@@ -88,11 +88,15 @@ public class PujaService implements PujaSettlement {
     // --- booking (public) -------------------------------------------------------------------------
 
     @Transactional
-    public Booked book(long pujaId, BookingDetails d) {
-        PujaBooking booking = bookings.saveAndFlush(newBooking(pujaId, d, true));
-        audit.info("event=puja_booked tenant={} booking={} puja={} paise={}", currentTenant(), booking.getId(),
-                pujaId, booking.getAmountPaise());
-        CreatedOrder order = booking.getAmountPaise() == 0 ? null
+    public Booked book(long pujaId, BookingDetails d, boolean payAtTemple) {
+        PujaBooking draft = newBooking(pujaId, d, true);
+        if (payAtTemple && draft.getAmountPaise() > 0) {
+            draft.payAtTemple();
+        }
+        PujaBooking booking = bookings.saveAndFlush(draft);
+        audit.info("event=puja_booked tenant={} booking={} puja={} paise={} at_temple={}", currentTenant(), booking.getId(),
+                pujaId, booking.getAmountPaise(), payAtTemple);
+        CreatedOrder order = booking.getAmountPaise() == 0 || "PAY_AT_TEMPLE".equals(booking.getStatus()) ? null
                 : payments.createPujaOrder(booking.getId(), booking.getAmountPaise(), booking.getDevoteeName(),
                         "Puja: " + booking.getPujaName());
         return new Booked(booking, order);
@@ -114,6 +118,21 @@ public class PujaService implements PujaSettlement {
         auditTrail.record(AuditAction.PUJA_BOOKED_AT_COUNTER, "puja_booking", booking.getId(),
                 booking.getAmountPaise() == 0 ? null : mode);
         return booking;
+    }
+
+    /** The dakshina of a pay-at-temple booking was taken at the counter (cash, UPI, card…). */
+    @Transactional
+    public PujaBooking collect(long bookingId, String mode, String reference, long staffId) {
+        PujaBooking b = bookings.lockById(bookingId).orElseThrow(PujaNotFoundException::new);
+        if (!"PAY_AT_TEMPLE".equals(b.getStatus())) {
+            throw new PujaConflictException("not_awaiting_collection");
+        }
+        if (mode == null || !COUNTER_MODES.contains(mode)) {
+            throw new InvalidFieldException("mode", "say how the dakshina was paid");
+        }
+        b.collect(staffId, mode, optional("reference", reference, 64));
+        auditTrail.record(AuditAction.PUJA_DAKSHINA_COLLECTED, "puja_booking", bookingId, mode);
+        return b;
     }
 
     private PujaBooking newBooking(long pujaId, BookingDetails d, boolean contactRequired) {

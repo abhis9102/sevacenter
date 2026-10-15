@@ -139,6 +139,14 @@ public class PujaController {
         return BookingResponse.of(service.perform(id, staff.userId()), staff.role() != Role.MEMBER, service.priestNames());
     }
 
+    /** The dakshina of a pay-at-temple booking, taken at the counter. LEADER+, like counter bookings. */
+    @PostMapping("/api/v1/puja-bookings/{id:\\d+}/collect")
+    @PreAuthorize("hasRole('LEADER')")
+    public BookingResponse collect(@PathVariable long id, @Valid @RequestBody CollectRequest r,
+                                   @AuthenticationPrincipal StaffUser staff) {
+        return BookingResponse.of(service.collect(id, r.mode(), r.reference(), staff.userId()), true, service.priestNames());
+    }
+
     @PostMapping("/api/v1/puja-bookings/{id:\\d+}/cancel")
     @PreAuthorize("hasRole('LEADER')")
     public BookingResponse cancel(@PathVariable long id, @AuthenticationPrincipal StaffUser staff) {
@@ -165,7 +173,7 @@ public class PujaController {
             throw new app.sevacenter.auth.LoginThrottle.TooManyAttemptsException();
         }
         PujaService.Booked b = service.book(id, new BookingDetails(r.devoteeName(), r.gotra(), r.nakshatra(), r.rashi(),
-                r.familyNames(), r.pujaDate(), r.phone(), r.email()));
+                r.familyNames(), r.pujaDate(), r.phone(), r.email()), Boolean.TRUE.equals(r.payAtTemple()));
         CreatedOrder o = b.order();
         return new BookedResponse(b.booking().getBookingCode(), b.booking().getStatus(), b.booking().getPujaName(),
                 b.booking().getPujaDate(), Money.toRupees(b.booking().getAmountPaise()),
@@ -204,7 +212,12 @@ public class PujaController {
             @Schema(example = "Ravi, Meena") @Size(max = 500) String familyNames,
             @Schema(example = "2030-08-15") @NotNull LocalDate pujaDate,
             @Schema(example = "98765 43210") @Size(max = 30) String phone,
-            @Schema(example = "lakshmi@example.org") @Size(max = 254) String email) { }
+            @Schema(example = "lakshmi@example.org") @Size(max = 254) String email,
+            @Schema(description = "Pay the dakshina at the temple instead of online", example = "false")
+            Boolean payAtTemple) { }
+
+    public record CollectRequest(@Schema(example = "CASH") @jakarta.validation.constraints.NotBlank @Size(max = 20) String mode,
+                                 @Schema(example = "UPI ref 1234") @Size(max = 64) String reference) { }
 
     public record PriestAssignment(@Schema(example = "1", description = "null clears the assignment") Long priestId) { }
 

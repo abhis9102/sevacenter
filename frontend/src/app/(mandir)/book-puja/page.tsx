@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { api } from "@/components/apiClient";
-import { MandirPageTitle, useDevotee, useMandirText } from "@/components/MandirShell";
+import { useTemple, MandirPageTitle, useDevotee, useMandirText } from "@/components/MandirShell";
 import { prefill } from "@/lib/devotee";
 import { Alert, Button, Card, TextField } from "@/components/ui";
 import { ApiError, describeError } from "@/lib/errors";
@@ -20,7 +20,7 @@ export default function BookPujaPage() {
   const [pujas, setPujas] = useState<Puja[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [chosen, setChosen] = useState<Puja | null>(null);
-  const [done, setDone] = useState<{ code: string; puja: string; date: string } | null>(null);
+  const [done, setDone] = useState<{ code: string; puja: string; date: string; dueAtTemple?: string } | null>(null);
 
   useEffect(() => {
     api.get<Puja[]>("/public/pujas").then(setPujas).catch((err) => setError(describeError(err)));
@@ -36,6 +36,7 @@ export default function BookPujaPage() {
           <h2 className="text-lg font-medium">{tx.puja.booked(done.puja, done.date)}</h2>
           <p className="text-sm text-muted">{tx.puja.code}</p>
           <p className="font-mono text-3xl tracking-widest text-primary-strong">{formatPassCode(done.code)}</p>
+          {done.dueAtTemple ? <p className="rounded-[10px] bg-haldi/15 p-2 text-sm font-medium text-maroon">{tx.puja.payAtCounter(done.dueAtTemple)}</p> : null}
           <p className="text-xs text-muted">{tx.puja.notDonation}</p>
         </Card>
       ) : chosen ? (
@@ -64,10 +65,15 @@ export default function BookPujaPage() {
 }
 
 function BookingForm({ puja, onBack, onDone }: {
-  puja: Puja; onBack: () => void; onDone: (d: { code: string; puja: string; date: string }) => void;
+  puja: Puja; onBack: () => void; onDone: (d: { code: string; puja: string; date: string; dueAtTemple?: string }) => void;
 }) {
   const tx = useMandirText();
   const devotee = useDevotee();
+  const temple = useTemple();
+  // Online payment only where the trust set it up; otherwise the dakshina is paid at the temple.
+  const online = !!temple?.onlineDonations;
+  const [atTemple, setAtTemple] = useState(!online);
+  const payNow = !isFree(puja.dakshina) && !(atTemple || !online);
   const [f, setF] = useState(() => {
     const pre = prefill(devotee), p = devotee?.profile;
     return { devoteeName: pre.name, gotra: p?.gotra ?? "", nakshatra: p?.nakshatra ?? "", rashi: p?.rashi ?? "",
@@ -86,10 +92,12 @@ function BookingForm({ puja, onBack, onDone }: {
     try {
       const booked = await api.request<Booked>(`/public/pujas/${puja.id}/book`, {
         method: "POST",
-        json: Object.fromEntries(Object.entries(f).map(([k, v]) => [k, v.trim() || null])),
+        json: { ...Object.fromEntries(Object.entries(f).map(([k, v]) => [k, v.trim() || null])),
+                payAtTemple: !isFree(puja.dakshina) && (atTemple || !online) },
       });
       if (!booked.orderId || !booked.keyId) {
-        onDone({ code: booked.bookingCode, puja: booked.pujaName, date: booked.pujaDate });
+        onDone({ code: booked.bookingCode, puja: booked.pujaName, date: booked.pujaDate,
+                 dueAtTemple: booked.status === "PAY_AT_TEMPLE" ? booked.amount : undefined });
         return;
       }
       const Razorpay = await loadCheckout();
@@ -134,9 +142,17 @@ function BookingForm({ puja, onBack, onDone }: {
         <TextField label={tx.common.mobile} inputMode="tel" value={f.phone} onChange={set("phone")} error={fields.phone} />
         <TextField label={tx.common.emailIfNoMobile} type="email" value={f.email} onChange={set("email")} error={fields.email} />
         <div className="flex flex-col gap-3 sm:col-span-2">
+        {!isFree(puja.dakshina) && online ? (
+          <fieldset className="flex flex-col gap-2 rounded-[10px] border border-line p-3 text-sm">
+            <legend className="px-1 font-medium">{tx.puja.howToPay}</legend>
+            <label className="flex items-center gap-2"><input type="radio" name="pay" checked={!atTemple} onChange={() => setAtTemple(false)} />{tx.puja.payOnline}</label>
+            <label className="flex items-center gap-2"><input type="radio" name="pay" checked={atTemple} onChange={() => setAtTemple(true)} />{tx.puja.payAtTemple}</label>
+          </fieldset>
+        ) : !isFree(puja.dakshina) ? <p className="text-sm text-muted">{tx.puja.payAtTemple}</p> : null}
         {error ? <Alert tone="danger">{error}</Alert> : null}
         <div className="flex gap-2">
-          <Button type="submit" busy={busy}>{isFree(puja.dakshina) ? tx.puja.submitFree : tx.puja.submitPaid(puja.dakshina)}</Button>
+          <Button type="submit" busy={busy}>{isFree(puja.dakshina) ? tx.puja.submitFree
+            : payNow ? tx.puja.submitPaid(puja.dakshina) : tx.puja.submitAtTemple(puja.dakshina)}</Button>
           <Button type="button" variant="secondary" onClick={onBack}>{tx.common.back}</Button>
         </div>
         </div>
