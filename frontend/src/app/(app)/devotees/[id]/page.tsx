@@ -288,7 +288,7 @@ function DevoteeDetail() {
             </div>
           ) : view === "giving" && activity?.donations ? (
             activity.donations.items.length === 0 ? <EmptyState title="No donations recorded yet." /> : (
-              <Card className="overflow-x-auto p-0">
+              <Card className="relative overflow-x-auto p-0">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-surface-2 text-xs uppercase tracking-wider text-muted">
                     <tr><th className="px-4 py-2">Date</th><th className="px-4 py-2">Amount</th><th className="px-4 py-2">Mode</th>
