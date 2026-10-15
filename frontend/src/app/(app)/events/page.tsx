@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { api } from "@/components/apiClient";
 import { useMe } from "@/components/Session";
+import { EventPhoto } from "@/components/EventPhoto";
 import { IssuePassDialog } from "@/components/StaffDialogs";
 import { ConfirmDialog, EmptyState, Pill, StaffTitle, StatCard, useView, ViewSwitcher } from "@/components/staff";
 import { Alert, Button, Card, Dialog, TextField } from "@/components/ui";
@@ -142,6 +143,11 @@ export default function EventsPage() {
                 const full = e.capacity !== null ? Math.min(100, Math.round((e.seatsTaken / e.capacity) * 100)) : null;
                 return (
                   <Card key={e.id} className={`flex flex-col gap-3 ${e.status === "CANCELLED" || ended ? "opacity-70" : ""}`}>
+                    {e.imageVersion ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- our own re-encoded JPEG (staff preview, drafts too)
+                      <img src={`/api/v1/events/${e.id}/image?v=${encodeURIComponent(e.imageVersion)}`} alt={e.title}
+                           className="aspect-[16/9] w-full rounded-[10px] border border-line object-cover" />
+                    ) : null}
                     <div className="flex items-start gap-4">
                       <div className="flex size-14 shrink-0 flex-col items-center justify-center rounded-[12px] border border-primary/25 bg-primary/10 text-primary-strong">
                         <span className="text-xl font-semibold leading-none">{chip.day}</span>
@@ -171,6 +177,8 @@ export default function EventsPage() {
                     {isLeader && e.status !== "CANCELLED" && !ended ? (
                       <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3">
                         {e.status === "DRAFT" ? <Button variant="ghost" className="text-danger" onClick={() => setDeleting(e)}>Delete</Button> : null}
+                        <EventPhoto event={e} onChanged={() => void load()}
+                                    onError={(text) => setNotice({ tone: "danger", text })} />
                         <Button variant="secondary" onClick={() => setEditing(e)}>Edit</Button>
                         {e.status === "DRAFT" ? <Button onClick={() => void changeStatus(e, "publish")}>Publish</Button> : null}
                         {e.status === "PUBLISHED" ? <Button variant="danger" onClick={() => setCancelling(e)}>Cancel utsav</Button> : null}

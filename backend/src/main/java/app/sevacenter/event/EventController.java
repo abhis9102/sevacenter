@@ -35,41 +35,47 @@ import org.springframework.web.bind.annotation.RestController;
 public class EventController {
 
     private final EventService service;
+    private final EventImageRepository images;
 
-    public EventController(EventService service) {
+    public EventController(EventService service, EventImageRepository images) {
         this.service = service;
+        this.images = images;
     }
 
     @GetMapping
     @PreAuthorize("hasRole('MEMBER')")
     public List<EventResponse> list() {
-        return service.list().stream().map(e -> EventResponse.of(e, service.seatsTaken(e.getId()))).toList();
+        return service.list().stream().map(e -> EventResponse.of(e, service.seatsTaken(e.getId()), imageOf(e))).toList();
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('LEADER')")
     public EventResponse create(@Valid @RequestBody EventRequest r, @AuthenticationPrincipal StaffUser staff) {
-        return EventResponse.of(service.create(r.details(), staff.userId()), 0);
+        Event e = service.create(r.details(), staff.userId());
+        return EventResponse.of(e, 0, imageOf(e));
     }
 
     @PutMapping("/{id:\\d+}")
     @PreAuthorize("hasRole('LEADER')")
     public EventResponse update(@PathVariable long id, @Valid @RequestBody EventRequest r,
                                 @AuthenticationPrincipal StaffUser staff) {
-        return EventResponse.of(service.update(id, r.details(), staff.userId()), service.seatsTaken(id));
+        Event e = service.update(id, r.details(), staff.userId());
+        return EventResponse.of(e, service.seatsTaken(id), imageOf(e));
     }
 
     @PostMapping("/{id:\\d+}/publish")
     @PreAuthorize("hasRole('LEADER')")
     public EventResponse publish(@PathVariable long id, @AuthenticationPrincipal StaffUser staff) {
-        return EventResponse.of(service.changeStatus(id, EventStatus.PUBLISHED, staff.userId()), service.seatsTaken(id));
+        Event e = service.changeStatus(id, EventStatus.PUBLISHED, staff.userId());
+        return EventResponse.of(e, service.seatsTaken(id), imageOf(e));
     }
 
     @PostMapping("/{id:\\d+}/cancel")
     @PreAuthorize("hasRole('LEADER')")
     public EventResponse cancel(@PathVariable long id, @AuthenticationPrincipal StaffUser staff) {
-        return EventResponse.of(service.changeStatus(id, EventStatus.CANCELLED, staff.userId()), service.seatsTaken(id));
+        Event e = service.changeStatus(id, EventStatus.CANCELLED, staff.userId());
+        return EventResponse.of(e, service.seatsTaken(id), imageOf(e));
     }
 
     /** ADR 0029: a draft or cancelled event only (409 cancel_first). */
@@ -122,12 +128,16 @@ public class EventController {
         }
     }
 
+    private String imageOf(Event e) {
+        return images.versionOf(e.getId()).orElse(null);
+    }
+
     public record EventResponse(long id, String title, String description, OffsetDateTime startsAt,
                                 OffsetDateTime endsAt, Integer capacity, long seatsTaken, EventStatus status,
-                                boolean registrationOpen) {
-        static EventResponse of(Event e, long taken) {
+                                boolean registrationOpen, String imageVersion) {
+        static EventResponse of(Event e, long taken, String imageVersion) {
             return new EventResponse(e.getId(), e.getTitle(), e.getDescription(), e.getStartsAt(), e.getEndsAt(),
-                    e.getCapacity(), taken, e.getStatus(), e.isRegistrationOpen());
+                    e.getCapacity(), taken, e.getStatus(), e.isRegistrationOpen(), imageVersion);
         }
     }
 
