@@ -103,6 +103,16 @@ describe("API proxy headers", () => {
         .get("x-forwarded-for"), null, junk);
     }
   });
+  it("forwards a custom domain for the backend to resolve, only when the Host names no slug", () => {
+    assert.equal(upstreamRequestHeaders(new Headers(), null, "www.temple.org").get("x-tenant-host"), "www.temple.org");
+    const withSlug = upstreamRequestHeaders(new Headers(), "demo", "www.temple.org");
+    assert.equal(withSlug.get("x-tenant-host"), null);
+    assert.equal(withSlug.get("x-tenant-slug"), "demo");
+  });
+  it("never forwards a client-supplied X-Tenant-Host", () => {
+    const out = upstreamRequestHeaders(new Headers({ "x-tenant-host": "victim-temple.org" }), null);
+    assert.equal(out.get("x-tenant-host"), null);
+  });
   it("keeps each Set-Cookie separate on the way back", () => {
     const up = new Headers();
     up.append("set-cookie", "SC_SESSION=a; Path=/; HttpOnly");

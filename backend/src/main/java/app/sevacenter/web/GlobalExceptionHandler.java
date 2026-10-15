@@ -37,6 +37,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "avatar_not_found"));
     }
 
+    @ExceptionHandler(app.sevacenter.domain.CustomDomainService.NotFoundException.class)
+    public ResponseEntity<Map<String, Object>> onCustomDomainNotFound() {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
+    }
+
     @ExceptionHandler(DevoteeService.DevoteeNotFoundException.class)
     public ResponseEntity<Map<String, Object>> onDevoteeNotFound() {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));

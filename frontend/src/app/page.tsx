@@ -9,6 +9,11 @@ export default async function Home() {
   const host = (await headers()).get("host");
   const site = siteForHost(host);
 
+  // A temple's own domain (ADR 0036): its temple page; the backend resolves which trust.
+  if (site.custom) {
+    return <TemplePublicPage />;
+  }
+
   // Single-domain / dev: one host serves both brands by path (original behaviour).
   if (site.singleDomain || site.brand === null) {
     return site.slug ? <TemplePublicPage /> : <LandingPage />;

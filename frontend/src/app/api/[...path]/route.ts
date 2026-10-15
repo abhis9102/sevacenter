@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 
+import { customHostname } from "@/lib/brand";
 import { parseBaseDomains, slugFromHost } from "@/lib/tenant";
 import {
   backendBaseUrl,
@@ -54,7 +55,7 @@ async function forward(request: NextRequest): Promise<Response> {
   try {
     upstream = await fetch(BACKEND + path + request.nextUrl.search, {
       method: request.method,
-      headers: upstreamRequestHeaders(request.headers, slug),
+      headers: upstreamRequestHeaders(request.headers, slug, slug ? null : customHostname(request.headers.get("host"))),
       body,
       redirect: "manual",
       cache: "no-store",

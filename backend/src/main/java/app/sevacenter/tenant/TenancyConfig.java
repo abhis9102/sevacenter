@@ -48,9 +48,10 @@ public class TenancyConfig {
     FilterRegistrationBean<TenantResolutionFilter> tenantResolutionFilter(
             TenantRepository tenants,
             @Value("${sevacenter.tenant.allow-header-override:false}") boolean allowHeaderOverride,
-            PublicUrls publicUrls) {
+            PublicUrls publicUrls, app.sevacenter.domain.TenantDomainRepository customDomains) {
         FilterRegistrationBean<TenantResolutionFilter> reg = new FilterRegistrationBean<>();
-        reg.setFilter(new TenantResolutionFilter(tenants, allowHeaderOverride, publicUrls.baseDomains()));
+        reg.setFilter(new TenantResolutionFilter(tenants, allowHeaderOverride, publicUrls.baseDomains(),
+                host -> customDomains.findById(host).map(app.sevacenter.domain.TenantDomain::getTenantId)));
         reg.addUrlPatterns("/*");
         reg.setOrder(Ordered.HIGHEST_PRECEDENCE + 1);   // after the sanity filter, before Spring Security (-100)
         return reg;

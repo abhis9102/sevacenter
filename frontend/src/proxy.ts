@@ -29,12 +29,18 @@ export function proxy(request: NextRequest) {
 
   // Brand gate first: a cross-brand redirect needs no CSP of its own.
   const site = siteForHost(request.headers.get("host"));
+  // A temple's own domain serves the public pages only: never staff sign-in or the staff app, so
+  // no staff session ever lives on a domain we don't control (ADR 0036). 404, not a redirect: the
+  // trust's staff address isn't advertised on its public domain.
+  if (site.custom && hasPrefix(path, STAFF_PREFIXES)) {
+    return new NextResponse("Not found", { status: 404, headers: { "content-type": "text/plain" } });
+  }
   // A trust's staff host has no home page: straight to sign-in. Done here, not in the page, so the
   // 307 carries no body (a page-level redirect streamed the app shell with it: DAST "big redirect").
   if (!site.singleDomain && site.brand === "staff" && site.slug && path === "/") {
     return NextResponse.redirect(new URL("/login", request.nextUrl), 307);
   }
-  if (!site.singleDomain && site.brand) {
+  if (!site.singleDomain && site.brand && !site.custom) {
     const crossTo = (base: string) => {
       const url = request.nextUrl.clone();
       url.host = site.slug ? `${site.slug}.${base}` : base;

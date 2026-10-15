@@ -54,6 +54,18 @@
         },
         "type" : "object"
       },
+      "AddRequest" : {
+        "properties" : {
+          "hostname" : {
+            "example" : "www.shrisiddhivinayak.org",
+            "maxLength" : 253,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "hostname" ],
+        "type" : "object"
+      },
       "AssignRequest" : {
         "properties" : {
           "duty" : {
@@ -634,6 +646,59 @@
         },
         "type" : "object"
       },
+      "DomainResponse" : {
+        "properties" : {
+          "hostname" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "lastCheckedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "lastError" : {
+            "type" : "string"
+          },
+          "pointsHere" : {
+            "type" : "boolean"
+          },
+          "status" : {
+            "enum" : [ "PENDING", "ACTIVE", "FAILED" ],
+            "type" : "string"
+          },
+          "txtName" : {
+            "description" : "TXT record name to create",
+            "type" : "string"
+          },
+          "txtValue" : {
+            "description" : "TXT record value: proves you own the domain",
+            "type" : "string"
+          },
+          "verifiedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "Domains" : {
+        "properties" : {
+          "domains" : {
+            "items" : {
+              "$ref" : "#/components/schemas/DomainResponse"
+            },
+            "type" : "array"
+          },
+          "target" : {
+            "description" : "Point your domain here (CNAME), or at its address (A)",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "DonationItem" : {
         "properties" : {
           "amount" : {
@@ -969,7 +1034,7 @@
       "Item" : {
         "properties" : {
           "action" : {
-            "enum" : [ "USER_INVITED", "USER_ROLE_CHANGED", "USER_DEACTIVATED", "USER_DELETED", "USER_SETUP_LINK_REISSUED", "USER_RESET_LINK_ISSUED", "USER_ACCESS_CHANGED", "DEVOTEE_CREATED", "DEVOTEE_UPDATED", "DEVOTEE_ERASED", "DEVOTEES_IMPORTED", "DEVOTEES_EXPORTED", "DONATION_RECORDED", "DONATION_REVERSED", "RECEIPT_ISSUED", "TRUST_PROFILE_SAVED", "PAYMENT_SETTINGS_SAVED", "FUND_SAVED", "EVENT_STATUS_CHANGED", "PUJA_SAVED", "PUJA_BOOKING_CANCELLED", "SEVAK_REVIEWED", "TEMPLE_PAGE_SAVED", "PUJA_BOOKED_AT_COUNTER", "PASS_ISSUED_AT_COUNTER", "PRIEST_SAVED", "PRIEST_ASSIGNED", "SEVA_TEAM_SAVED", "SEVA_TEAM_DELETED", "SEVAK_REGISTERED", "SEVAK_ASSIGNED", "SEVAK_REMOVED", "EVENT_DELETED", "PUJA_DELETED", "ACCOUNT_LOCKED" ],
+            "enum" : [ "USER_INVITED", "USER_ROLE_CHANGED", "USER_DEACTIVATED", "USER_DELETED", "USER_SETUP_LINK_REISSUED", "USER_RESET_LINK_ISSUED", "USER_ACCESS_CHANGED", "DEVOTEE_CREATED", "DEVOTEE_UPDATED", "DEVOTEE_ERASED", "DEVOTEES_IMPORTED", "DEVOTEES_EXPORTED", "DONATION_RECORDED", "DONATION_REVERSED", "RECEIPT_ISSUED", "TRUST_PROFILE_SAVED", "PAYMENT_SETTINGS_SAVED", "FUND_SAVED", "EVENT_STATUS_CHANGED", "PUJA_SAVED", "PUJA_BOOKING_CANCELLED", "SEVAK_REVIEWED", "TEMPLE_PAGE_SAVED", "PUJA_BOOKED_AT_COUNTER", "PASS_ISSUED_AT_COUNTER", "PRIEST_SAVED", "PRIEST_ASSIGNED", "SEVA_TEAM_SAVED", "SEVA_TEAM_DELETED", "SEVAK_REGISTERED", "SEVAK_ASSIGNED", "SEVAK_REMOVED", "EVENT_DELETED", "PUJA_DELETED", "ACCOUNT_LOCKED", "CUSTOM_DOMAIN_ADDED", "CUSTOM_DOMAIN_VERIFIED", "CUSTOM_DOMAIN_REMOVED", "CUSTOM_DOMAIN_DEACTIVATED" ],
             "type" : "string"
           },
           "actor" : {
@@ -2444,7 +2509,7 @@
   "paths" : {
     "/api/v1/audit" : {
       "get" : {
-        "operationId" : "list_5",
+        "operationId" : "list_6",
         "parameters" : [ {
           "in" : "query",
           "name" : "page",
@@ -2468,7 +2533,7 @@
           "name" : "action",
           "required" : false,
           "schema" : {
-            "enum" : [ "USER_INVITED", "USER_ROLE_CHANGED", "USER_DEACTIVATED", "USER_DELETED", "USER_SETUP_LINK_REISSUED", "USER_RESET_LINK_ISSUED", "USER_ACCESS_CHANGED", "DEVOTEE_CREATED", "DEVOTEE_UPDATED", "DEVOTEE_ERASED", "DEVOTEES_IMPORTED", "DEVOTEES_EXPORTED", "DONATION_RECORDED", "DONATION_REVERSED", "RECEIPT_ISSUED", "TRUST_PROFILE_SAVED", "PAYMENT_SETTINGS_SAVED", "FUND_SAVED", "EVENT_STATUS_CHANGED", "PUJA_SAVED", "PUJA_BOOKING_CANCELLED", "SEVAK_REVIEWED", "TEMPLE_PAGE_SAVED", "PUJA_BOOKED_AT_COUNTER", "PASS_ISSUED_AT_COUNTER", "PRIEST_SAVED", "PRIEST_ASSIGNED", "SEVA_TEAM_SAVED", "SEVA_TEAM_DELETED", "SEVAK_REGISTERED", "SEVAK_ASSIGNED", "SEVAK_REMOVED", "EVENT_DELETED", "PUJA_DELETED", "ACCOUNT_LOCKED" ],
+            "enum" : [ "USER_INVITED", "USER_ROLE_CHANGED", "USER_DEACTIVATED", "USER_DELETED", "USER_SETUP_LINK_REISSUED", "USER_RESET_LINK_ISSUED", "USER_ACCESS_CHANGED", "DEVOTEE_CREATED", "DEVOTEE_UPDATED", "DEVOTEE_ERASED", "DEVOTEES_IMPORTED", "DEVOTEES_EXPORTED", "DONATION_RECORDED", "DONATION_REVERSED", "RECEIPT_ISSUED", "TRUST_PROFILE_SAVED", "PAYMENT_SETTINGS_SAVED", "FUND_SAVED", "EVENT_STATUS_CHANGED", "PUJA_SAVED", "PUJA_BOOKING_CANCELLED", "SEVAK_REVIEWED", "TEMPLE_PAGE_SAVED", "PUJA_BOOKED_AT_COUNTER", "PASS_ISSUED_AT_COUNTER", "PRIEST_SAVED", "PRIEST_ASSIGNED", "SEVA_TEAM_SAVED", "SEVA_TEAM_DELETED", "SEVAK_REGISTERED", "SEVAK_ASSIGNED", "SEVAK_REMOVED", "EVENT_DELETED", "PUJA_DELETED", "ACCOUNT_LOCKED", "CUSTOM_DOMAIN_ADDED", "CUSTOM_DOMAIN_VERIFIED", "CUSTOM_DOMAIN_REMOVED", "CUSTOM_DOMAIN_DEACTIVATED" ],
             "type" : "string"
           }
         } ],
@@ -2578,6 +2643,97 @@
           }
         },
         "tags" : [ "csrf-controller" ]
+      }
+    },
+    "/api/v1/custom-domains" : {
+      "get" : {
+        "operationId" : "list_4",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Domains"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "custom-domain-controller" ]
+      },
+      "post" : {
+        "operationId" : "add",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AddRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DomainResponse"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "custom-domain-controller" ]
+      }
+    },
+    "/api/v1/custom-domains/{id}" : {
+      "delete" : {
+        "operationId" : "remove_2",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "custom-domain-controller" ]
+      }
+    },
+    "/api/v1/custom-domains/{id}/verify" : {
+      "post" : {
+        "operationId" : "verify_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DomainResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "custom-domain-controller" ]
       }
     },
     "/api/v1/devotees" : {
@@ -3893,6 +4049,25 @@
         "tags" : [ "profile-controller" ]
       }
     },
+    "/api/v1/public/custom-domains/allowed" : {
+      "get" : {
+        "operationId" : "allowed",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "domain",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "custom-domain-controller" ]
+      }
+    },
     "/api/v1/public/devotee-login" : {
       "get" : {
         "operationId" : "channels",
@@ -4504,7 +4679,7 @@
     },
     "/api/v1/receipts" : {
       "get" : {
-        "operationId" : "list_4",
+        "operationId" : "list_5",
         "parameters" : [ {
           "in" : "query",
           "name" : "fy",

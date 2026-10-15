@@ -9,6 +9,7 @@ locals {
     "*.internal.",                   # VPC-internal host names
     "acme-v02.api.letsencrypt.org.", # edge box certificates
     "api.razorpay.com.",             # online donations (ADR 0013)
+    "cloudflare-dns.com.",           # DNS over HTTPS: custom domain ownership checks (ADR 0036)
   ], [for d in var.extra_allowed_domains : endswith(d, ".") ? d : "${d}."])
 }
 
