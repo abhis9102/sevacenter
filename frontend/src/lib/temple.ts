@@ -18,6 +18,8 @@ export interface PublicTemple {
   onlineDonations: boolean;
   upcomingEvents: boolean;
   pujaBooking: boolean;
+  /** At least one group is listed for devotees to join (ADR 0037). */
+  groups: boolean;
   /** Plain text: render as text (whitespace-pre-line), never as HTML. */
   about: string | null;
   history: string | null;

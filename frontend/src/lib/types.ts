@@ -30,7 +30,7 @@ export interface Me {
   moduleLimits?: ModuleLimits;
 }
 
-export type StaffModule = "DEVOTEES" | "DONATIONS" | "EVENTS" | "PUJAS" | "VOLUNTEERS" | "TEMPLE";
+export type StaffModule = "DEVOTEES" | "DONATIONS" | "EVENTS" | "PUJAS" | "VOLUNTEERS" | "TEMPLE" | "GROUPS";
 export type ModuleAccess = "FULL" | "VIEW" | "NONE";
 export type ModuleLimits = Partial<Record<StaffModule, ModuleAccess>>;
 
@@ -40,6 +40,7 @@ export const STAFF_MODULES: { id: StaffModule; label: string }[] = [
   { id: "EVENTS", label: "Events" },
   { id: "PUJAS", label: "Pujas" },
   { id: "VOLUNTEERS", label: "Volunteers" },
+  { id: "GROUPS", label: "Groups" },
   { id: "TEMPLE", label: "Mandir Center" },
 ];
 

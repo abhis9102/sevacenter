@@ -11,7 +11,8 @@ describe("modules", () => {
   });
 
   it("keeps money and administration away from members", () => {
-    assert.deepEqual(ids({ role: "MEMBER" }), ["dashboard", "devotees", "pujas", "events", "mandir"]);
+    // Members see the groups list (ADR 0037); who is in a group is LEADER+ (enforced by the API).
+    assert.deepEqual(ids({ role: "MEMBER" }), ["dashboard", "devotees", "pujas", "events", "groups", "mandir"]);
   });
 
   it("shows leaders donations, volunteers and staff, but not payment settings or the audit log", () => {
@@ -41,7 +42,7 @@ describe("modules", () => {
   it("keeps related modules together: finance, administration, people, pujas and utsavs", () => {
     const groups = sectionsOf(visibleModules({ role: "TRUST_ADMIN" })).map((g) => [g.section, g.modules.map((m) => m.id)]);
     assert.deepEqual(groups, [
-      ["dashboard", ["dashboard"]], ["people", ["devotees", "volunteers"]], ["finance", ["donations", "payments"]],
+      ["dashboard", ["dashboard"]], ["people", ["devotees", "volunteers", "groups"]], ["finance", ["donations", "payments"]],
       ["worship", ["pujas", "events"]], ["mandir", ["mandir"]], ["admin", ["staff", "audit"]],
     ]);
     // A leader's finance section has the ledger but no payment setup; members have no finance at all.

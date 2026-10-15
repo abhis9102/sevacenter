@@ -54,7 +54,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class PortalController {
 
     /** Scoped to the portal path: the cookie never even reaches the staff API. */
-    static final String COOKIE = "SC_DEVOTEE";
+    public static final String COOKIE = "SC_DEVOTEE";
     static final String COOKIE_PATH = "/api/v1/portal";
 
     private final DevoteeLoginService login;

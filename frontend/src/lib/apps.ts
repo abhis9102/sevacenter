@@ -11,8 +11,8 @@ import type { Translations } from "./i18n";
 import { hasRole, moduleAccess, type Me, type Role, type StaffModule } from "./types";
 
 export type ModuleId =
-  | "dashboard" | "devotees" | "donations" | "payments" | "pujas" | "events" | "volunteers" | "mandir" | "staff"
-  | "audit";
+  | "dashboard" | "devotees" | "donations" | "payments" | "pujas" | "events" | "volunteers" | "groups" | "mandir"
+  | "staff" | "audit";
 
 /** Related modules live together: one switcher entry per section, in this order. */
 export type Section = "dashboard" | "people" | "finance" | "worship" | "mandir" | "admin";
@@ -35,6 +35,7 @@ export const MODULES: NavModule[] = [
   { id: "pujas", href: "/pujas", label: "pujas", section: "worship", min: "MEMBER", module: "PUJAS" },
   { id: "events", href: "/events", label: "events", section: "worship", min: "MEMBER", module: "EVENTS" },
   { id: "volunteers", href: "/volunteers", label: "volunteers", section: "people", min: "LEADER", module: "VOLUNTEERS" },
+  { id: "groups", href: "/groups", label: "groups", section: "people", min: "MEMBER", module: "GROUPS" },
   { id: "mandir", href: "/temple", label: "temple", section: "mandir", min: "MEMBER", module: "TEMPLE" },
   { id: "staff", href: "/staff", label: "staff", section: "admin", min: "LEADER" },
   { id: "audit", href: "/audit", label: "audit", section: "admin", min: "TRUST_ADMIN" },

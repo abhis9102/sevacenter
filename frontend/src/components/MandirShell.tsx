@@ -78,6 +78,7 @@ export function MandirShell({ children }: { children: React.ReactNode }) {
     { href: "/donate", label: t.mandir.tabs.donate, icon: "donate", show: !!temple?.onlineDonations },
     { href: "/upcoming", label: t.mandir.tabs.utsavs, icon: "utsav", show: !!temple?.upcomingEvents },
     { href: "/sevak", label: t.mandir.tabs.sevak, icon: "sevak", show: true },
+    { href: "/community", label: t.mandir.tabs.groups, icon: "sevak", show: !!temple?.groups },
     { href: "/my-seva", label: t.mandir.tabs.myMandir, icon: "user", show: true },
   ];
 

@@ -29,6 +29,7 @@ export interface Translations {
     audit: string;
     events: string;
     volunteers: string;
+    groups: string;
     pujas: string;
     temple: string;
     home: string;
@@ -39,13 +40,19 @@ export interface Translations {
     menuTitle: string;
     mandirCenter: string;
     newTab: string;
-    describe: Record<"dashboard" | "devotees" | "donations" | "payments" | "pujas" | "events" | "volunteers" | "mandir"
+    describe: Record<"dashboard" | "devotees" | "donations" | "payments" | "pujas" | "events" | "volunteers" | "groups" | "mandir"
       | "staff" | "audit", string>;
     sections: Record<"dashboard" | "people" | "finance" | "worship" | "mandir" | "admin", { name: string; description: string }>;
   };
   mandir: {
     tagline: string;
-    tabs: { home: string; pujas: string; donate: string; utsavs: string; sevak: string; myMandir: string };
+    tabs: { home: string; pujas: string; donate: string; utsavs: string; sevak: string; groups: string; myMandir: string };
+    groups: {
+      title: string; subtitle: string; none: string; meets: string; where: string; members: string;
+      join: string; request: string; pending: string; joined: string; leave: string; full: string;
+      signIn: string; mine: string; askToJoin: string;
+      categories: Record<"SATSANG" | "BHAJAN" | "YOUTH" | "WOMEN" | "STUDY" | "SEVA" | "OTHER", string>;
+    };
     signIn: string;
     openNow: string;
     closedNow: string;
@@ -345,6 +352,7 @@ export const DICTIONARIES: Record<Language, Translations> = {
       audit: "Audit Trail",
       events: "Utsavs & Passes",
       volunteers: "Sevak Hub",
+      groups: "Groups",
       pujas: "Pujas & Sankalp",
       temple: "Mandir Center",
       home: "Home",
@@ -363,6 +371,7 @@ export const DICTIONARIES: Record<Language, Translations> = {
         pujas: "Priest sankalp roster and the puja catalog",
         events: "Utsavs, darshan passes and gate check-in",
         volunteers: "Seva teams, shifts and volunteers",
+        groups: "Satsang, bhajan and youth groups, and who's in them",
         mandir: "Your public Mandir Center: darshan, aartis, notices",
         staff: "Staff, roles and module access",
         audit: "Every staff action, as it happened",
@@ -379,7 +388,15 @@ export const DICTIONARIES: Record<Language, Translations> = {
 
     mandir: {
       tagline: "Darshan, puja, seva and utsav",
-      tabs: { home: "Home", pujas: "Pujas", donate: "Donate", utsavs: "Utsavs", sevak: "Sevak", myMandir: "My Mandir" },
+      tabs: { home: "Home", pujas: "Pujas", donate: "Donate", utsavs: "Utsavs", sevak: "Sevak", groups: "Groups", myMandir: "My Mandir" },
+      groups: {
+        title: "Groups", subtitle: "Satsang, bhajan, youth and study groups you can be part of",
+        none: "No groups are open to join right now.", meets: "Meets", where: "Where", members: "members",
+        join: "Join", request: "Ask to join", pending: "Request sent", joined: "You're a member", leave: "Leave",
+        full: "Full", signIn: "Sign in to join", mine: "My groups", askToJoin: "A group leader approves new members",
+        categories: { SATSANG: "Satsang", BHAJAN: "Bhajan mandali", YOUTH: "Youth", WOMEN: "Mahila mandal",
+          STUDY: "Study circle", SEVA: "Seva", OTHER: "Group" },
+      },
       signIn: "Devotee sign in",
       openNow: "Open for darshan",
       closedNow: "Darshan closed",
@@ -701,6 +718,7 @@ export const DICTIONARIES: Record<Language, Translations> = {
       audit: "ऑडिट लॉग (Audit Trail)",
       events: "उत्सव एवं पास (Utsavs)",
       volunteers: "सेवक केंद्र (Sevak Hub)",
+      groups: "समूह (Groups)",
       pujas: "पूजा एवं संकल्प (Pujas)",
       temple: "मंदिर सेंटर (Mandir Center)",
       home: "मुख्य पृष्ठ",
@@ -719,6 +737,7 @@ export const DICTIONARIES: Record<Language, Translations> = {
         pujas: "पुजारी संकल्प सूची और पूजा सूची",
         events: "उत्सव, दर्शन पास और प्रवेश जाँच",
         volunteers: "सेवा दल, पालियाँ और सेवक",
+        groups: "सत्संग, भजन और युवा समूह, और उनके सदस्य",
         mandir: "आपका सार्वजनिक मंदिर सेंटर: दर्शन, आरती, सूचना",
         staff: "कर्मचारी, भूमिकाएँ और अनुमतियाँ",
         audit: "कर्मचारियों की हर कार्रवाई का रिकॉर्ड",
@@ -735,7 +754,15 @@ export const DICTIONARIES: Record<Language, Translations> = {
 
     mandir: {
       tagline: "दर्शन, पूजा, सेवा एवं उत्सव",
-      tabs: { home: "मुख्य", pujas: "पूजा", donate: "दान", utsavs: "उत्सव", sevak: "सेवक", myMandir: "मेरा मंदिर" },
+      tabs: { home: "मुख्य", pujas: "पूजा", donate: "दान", utsavs: "उत्सव", sevak: "सेवक", groups: "समूह", myMandir: "मेरा मंदिर" },
+      groups: {
+        title: "समूह", subtitle: "सत्संग, भजन, युवा और अध्ययन समूह जिनसे आप जुड़ सकते हैं",
+        none: "अभी कोई समूह जुड़ने के लिए खुला नहीं है।", meets: "मिलन", where: "स्थान", members: "सदस्य",
+        join: "जुड़ें", request: "जुड़ने का अनुरोध", pending: "अनुरोध भेजा गया", joined: "आप सदस्य हैं", leave: "छोड़ें",
+        full: "भरा हुआ", signIn: "जुड़ने के लिए साइन इन करें", mine: "मेरे समूह", askToJoin: "समूह प्रमुख नए सदस्यों को स्वीकृति देते हैं",
+        categories: { SATSANG: "सत्संग", BHAJAN: "भजन मंडली", YOUTH: "युवा", WOMEN: "महिला मंडल",
+          STUDY: "अध्ययन मंडल", SEVA: "सेवा", OTHER: "समूह" },
+      },
       signIn: "भक्त लॉगिन",
       openNow: "दर्शन खुले हैं",
       closedNow: "दर्शन बंद हैं",
