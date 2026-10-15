@@ -3,8 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { api } from "@/components/apiClient";
-import { AboutPhotos } from "@/components/AboutPhotos";
-import { CustomDomainCard } from "@/components/CustomDomainCard";
+import { TempleTabs } from "@/components/TempleTabs";
 import { useMe } from "@/components/Session";
 import { useMandirHref } from "@/components/SiteProvider";
 import { Alert, Button, Card, PageHeader, TextField } from "@/components/ui";
@@ -168,6 +167,7 @@ export default function TempleSettingsPage() {
         description="Your temple's public Mandir Center: what devotees see at its own address. Leave anything blank to hide it."
         actions={<a href={mandirHref} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary-strong">Open Mandir Center ↗</a>}
       />
+      <TempleTabs />
       {notice ? <Alert tone={notice.tone}>{notice.text}</Alert> : null}
 
       <Card className="flex flex-col gap-3">
@@ -221,8 +221,6 @@ export default function TempleSettingsPage() {
         ) : null}
       </Card>
 
-      {hasRole(me.role, "TRUST_ADMIN") ? <CustomDomainCard /> : null}
-
       <form onSubmit={onSave} className="flex flex-col gap-6">
         <Card className="flex flex-col gap-3">
           <h2 className="text-base font-semibold">Temple</h2>
@@ -248,28 +246,6 @@ export default function TempleSettingsPage() {
           </label>
         </Card>
 
-        <Card className="flex flex-col gap-3">
-          <div>
-            <h2 className="text-base font-semibold">About and history</h2>
-            <p className="text-sm text-muted">Shown on your Mandir Center&apos;s About page as written (plain text, line breaks kept), with any photos you add here.</p>
-          </div>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium">About the temple</span>
-            <textarea rows={5} maxLength={4000} value={f.about} onChange={set("about")} disabled={!canEdit}
-                      placeholder="Who the temple is dedicated to, what devotees can expect, festivals it is known for"
-                      className="rounded-[10px] border border-line bg-surface px-3 py-2" />
-            <span className="text-xs text-muted">{f.about.length} / 4000</span>
-          </label>
-          <AboutPhotos section="ABOUT" canEdit={canEdit} />
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium">History</span>
-            <textarea rows={7} maxLength={8000} value={f.history} onChange={set("history")} disabled={!canEdit}
-                      placeholder="When and by whom it was founded, renovations, stories devotees should know"
-                      className="rounded-[10px] border border-line bg-surface px-3 py-2" />
-            <span className="text-xs text-muted">{f.history.length} / 8000</span>
-          </label>
-          <AboutPhotos section="HISTORY" canEdit={canEdit} />
-        </Card>
 
         <Card className="flex flex-col gap-3">
           <div>
