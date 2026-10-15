@@ -11,7 +11,7 @@ import type { Translations } from "./i18n";
 import { hasRole, moduleAccess, type Me, type Role, type StaffModule } from "./types";
 
 export type ModuleId =
-  | "dashboard" | "devotees" | "donations" | "payments" | "pujas" | "events" | "volunteers" | "groups" | "mandir"
+  | "dashboard" | "devotees" | "households" | "donations" | "payments" | "pujas" | "events" | "volunteers" | "groups" | "mandir"
   | "staff" | "audit";
 
 /** Related modules live together: one switcher entry per section, in this order. */
@@ -30,6 +30,7 @@ export interface NavModule {
 export const MODULES: NavModule[] = [
   { id: "dashboard", href: "/dashboard", label: "dashboard", section: "dashboard", min: "MEMBER" },
   { id: "devotees", href: "/devotees", label: "devotees", section: "people", min: "MEMBER", module: "DEVOTEES" },
+  { id: "households", href: "/households", label: "households", section: "people", min: "MEMBER", module: "DEVOTEES" },
   { id: "donations", href: "/donations", label: "donations", section: "finance", min: "LEADER", module: "DONATIONS" },
   { id: "payments", href: "/payments", label: "payments", section: "finance", min: "TRUST_ADMIN" },
   { id: "pujas", href: "/pujas", label: "pujas", section: "worship", min: "MEMBER", module: "PUJAS" },

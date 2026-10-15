@@ -1283,8 +1283,15 @@
           "gotra" : {
             "type" : "string"
           },
+          "head" : {
+            "type" : "string"
+          },
           "id" : {
             "format" : "int64",
+            "type" : "integer"
+          },
+          "members" : {
+            "format" : "int32",
             "type" : "integer"
           },
           "name" : {

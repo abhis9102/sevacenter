@@ -55,8 +55,14 @@ public class HouseholdController {
 
     @GetMapping("/api/v1/households")
     @PreAuthorize("hasRole('MEMBER')")
+    @Transactional(readOnly = true)
     public List<HouseholdSummary> search(@RequestParam(required = false) String q) {
-        return service.search(q).stream().map(h -> new HouseholdSummary(h.getId(), h.getName(), h.getGotra())).toList();
+        return service.search(q).stream().map(h -> {
+            List<HouseholdService.MemberView> people = service.members(h.getId());
+            String head = people.stream().filter(m -> m.member().getRelation() == HouseholdMember.Relation.HEAD)
+                    .map(m -> m.devotee().getFullName()).findFirst().orElse(null);
+            return new HouseholdSummary(h.getId(), h.getName(), h.getGotra(), head, people.size());
+        }).toList();
     }
 
     @GetMapping("/api/v1/households/{id:\\d+}")
@@ -171,7 +177,7 @@ public class HouseholdController {
 
     public record RelationRequest(@Schema(example = "CHILD") @NotNull HouseholdMember.Relation relation) { }
 
-    public record HouseholdSummary(long id, String name, String gotra) { }
+    public record HouseholdSummary(long id, String name, String gotra, String head, int members) { }
 
     public record MemberResponse(long memberId, long devoteeId, String fullName, HouseholdMember.Relation relation) { }
 

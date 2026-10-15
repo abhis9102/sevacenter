@@ -136,7 +136,7 @@ export default function EventsPage() {
             {isLeader ? <Button onClick={() => setEditing("new")}>+ Create utsav</Button> : null}
           </div>
           {events === null ? null : events.length === 0 ? <EmptyState title="No utsavs yet." /> : (
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {[...events].sort((a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt)).map((e) => {
                 const chip = dateChip(e.startsAt);
                 const ended = Date.parse(e.endsAt) <= now;
@@ -146,7 +146,7 @@ export default function EventsPage() {
                     {e.imageVersion ? (
                       // eslint-disable-next-line @next/next/no-img-element -- our own re-encoded JPEG (staff preview, drafts too)
                       <img src={`/api/v1/events/${e.id}/image?v=${encodeURIComponent(e.imageVersion)}`} alt={e.title}
-                           className="aspect-[16/9] w-full rounded-[10px] border border-line object-cover" />
+                           className="aspect-[2/1] w-full rounded-[10px] border border-line object-cover" />
                     ) : null}
                     <div className="flex items-start gap-4">
                       <div className="flex size-14 shrink-0 flex-col items-center justify-center rounded-[12px] border border-primary/25 bg-primary/10 text-primary-strong">
@@ -162,7 +162,7 @@ export default function EventsPage() {
                         <p className="font-mono text-xs text-muted">{formatIst(e.startsAt)} – {formatIst(e.endsAt).split(", ").pop()}</p>
                       </div>
                     </div>
-                    {e.description ? <p className="rounded-[10px] bg-surface-2 p-3 text-sm">{e.description}</p> : null}
+                    {e.description ? <p className="line-clamp-3 rounded-[10px] bg-surface-2 p-3 text-sm">{e.description}</p> : null}
                     <div>
                       <div className="mb-1 flex justify-between text-xs text-muted">
                         <span>{e.seatsTaken} registered{e.capacity !== null ? ` of ${e.capacity}` : ""}</span>

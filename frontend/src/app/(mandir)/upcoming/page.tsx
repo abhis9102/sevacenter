@@ -42,28 +42,28 @@ export default function UpcomingPage() {
         <RegisterForm event={registering} onCancel={() => setRegistering(null)}
                       onDone={(p) => { setRegistering(null); setIssued(p); }} />
       ) : (
-        <div className="flex flex-col gap-4">
-          {events?.length === 0 ? <Card><p className="text-muted">{tx.utsav.none}</p></Card> : null}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {events?.length === 0 ? <Card className="sm:col-span-2 lg:col-span-3"><p className="text-muted">{tx.utsav.none}</p></Card> : null}
           {events?.map((e) => {
             const d = new Date(e.startsAt);
             const day = d.toLocaleDateString("en-IN", { day: "numeric", timeZone: "Asia/Kolkata" });
             const month = d.toLocaleDateString("en-IN", { month: "short", timeZone: "Asia/Kolkata" });
             return (
-              <Card key={e.id} className="flex flex-col gap-4">
+              <Card key={e.id} className="flex flex-col gap-3 overflow-hidden p-0">
                 {e.imageVersion ? (
                   // eslint-disable-next-line @next/next/no-img-element -- our own re-encoded JPEG
                   <img src={eventImageUrl(e.id, e.imageVersion)} alt={e.title} loading="lazy"
-                       className="aspect-[16/9] w-full rounded-[12px] border border-line object-cover" />
+                       className="aspect-[16/9] w-full object-cover" />
                 ) : null}
-                <div className="flex gap-4">
-                <div className="flex size-16 shrink-0 flex-col items-center justify-center rounded-[12px] bg-gradient-to-br from-primary to-kumkum text-white shadow-xs">
-                  <span className="text-2xl font-semibold leading-none">{day}</span>
+                <div className="flex gap-3 px-4 pb-4 pt-1">
+                <div className="flex size-12 shrink-0 flex-col items-center justify-center rounded-[12px] bg-gradient-to-br from-primary to-kumkum text-white shadow-xs">
+                  <span className="text-xl font-semibold leading-none">{day}</span>
                   <span className="text-xs font-semibold uppercase">{month}</span>
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                  <h2 className="text-lg font-semibold">{e.title}</h2>
-                  <p className="text-sm text-muted">{formatIst(e.startsAt)}</p>
-                  {e.description ? <p className="text-sm">{e.description}</p> : null}
+                  <h2 className="font-semibold leading-snug">{e.title}</h2>
+                  <p className="text-xs text-muted">{formatIst(e.startsAt)}</p>
+                  {e.description ? <p className="line-clamp-3 text-sm">{e.description}</p> : null}
                   <div className="flex flex-wrap items-center gap-3 pt-1">
                     <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                       e.placesLeft === 0 ? "bg-kumkum/12 text-kumkum" : "bg-success/12 text-success"}`}>
