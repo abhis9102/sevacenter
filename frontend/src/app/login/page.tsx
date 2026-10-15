@@ -7,6 +7,7 @@ import { Suspense, useEffect, useState } from "react";
 import { api } from "@/components/apiClient";
 import { AuthFrame } from "@/components/AuthFrame";
 import { useLanguage } from "@/components/LanguageProvider";
+import { useStaffRootHref } from "@/components/SiteProvider";
 import { useTenant } from "@/components/TenantProvider";
 import { Alert, Button, TextField } from "@/components/ui";
 import { ApiError, describeError } from "@/lib/errors";
@@ -22,6 +23,8 @@ export default function LoginPage() {
 }
 
 function LoginForm() {
+  // Registering a new trust happens on the bare staff domain, never on a trust's own host.
+  const registerHref = useStaffRootHref("/register");
   const router = useRouter();
   const params = useSearchParams();
   const tenant = useTenant();
@@ -122,7 +125,7 @@ function LoginForm() {
           {t.auth.newStaffHelp}
         </p>
         <div className="border-t border-line/60 pt-3 text-center text-xs text-muted">
-          <Link href="/register" className="font-medium text-primary hover:underline">
+          <Link href={registerHref} className="font-medium text-primary hover:underline">
             {t.auth.registerTrust}
           </Link>
         </div>

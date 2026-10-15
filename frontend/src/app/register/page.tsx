@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/components/apiClient";
 import { Diya, Wordmark } from "@/components/Diya";
 import { useLanguage } from "@/components/LanguageProvider";
+import { useSite } from "@/components/SiteProvider";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { Alert, Button, Card, TextField } from "@/components/ui";
 import { describeError } from "@/lib/errors";
@@ -31,10 +32,17 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [base, setBase] = useState("");
 
+  const site = useSite();
   useEffect(() => {
+    // On a trust's own host (demo.<staff domain>/register) this page is in the wrong place: the
+    // preview would read "yourtrust.demo.<staff domain>". Go to the bare staff domain instead.
+    if (!site.singleDomain && site.slug && site.staffBase) {
+      window.location.replace(`${window.location.protocol}//${site.staffBase}/register`);
+      return;
+    }
     // eslint-disable-next-line react-hooks/set-state-in-effect -- the host is only known in the browser
-    setBase(portalBase(window.location));
-  }, []);
+    setBase(!site.singleDomain && site.staffBase ? site.staffBase : portalBase(window.location));
+  }, [site.singleDomain, site.slug, site.staffBase]);
   const [result, setResult] = useState<RegistrationResult | null>(null);
 
   function onSlugChange(value: string) {
