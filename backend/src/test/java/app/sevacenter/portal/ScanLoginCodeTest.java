@@ -55,6 +55,18 @@ class ScanLoginCodeTest {
         assertThat(scan.matches(3, "482913")).isFalse(); // unknown tenant
     }
 
+    @Test
+    void theStagingWildcardOpensEveryTrustButStillNeverProduction() {
+        when(tenants.findById(1L)).thenReturn(Optional.of(new Tenant("demo", "Demo")));
+        when(tenants.findById(2L)).thenReturn(Optional.of(new Tenant("siddhivinayak", "S")));
+        ScanLoginCode all = new ScanLoginCode("*", "123456", env("staging"), tenants);
+        assertThat(all.matches(1, "123456")).isTrue();
+        assertThat(all.matches(2, "123456")).isTrue();
+        assertThat(all.matches(2, "654321")).isFalse();
+        assertThat(all.matches(3, "123456")).isFalse(); // unknown tenant
+        assertThatThrownBy(() -> new ScanLoginCode("*", "123456", env(), tenants)).isInstanceOf(IllegalStateException.class);
+    }
+
     private static MockEnvironment env(String... profiles) {
         MockEnvironment e = new MockEnvironment();
         e.setActiveProfiles(profiles);
