@@ -35,6 +35,26 @@ updates:
     commit-message:
       prefix: build
 
+  # G3 (SCA): npm for the frontend, same idea as Maven. Without this entry the frontend got no
+  # version PRs at all (found 2026-10-16, Next.js advisories). Next.js and its lint config move
+  # together; React and its types together; the rest grouped by update type.
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+      semver-major-days: 30
+    groups:
+      next:
+        patterns: ["next", "eslint-config-next"]
+      react:
+        patterns: ["react", "react-dom", "@types/react", "@types/react-dom"]
+      npm-minor-patch:
+        update-types: [minor, patch]
+    commit-message:
+      prefix: build
+
   # M5: base images in backend/Dockerfile are pinned by digest, which also means they never pick
   # up OS security fixes by themselves (a stale "minimal" image is how CVEs pile up). Dependabot
   # proposes digest bumps weekly; the image scan in CI judges each one like any other change.
