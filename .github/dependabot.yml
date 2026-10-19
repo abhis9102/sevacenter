@@ -52,6 +52,13 @@ updates:
         patterns: ["react", "react-dom", "@types/react", "@types/react-dom"]
       npm-minor-patch:
         update-types: [minor, patch]
+    # @types/node follows the Node runtime major (22, frontend/Dockerfile): newer types let code use
+    # APIs that don't exist at runtime. TypeScript majors are planned migrations (7 broke CI).
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
     commit-message:
       prefix: build
 
