@@ -336,7 +336,7 @@ function PassList({ event, compact, refresh = 0, onChanged }: {
         </div>
       ) : null}
       {error ? <Alert tone="danger">{error}</Alert> : null}
-      <Card className="overflow-x-auto p-0">
+      <Card className="relative overflow-x-auto p-0">
         {compact ? <p className="border-b border-line px-4 py-3 text-sm font-semibold">Latest passes</p> : null}
         {passes?.length === 0 ? <p className="px-4 py-6 text-sm text-muted">No passes issued yet.</p> : (
           <table className="w-full text-left text-sm">

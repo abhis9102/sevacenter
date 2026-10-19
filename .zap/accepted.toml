@@ -88,3 +88,9 @@ pluginId = "90004" # Cross-Origin-Embedder-Policy missing
 uri = '^https://[^/]+/(?!api/)' # pages only
 ignoreUntil = 2027-01-10
 reason = "Claude (triage) for Abhi: COEP only matters for cross-origin isolation (SharedArrayBuffer etc.), which we don't use; COOP and CORP are set. require-corp would break the Razorpay Checkout frame on /donate and /book-puja. Re-check if Razorpay supports COEP."
+
+[[accepted]]
+pluginId = "10202" # Absence of Anti-CSRF Tokens (frontend baseline)
+uri = '^https://[^/?]+/(login)?(\?|$)' # the staff sign-in form (served at /login, and at / before the redirect)
+ignoreUntil = 2026-12-31
+reason = "Abhi (AppSec): by design (ADR 0007) CSRF is a double-submit cookie sent as the X-XSRF-TOKEN header by fetch, never a hidden form field, which a passive HTML rule can't see. The form only runs JS (method=post is a no-JS fallback that keeps the password out of the URL). The server rejects a login without the token: StaffAuthTest.loginRequiresCsrf. Re-check if any form ever posts natively."
