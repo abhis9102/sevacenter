@@ -79,7 +79,7 @@ export default function AuditPageView() {
         </select>
       </div>
       {error ? <Alert tone="danger">{error}</Alert> : null}
-      <Card className="overflow-x-auto p-0">
+      <Card className="relative overflow-x-auto p-0">
         <table className="w-full text-sm">
           <thead className="text-left text-muted">
             <tr>

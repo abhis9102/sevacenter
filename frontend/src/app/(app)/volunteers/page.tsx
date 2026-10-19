@@ -171,7 +171,7 @@ export default function VolunteersPage() {
         signups === null ? null : signups.length === 0 ? (
           <EmptyState title="No volunteers yet.">Devotees offer seva on the Mandir Center; you can also register them here.</EmptyState>
         ) : (
-          <Card className="overflow-x-auto p-0">
+          <Card className="relative overflow-x-auto p-0">
             <table className="w-full text-left text-sm">
               <thead className="bg-surface-2 text-xs uppercase tracking-wider text-muted">
                 <tr><th className="px-4 py-2">Sevak</th><th className="px-4 py-2">Contact</th><th className="px-4 py-2">Offered</th>

@@ -418,7 +418,7 @@ export default function DonationsPage() {
 
       {/* Donations Table */}
       <Card className="overflow-hidden border-line">
-        <div className="overflow-x-auto">
+        <div className="relative overflow-x-auto">
           <table className="min-w-full divide-y divide-line text-left text-sm">
             <thead className="bg-surface-2 text-xs font-semibold text-muted uppercase tracking-wider">
               <tr>

@@ -131,7 +131,7 @@ export default function StaffPage() {
       ) : null}
 
       {users ? (
-        <Card className="overflow-x-auto p-0">
+        <Card className="relative overflow-x-auto p-0">
           <table className="w-full min-w-[40rem] text-left text-sm">
             <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
               <tr>

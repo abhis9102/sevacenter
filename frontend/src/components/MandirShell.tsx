@@ -12,6 +12,7 @@ import { MandirIcon, type MandirIconName } from "@/components/MandirIcons";
 import { MandirLogo } from "@/components/MandirLogo";
 import { useStaffHref } from "@/components/SiteProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useActiveInView } from "@/components/useActiveInView";
 import { Alert } from "@/components/ui";
 import { clock, darshanState } from "@/lib/darshan";
 import { displayPhone, type MySeva } from "@/lib/devotee";
@@ -58,6 +59,8 @@ export function MandirShell({ children }: { children: React.ReactNode }) {
   const phrase = (word: string, time: string) => (lang === "hi" ? `${time} ${word}` : `${word} ${time}`);
   const [temple, setTemple] = useState<PublicTemple | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // The tabs depend on the temple (which pages it shows), so re-centre once it has loaded too.
+  const tabRow = useActiveInView<HTMLDivElement>(`${pathname}|${temple ? 1 : 0}`);
   const [devotee, setDevotee] = useState<MySeva | null>(null);
 
   useEffect(() => {
@@ -135,7 +138,7 @@ export function MandirShell({ children }: { children: React.ReactNode }) {
           ) : null}
 
           <nav aria-label={t.mandir.tagline} className="border-t border-line">
-            <div className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-4 py-2 sm:px-6">
+            <div ref={tabRow} className="scroll-row mx-auto flex max-w-5xl gap-1 px-4 py-2 sm:px-6">
               {tabs.filter((tab) => tab.show).map((tab) => {
                 const active = tab.href === "/" ? pathname === "/" : pathname.startsWith(tab.href);
                 return (
@@ -143,7 +146,7 @@ export function MandirShell({ children }: { children: React.ReactNode }) {
                     key={tab.href}
                     href={tab.href}
                     aria-current={active ? "page" : undefined}
-                    className={`flex shrink-0 items-center gap-1.5 rounded-[10px] px-3.5 py-1.5 text-sm font-semibold transition-colors ${
+                    className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[10px] px-3.5 py-1.5 text-sm font-semibold transition-colors ${
                       active ? "bg-primary text-white shadow-xs" : "text-muted hover:bg-surface-2 hover:text-fg"
                     }`}
                   >

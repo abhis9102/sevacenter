@@ -132,7 +132,7 @@ export default function ImportDevoteesPage() {
       {error ? <Alert tone="danger">{error}</Alert> : null}
 
       {rows.length > 0 ? (
-        <Card className="max-w-3xl overflow-x-auto p-0">
+        <Card className="max-w-3xl relative overflow-x-auto p-0">
           <table className="w-full text-left text-sm">
             <caption className="px-4 pt-4 text-left font-medium">{t.devotees.importPage.rowsToFix}</caption>
             <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">

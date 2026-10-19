@@ -15,6 +15,7 @@ import { useMandirHref } from "@/components/SiteProvider";
 import { useTenant } from "@/components/TenantProvider";
 import { Alert, Spinner } from "@/components/ui";
 import { UserMenu } from "@/components/UserMenu";
+import { useActiveInView } from "@/components/useActiveInView";
 import { ApiError, describeError } from "@/lib/errors";
 import { MandirLogo } from "@/components/MandirLogo";
 import { isActive, moduleForPath, sectionsOf, visibleModules } from "@/lib/apps";
@@ -33,6 +34,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [signingOut, setSigningOut] = useState(false);
   const { t } = useLanguage();
   const mandirHref = useMandirHref("/");
+  const sectionRow = useActiveInView<HTMLElement>(`${pathname}|${me ? 1 : 0}`);
 
   useEffect(() => {
     if (!tenant) {
@@ -138,12 +140,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
           {current && siblings.length > 1 ? (
             // A section's pages (e.g. Finance: Donations, Payment setup) switch here, at the top of the page.
-            <nav aria-label={t.apps.sections[current.section].name}
-                 className="mb-6 inline-flex flex-wrap items-center gap-1 rounded-[12px] border border-line bg-surface p-1 shadow-xs">
-              <span className="px-2 text-xs font-semibold uppercase tracking-wider text-muted">{t.apps.sections[current.section].name}</span>
+            <nav ref={sectionRow} aria-label={t.apps.sections[current.section].name}
+                 className="scroll-row mb-6 flex max-w-full items-center gap-1 rounded-[12px] border border-line bg-surface p-1 shadow-xs sm:inline-flex sm:flex-wrap">
+              <span className="shrink-0 whitespace-nowrap px-2 text-xs font-semibold uppercase tracking-wider text-muted">{t.apps.sections[current.section].name}</span>
               {siblings.map((m) => (
                 <Link key={m.id} href={m.href} aria-current={isActive(pathname, m.href) ? "page" : undefined}
-                      className={`rounded-[9px] px-3 py-1.5 text-sm font-semibold transition-colors ${
+                      className={`shrink-0 whitespace-nowrap rounded-[9px] px-3 py-1.5 text-sm font-semibold transition-colors ${
                         isActive(pathname, m.href) ? "bg-primary/12 text-primary-strong" : "text-muted hover:bg-surface-2 hover:text-fg"}`}>
                   {t.nav[m.label]}
                 </Link>
