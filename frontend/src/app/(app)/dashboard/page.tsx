@@ -181,7 +181,7 @@ export default function DashboardPage() {
       </div>
 
       {can("LEADER", "DONATIONS") && recent.data && recent.data.items.length > 0 ? (
-        <Card className="flex flex-col gap-3 overflow-x-auto">
+        <Card className="flex flex-col gap-3 relative overflow-x-auto">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Recent donations &amp; 80G receipts</h2>
             <Link href="/donations" className="text-sm font-medium text-primary-strong hover:underline">Full ledger →</Link>

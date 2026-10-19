@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { useLanguage } from "@/components/LanguageProvider";
+import { LanguageToggle } from "@/components/LanguageToggle";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Badge } from "@/components/ui";
 import type { Me, Role } from "@/lib/types";
 
@@ -135,6 +137,12 @@ export function UserMenu({
             </svg>
             <span>{t.nav.profile}</span>
           </Link>
+
+          {/* Phones have no room for these in the header (app/(app)/layout.tsx), so they live here. */}
+          <div className="flex items-center justify-between gap-2 px-3 py-2 sm:hidden">
+            <LanguageToggle />
+            <ThemeToggle />
+          </div>
 
           <div className="my-1.5 border-t border-line" />
 

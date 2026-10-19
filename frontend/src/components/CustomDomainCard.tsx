@@ -79,7 +79,7 @@ export function CustomDomainCard() {
           </div>
           {d.lastError ? <p className="text-sm text-danger">{d.lastError}</p> : null}
           <p className="text-sm">Add these two records where you manage your domain (GoDaddy, Hostinger, Cloudflare…):</p>
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table className="w-full min-w-[32rem] text-left text-xs">
               <thead className="text-muted">
                 <tr><th className="pb-1 pr-3">Type</th><th className="pb-1 pr-3">Name</th><th className="pb-1">Value</th><th /></tr>
