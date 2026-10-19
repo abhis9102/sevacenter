@@ -171,7 +171,8 @@ runs after every staging deploy (called by `cd-staging`), daily at 10:00 IST, an
 | Devotee pass | Active scan of `/api/v1/portal/**`, signed in through the real MandirCenter login with the scan trust's fixed code (`ScanLoginCode`, ADR 0035). |
 | Anonymous pass | Active scan of `/api/v1/public/**` and registration on the temple host. |
 | Frontend | ZAP baseline (crawl + passive rules) of the staff login page and the temple site. |
-| Coverage | Both sessions must survive, and the staff pass must have created devotees and donations (counted through the staff API: staging's database isn't reachable from CI). |
+| Coverage | Each session must survive **its own pass** (checked right after it), and the staff pass must have created devotees and donations (counted through the staff API: staging's database isn't reachable from CI). Every coverage problem is reported before the run fails, so one can't hide the next. |
+| Real ids | ZAP fills request bodies from the spec's `example` values and makes up `10` for ids without one. The scan sets `RecordDonationRequest.devoteeId`/`fundId` examples to a real devotee and active fund of the scan trust, so donations get recorded. |
 | Spec | `docs/api/openapi.json`, the API contract (`OpenApiContractTest` fails if it drifts): staging doesn't serve `/v3/api-docs`. |
 | Load | Two threads per host, at most 2 minutes per rule and 20 per pass: staging is one small box. |
 | Gate + tickets | Same `dast_policy.py` and `.zap/accepted.toml`. Tickets are scoped (`--scope staging`, `[dast-staging]`): each scan only ever closes its own. Staging tickets are **one per rule**, listing the affected requests, and writes are paced with retry: one ticket per request opened 81 issues and hit GitHub's content-creation limit. |
@@ -197,6 +198,14 @@ scan has been proven against a planted flaw.
 | Login form submitted as GET before JS loads: password in the URL (seen in the crawl) | Real | `method="post"` on every form with a secret; `forms.test.ts` |
 | Big redirect: page-level 307 streamed the app shell | Real (harmless content) | Redirect at the edge proxy, empty body |
 | Unexpected content type on non-API paths; COEP missing | By design | Scoped acceptances |
+
+### Red every run, 2026-10-15 to 10-18: three pipeline faults, no new vulnerability
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| "Staff session died during its scan" (`/me` → 401) | The check ran after the devotee and anonymous passes: the staff session had sat idle ~43 min, past the 30-minute session timeout (the devotee session, idle ~22 min, always passed). It measured the timeout, not the scan. The first scan's lost session was blamed on deploys alone. | Check each session right after its own pass |
+| No donations created (hidden: the first failure exited) | ZAP sent `devoteeId: 10, fundId: 10`, ids that don't exist in the scan trust, so every `POST /donations` was rejected. Proven locally with the pinned ZAP image against an echo server. | Real ids as spec examples; report all coverage problems, then fail |
+| Medium: Absence of Anti-CSRF Tokens (10202) on the staff sign-in form | False positive: the token is a header (ADR 0007), which a passive HTML rule can't see; `StaffAuthTest.loginRequiresCsrf` proves the server enforces it | Scoped acceptance |
 
 ## Known gaps
 

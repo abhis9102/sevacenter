@@ -8,7 +8,8 @@ scan trust:
   3. devotee       active API scan of the portal as a scan-trust devotee (scan code, ADR 0035)
   4. anonymous     active API scan of the public endpoints (temple host) and registration
   5. frontend      ZAP baseline (crawl + passive rules) of both sites
-  6. coverage      both sessions survived, and the staff scan wrote devotees and donations
+  6. coverage      each session survived its own pass (checked right after it), and the staff
+                   scan wrote devotees and donations; every problem is reported, not just the first
 
 The spec comes from docs/api/openapi.json (the API contract): staging doesn't serve /v3/api-docs.
 
@@ -43,6 +44,12 @@ MAX_MINUTES = "10"
 def fail(msg: str) -> None:
     print(f"::error::{msg}")
     sys.exit(1)
+
+
+def problem(problems: list[str], msg: str) -> None:
+    """A coverage problem: reported now, and the run fails at the end, so one can't hide another."""
+    print(f"::error::{msg}")
+    problems.append(msg)
 
 
 def mask(value: str) -> None:
@@ -142,10 +149,13 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
-def spec_for(host: str, keep, drop=()) -> dict:
+def spec_for(host: str, keep, drop=(), examples=None) -> dict:
     spec = json.loads((ROOT / "docs/api/openapi.json").read_text())
     spec["servers"] = [{"url": f"https://{host}"}]
     spec["paths"] = {p: v for p, v in spec["paths"].items() if keep(p) and p not in drop}
+    # ZAP builds each request body from the schema examples; a made-up id is a 404 every time.
+    for (schema, prop), value in (examples or {}).items():
+        spec["components"]["schemas"][schema]["properties"][prop]["example"] = value
     return spec
 
 
@@ -198,6 +208,17 @@ def devotee_login(host: str, contact: str) -> Client:
     return c
 
 
+def donation_examples(staff: Client) -> dict[tuple[str, str], int]:
+    """A real devotee and active fund of the scan trust, so the staff pass can record donations."""
+    devotees = staff.ok("GET", "/api/v1/devotees?page=0&size=1")["items"]
+    if not devotees:
+        fail("the scan trust has no devotees: re-seed it (ADR 0035)")
+    fund = next((f for f in staff.ok("GET", "/api/v1/donation-funds") if f["active"]), None) \
+        or staff.ok("POST", "/api/v1/donation-funds", {"name": "DAST scan fund", "active": True})
+    return {("RecordDonationRequest", "devoteeId"): devotees[0]["id"],
+            ("RecordDonationRequest", "fundId"): fund["id"]}
+
+
 def counts(staff: Client) -> dict[str, int]:
     return {"devotees": staff.ok("GET", "/api/v1/devotees?page=0&size=1")["total"],
             "donations": staff.ok("GET", "/api/v1/donations?page=0&size=1")["total"]}
@@ -223,18 +244,29 @@ def main() -> int:
     print("--- 1/6 edge: TLS, redirect, HSTS", flush=True)
     edge_checks([staff_host, mandir_host])
 
+    problems: list[str] = []
     print("--- 2/6 staff (active, logged in as the scan trust's admin)", flush=True)
     staff = staff_login(staff_host)
     for v in staff.cookies.values():
         mask(v)
     before = counts(staff)
+    examples = donation_examples(staff)
     session, xsrf = staff.cookies["SC_SESSION"], staff.cookies["XSRF-TOKEN"]
     # login/logout/register would rotate or kill the session or belong to the anonymous pass;
     # change-password would lock the scanner out; portal paths need the devotee cookie.
     zap_api(out, "zap-staff", spec_for(
         staff_host, lambda p: not p.startswith(("/api/v1/public/", "/api/v1/portal/")),
-        drop=("/api/v1/auth/login", "/api/v1/auth/logout", "/api/v1/register", "/api/v1/profile/change-password")),
+        drop=("/api/v1/auth/login", "/api/v1/auth/logout", "/api/v1/register", "/api/v1/profile/change-password"),
+        examples=examples),
         [("csrf-header", "X-XSRF-TOKEN", xsrf), ("cookies", "Cookie", f"SC_SESSION={session};XSRF-TOKEN={xsrf}")])
+    # Checked now, not after the other passes: sessions expire after 30 idle minutes, and the
+    # devotee + anonymous passes take ~40, so a late check only measured the idle timeout.
+    staff_alive = staff.send("GET", "/api/v1/me")[0]
+    if staff_alive != 200:
+        problem(problems, f"the staff session died during its scan ({staff_alive}): later requests were tested as anonymous")
+        staff = staff_login(staff_host)
+    after = counts(staff)
+    created = {k: after[k] - before[k] for k in before}
 
     print("--- 3/6 devotee portal (active, scan-code login)", flush=True)
     devotee = devotee_login(mandir_host, f"devotee1@{trust}.example.com")
@@ -244,6 +276,9 @@ def main() -> int:
     zap_api(out, "zap-devotee", spec_for(mandir_host, lambda p: p.startswith("/api/v1/portal/"),
                                          drop=("/api/v1/portal/logout",)),
             [("csrf-header", "X-XSRF-TOKEN", dxsrf), ("cookies", "Cookie", f"SC_DEVOTEE={dsession};XSRF-TOKEN={dxsrf}")])
+    devotee_alive = devotee.send("GET", "/api/v1/portal/me")[0]
+    if devotee_alive != 200:
+        problem(problems, f"the devotee session died during its scan ({devotee_alive})")
 
     print("--- 4/6 anonymous (active): public endpoints + registration", flush=True)
     anon = Client(mandir_host)
@@ -258,19 +293,14 @@ def main() -> int:
         run_zap(out, name, ["zap-baseline.py", "-t", url, "-c", "rules.tsv", "-m", "3", "-z", " ".join(ZAP_TUNING)])
 
     print("--- 6/6 coverage", flush=True)
-    staff_alive = staff.send("GET", "/api/v1/me")[0]
-    devotee_alive = devotee.send("GET", "/api/v1/portal/me")[0]
-    after = counts(staff_login(staff_host)) if staff_alive != 200 else counts(staff)
-    created = {k: after[k] - before[k] for k in before}
-    print(f"staff session after scan: {staff_alive} | devotee session: {devotee_alive} | created: {created}")
-    if staff_alive != 200:
-        fail("the staff session died during its scan: later requests were tested as anonymous")
-    if devotee_alive != 200:
-        fail("the devotee session died during its scan")
+    print(f"staff session after its scan: {staff_alive} | devotee session after its scan: {devotee_alive}"
+          f" | created: {created}")
     for k, n in created.items():
         if n < 1:
-            fail(f"the staff scan created no {k}: it never got past authz/CSRF/validation")
+            problem(problems, f"the staff scan created no {k}: it never got past authz/CSRF/validation")
     (out / "coverage.json").write_text(json.dumps({"created": created}))
+    if problems:
+        return 1
     print("DAST staging scan complete")
     return 0
 
