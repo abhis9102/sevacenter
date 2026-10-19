@@ -66,6 +66,14 @@ class SecurityRegressionTest {
                 .andExpect(jsonPath("$.paths['/api/v1/csrf'].get.parameters").doesNotExist());
     }
 
+    @Test
+    void registerRequiresCsrf() throws Exception {
+        // ZAP 10202 on /register is accepted as a false positive (#380): this test is what keeps that true.
+        mvc.perform(post("/api/v1/register")
+                        .contentType(MediaType.APPLICATION_JSON).content(INVALID_REGISTRATION))
+                .andExpect(status().isForbidden());
+    }
+
     private String rejected() throws Exception {
         return mvc.perform(post("/api/v1/register").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content(INVALID_REGISTRATION))

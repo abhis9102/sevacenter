@@ -91,6 +91,6 @@ reason = "Claude (triage) for Abhi: COEP only matters for cross-origin isolation
 
 [[accepted]]
 pluginId = "10202" # Absence of Anti-CSRF Tokens (frontend baseline)
-uri = '^https://[^/?]+/(login)?(\?|$)' # the staff sign-in form (served at /login, and at / before the redirect)
+uri = '^https://[^/?]+/(login|register)?(\?|$)' # the staff sign-in and trust registration forms (/login, /register, and / before the redirect)
 ignoreUntil = 2026-12-31
-reason = "Abhi (AppSec): by design (ADR 0007) CSRF is a double-submit cookie sent as the X-XSRF-TOKEN header by fetch, never a hidden form field, which a passive HTML rule can't see. The form only runs JS (method=post is a no-JS fallback that keeps the password out of the URL). The server rejects a login without the token: StaffAuthTest.loginRequiresCsrf. Re-check if any form ever posts natively."
+reason = "Abhi (AppSec): by design (ADR 0007) CSRF is a double-submit cookie sent as the X-XSRF-TOKEN header by fetch, never a hidden form field, which a passive HTML rule can't see. The form only runs JS (method=post is a no-JS fallback that keeps the password out of the URL). The server rejects a login without the token: StaffAuthTest.loginRequiresCsrf. The trust registration form at /register works the same way: POST /api/v1/register without the token returns 403 (SecurityRegressionTest.registerRequiresCsrf, triage in #380). Re-check if any form ever posts natively."
