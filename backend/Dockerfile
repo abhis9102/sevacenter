@@ -20,7 +20,7 @@ RUN ./mvnw -B -ntp package -DskipTests
 
 # --- stage 2: what ships. Distroless Debian 13: Java, libc, CA certificates, tzdata. No shell, no
 # package manager, no curl: after a code-execution bug there is little to work with. ---
-FROM gcr.io/distroless/java21-debian13:nonroot@sha256:51c242e7ddaba3666d47115a76a19cfa5076b2ad3ed6077b30d7bac689d98fa1
+FROM gcr.io/distroless/java21-debian13:nonroot@sha256:f3ac871fb5802c2739bb23b67212e67f341cbe754131528d2e9849072f9efb9a
 LABEL org.opencontainers.image.title="sevacenter-backend" \
       org.opencontainers.image.source="https://github.com/abhis9102/sevacenter"
 WORKDIR /app
