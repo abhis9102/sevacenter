@@ -195,6 +195,35 @@ jobs:
       - name: Severity gate (block CVSS >= 7.0 unless an accepted risk)
         run: python3 tools/security/sca_policy.py gate osv-all.json --fail-at 7.0
 
+  # G3 early warning: the vendors' own advisories, read directly. osv-scanner only sees an
+  # advisory once it reaches the GitHub Advisory Database, days later for the 14 Oct 2026
+  # Next.js RCEs (next@16.3.8 passed the job above meanwhile). The daily schedule makes this
+  # an alarm on main too. Policy: docs/security/sca.md.
+  vendor-advisories:
+    name: SCA vendor advisories (Next.js, React, Node)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Self-test the version matching (offline, real vendor ranges)
+        run: python3 tools/security/vendor_advisories.py selftest
+      - name: npm packages against their vendors' advisories
+        env:
+          GITHUB_TOKEN: ${{ github.token }} # read-only; only lifts the anonymous API rate limit
+        run: python3 tools/security/vendor_advisories.py npm frontend/package-lock.json
+      # The Node.js we ship is the one inside the runtime base image (pinned by digest), not
+      # the runner's: ask that image, then check nodejs.org for a newer security release.
+      - name: Node.js in the frontend runtime image against nodejs.org security releases
+        run: |
+          image=$(awk '/^FROM/ {img=$2} END {print img}' frontend/Dockerfile)
+          ver=$(docker run --rm "$image" --version)
+          echo "runtime image: $image -> node $ver"
+          python3 tools/security/vendor_advisories.py node "$ver"
+
   sbom:
     name: SBOM (CycloneDX)
     needs: build

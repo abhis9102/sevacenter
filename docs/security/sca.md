@@ -62,6 +62,37 @@ code scanning, yet the PR was **mergeable**: GitHub's code scanning merge check 
 rule works for Semgrep, which reports the exact line. So the severity decision moved into the
 required `SCA (osv-scanner)` job. Code scanning remains the place for visibility and tickets.
 
+## Vendor advisories: the database lag
+
+osv-scanner and `npm audit` only know an advisory once it is in the GitHub Advisory Database. A
+project's own advisory (published on its repo) gets there after GitHub reviews it, which takes days.
+On 14 Oct 2026 Next.js published two critical RCEs and a high DoS (fixed in 16.4.1). Two days later
+`SCA (osv-scanner)` still passed `next@16.3.8`, and Dependabot had no npm entry, so nothing would
+have opened a PR either. The first days are when exploitation starts, so this lag matters most.
+
+`SCA vendor advisories` (`tools/security/vendor_advisories.py`) reads the vendors directly:
+
+- **npm:** the installed `next`, `react`, `react-dom` (from `package-lock.json`) against
+  `GET /repos/{vendor}/security-advisories`. Vendor ranges are typed by hand and messy: some are
+  only a lower bound (`>=13.5.1`, with the fix only in `patched_versions`), and some list lower
+  bounds that mean "any of these lines" (`>= 13.3, >= 14, >=15, >=16`). So a version counts as
+  affected only if no patched version covers it: one on its own release line, or one newer than
+  every fix. An unknown patch (`16.3.?`) never clears that line. The offline `selftest`, run
+  before every check, holds these cases. It caught the "any of these lines" false negative on its
+  first run.
+- **Node.js:** the version inside the frontend runtime image (pinned by digest), checked against
+  `nodejs.org/dist/index.json`. If a newer release in the same major is a security release, the job
+  fails until Dependabot's digest bump lands.
+- High, critical or unrated advisories block. Medium and low are warnings. Accepted risks in
+  `osv-scanner.toml` apply here too (one list of exceptions).
+- It runs on every PR and push and on the daily schedule, so a new vendor advisory turns `main` red the next
+  morning. It is not a required check yet: it depends on two outside APIs, and should prove stable first.
+
+Proven (2026-10-16): main's lockfile (`next@16.3.8`) → 3 blocking (GHSA-2464, GHSA-673q, GHSA-p3m5),
+exit 1, while osv-scanner reported nothing for `next`. With `next@16.4.1` → 0, exit 0. `node v22.23.1`
+→ blocked by the 22.23.2 security release. A matcher with the patched-version rule removed fails the
+selftest.
+
 ## Known gaps (next gates)
 
 - osv-scanner resolves Maven's tree **itself**; it can differ from what Maven actually builds.
