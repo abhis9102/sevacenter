@@ -180,7 +180,7 @@ runs after every staging deploy (called by `cd-staging`), daily at 10:00 IST, an
 
 **Where it runs:** environment `staging-dast` (main only, no reviewer) holds only the scan trust's
 credentials, and the job has no AWS role: it attacks over HTTPS like any outsider. Staging sleeps
-23:00–08:00 IST; a scan that finds it asleep warns and skips.
+23:00–08:00 IST; a scan that finds it asleep warns and skips. In waking hours a down staging is retried for ~5 minutes (a deploy restarting it), then **fails** the run: a skipped scan must never look like a clean one.
 
 **What changes:** this is a *detect* gate. A finding turns the run red and opens a ticket; the change
 is already on staging and is fixed forward or reverted. Prevention returns at promotion: a staging
