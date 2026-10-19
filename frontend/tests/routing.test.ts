@@ -123,6 +123,11 @@ describe("API proxy headers", () => {
     assert.deepEqual(out.getSetCookie(), ["SC_SESSION=a; Path=/; HttpOnly", "XSRF-TOKEN=b; Path=/"]);
     assert.equal(out.get("x-internal"), null);
   });
+  it("keeps the API's own CSP (staging DAST, 2026-10-19: the proxy dropped it)", () => {
+    const csp = "default-src 'none'; frame-ancestors 'none'; sandbox";
+    const out = downstreamResponseHeaders(new Headers({ "content-security-policy": csp }));
+    assert.equal(out.get("content-security-policy"), csp);
+  });
   it("forwards only /api/v1 paths, without traversal", () => {
     assert.equal(upstreamPath("/api/v1/devotees/12"), "/api/v1/devotees/12");
     assert.equal(upstreamPath("/api/v1/../actuator/env"), null);

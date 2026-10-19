@@ -94,3 +94,9 @@ pluginId = "10202" # Absence of Anti-CSRF Tokens (frontend baseline)
 uri = '^https://[^/?]+/(login|register)?(\?|$)' # the staff sign-in and trust registration forms (/login, /register, and / before the redirect)
 ignoreUntil = 2026-12-31
 reason = "Abhi (AppSec): by design (ADR 0007) CSRF is a double-submit cookie sent as the X-XSRF-TOKEN header by fetch, never a hidden form field, which a passive HTML rule can't see. The form only runs JS (method=post is a no-JS fallback that keeps the password out of the URL). The server rejects a login without the token: StaffAuthTest.loginRequiresCsrf. The trust registration form at /register works the same way: POST /api/v1/register without the token returns 403 (SecurityRegressionTest.registerRequiresCsrf, triage in #380). Re-check if any form ever posts natively."
+
+[[accepted]]
+pluginId = "40012" # Cross Site Scripting (Reflected)
+uri = '/api/v1/donations(\?|$)' # recording a donation echoes the stored purpose/reference back, as JSON
+ignoreUntil = 2026-12-31
+reason = "Abhi (AppSec): the 201 body is the saved record as application/json + nosniff + the API CSP (default-src 'none'; sandbox; SecurityRegressionTest.securityHeadersArePresent), so no browser renders it as HTML; the POST also needs the session and the X-XSRF-TOKEN header, which a cross-site page can't send. Stored text only reaches the UI through React (escaped; no dangerouslySetInnerHTML, no server templates). Re-check if anything renders these fields as HTML."

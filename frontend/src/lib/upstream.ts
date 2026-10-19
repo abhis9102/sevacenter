@@ -23,6 +23,8 @@ const FORWARD_REQUEST_HEADERS = [
 const FORWARD_RESPONSE_HEADERS = [
   "cache-control",
   "content-disposition",
+  // The API's own CSP (default-src 'none'; sandbox): nothing an API response holds may run.
+  "content-security-policy",
   "content-type",
   "retry-after",
   "expires",
