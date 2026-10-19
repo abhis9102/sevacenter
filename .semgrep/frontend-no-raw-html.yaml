@@ -1,0 +1,41 @@
+# Custom SAST rule: the frontend never renders a string as HTML or code. Why: stored text (donation
+# purposes, names, titles) reaches the browser as JSON, and React renders it as escaped text; a
+# raw-HTML sink is the one thing that turns it into stored XSS. This rule is what lets ZAP 40014 on
+# /api/v1/ be accepted class-wide (#256, .zap/accepted.toml). Tested by frontend-no-raw-html.tsx
+# (`semgrep --test .semgrep/`); CI runs that test before the scan.
+rules:
+  - id: frontend-no-raw-html
+    message: >-
+      Raw HTML sink: this renders a string as HTML or code. If it ever holds stored data (purposes,
+      names, titles, notes), it is a stored XSS. Render it as text instead ({value} in JSX, or
+      textContent). If raw HTML is truly needed, sanitize it (DOMPurify) and get AppSec review: add
+      the file to this rule's paths.exclude with a reason, in a reviewed PR, never an inline nosemgrep.
+    severity: ERROR # error level: the protect-main ruleset blocks the merge on it
+    languages: [typescript, javascript]
+    metadata:
+      category: security
+      cwe: "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')"
+      owasp: "A03:2021 - Injection"
+      confidence: HIGH
+      references:
+        - docs/security/semgrep-rules.md
+    paths:
+      include:
+        - "frontend/src/"
+        - "*.tsx"
+    pattern-either:
+      # React's escape hatch, as a JSX attribute or hidden in a props object
+      - pattern: <$EL ... dangerouslySetInnerHTML={...} ... />
+      - pattern: <$EL ... dangerouslySetInnerHTML={...} ...>...</$EL>
+      - pattern: |
+          { ..., dangerouslySetInnerHTML: $X, ... }
+      # DOM APIs that parse a string as HTML
+      - pattern: $E.innerHTML = $V
+      - pattern: $E.outerHTML = $V
+      - pattern: $E.insertAdjacentHTML(...)
+      - pattern: $R.createContextualFragment(...)
+      - pattern: document.write(...)
+      - pattern: document.writeln(...)
+      # Strings run as code
+      - pattern: eval(...)
+      - pattern: new Function(...)
