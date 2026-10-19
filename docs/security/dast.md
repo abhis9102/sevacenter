@@ -206,6 +206,7 @@ scan has been proven against a planted flaw.
 | "Staff session died during its scan" (`/me` → 401) | The check ran after the devotee and anonymous passes: the staff session had sat idle ~43 min, past the 30-minute session timeout (the devotee session, idle ~22 min, always passed). It measured the timeout, not the scan. The first scan's lost session was blamed on deploys alone. | Check each session right after its own pass |
 | No donations created (hidden: the first failure exited) | ZAP sent `devoteeId: 10, fundId: 10`, ids that don't exist in the scan trust, so every `POST /donations` was rejected. Proven locally with the pinned ZAP image against an echo server. | Real ids as spec examples; report all coverage problems, then fail |
 | Medium: Absence of Anti-CSRF Tokens (10202) on the staff sign-in form | False positive: the token is a header (ADR 0007), which a passive HTML rule can't see; `StaffAuthTest.loginRequiresCsrf` proves the server enforces it | Scoped acceptance |
+| High: Reflected XSS (40012) on `POST /api/v1/donations` `purpose`/`reference`, first seen once donations got recorded (2026-10-19) | False positive: the echo is JSON + nosniff, the POST needs session + CSRF header, and nothing renders these fields as HTML. **But** checking it found a real gap: the Next.js `/api` proxy forwarded an allowlist of response headers without `Content-Security-Policy`, so the API's `default-src 'none'; sandbox` never reached browsers on staging | Proxy forwards the API CSP (`routing.test.ts`); scoped acceptance |
 
 ## Known gaps
 
