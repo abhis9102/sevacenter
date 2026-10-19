@@ -39,17 +39,31 @@ jobs:
             [ -n "${!v}" ] || { echo "::error::missing secret for $v"; exit 1; }
           done
 
+      # A skipped scan must never look like a clean one. Asleep (23:00-08:00 IST) is the only
+      # good reason to skip; in waking hours a down staging is retried for ~5 minutes (a deploy
+      # restarting the app) and then fails the run. 2026-10-19: a deploy mid-ping turned a
+      # scheduled run green without scanning anything.
       - name: Staging is awake
         id: awake
         run: |
-          code=$(curl -sS -m 20 -o /dev/null -w '%{http_code}' "https://$DAST_TRUST.$STAFF_BASE_DOMAIN/api/v1/ping" || echo 000)
-          echo "ping -> $code"
-          if [ "$code" != 200 ]; then
-            echo "::warning::staging isn't answering (asleep 23:00-08:00 IST?): no scan this time"
-            echo "## DAST staging: skipped, staging didn't answer (ping -> $code)" >> "$GITHUB_STEP_SUMMARY"
+          ping() { curl -sS -m 20 -o /dev/null -w '%{http_code}' "https://$DAST_TRUST.$STAFF_BASE_DOMAIN/api/v1/ping" || echo 000; }
+          hour=$(TZ=Asia/Kolkata date +%-H)
+          tries=1; [ "$hour" -ge 8 ] && [ "$hour" -lt 23 ] && tries=10
+          for i in $(seq "$tries"); do
+            code=$(ping); echo "ping $i/$tries -> $code"
+            [ "$code" = 200 ] && break
+            [ "$i" -lt "$tries" ] && sleep 30
+          done
+          if [ "$code" = 200 ]; then
+            echo "up=true" >> "$GITHUB_OUTPUT"
+          elif [ "$tries" -eq 1 ]; then
+            echo "::warning::staging is asleep (23:00-08:00 IST): no scan this time"
+            echo "## DAST staging: skipped, staging asleep (ping -> $code)" >> "$GITHUB_STEP_SUMMARY"
             echo "up=false" >> "$GITHUB_OUTPUT"
           else
-            echo "up=true" >> "$GITHUB_OUTPUT"
+            echo "::error::staging is down in waking hours (ping -> $code after $tries tries): nothing was scanned"
+            echo "## DAST staging: ❌ not scanned, staging down in waking hours (ping -> $code)" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
           fi
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
