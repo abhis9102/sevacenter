@@ -31,9 +31,9 @@ reason = "Abhi (AppSec): the export endpoint deliberately returns text/csv (ADR 
 
 [[accepted]]
 pluginId = "40014" # Cross Site Scripting Weakness (Persistent in JSON Response)
-uri = '/api/v1/(public/)?(events|pujas|sevaks|donations)(\?|$)'
-ignoreUntil = 2026-12-31
-reason = "Abhi (AppSec): stored titles/names come back verbatim as JSON data (application/json, nosniff, API CSP default-src 'none'; sandbox); the frontend renders them as text (React escapes; no dangerouslySetInnerHTML). Pinned by SecurityRegressionTest + frontend review."
+uri = '/api/v1/' # every JSON API response (class-wide, #256); frontend pages stay fully checked
+ignoreUntil = 2027-01-16 # 90 days: re-reviewed quarterly by design
+reason = "AppSec (proposed in #256, replaces the per-URL events/pujas/sevaks/donations entry by Abhi): the API never renders HTML. Every /api/** response is application/json + nosniff + CSP default-src 'none'; sandbox (SecurityRegressionTest), so stored text in JSON is data, not markup. The frontend renders it as React text; raw-HTML sinks (dangerouslySetInnerHTML, innerHTML, document.write, eval) are blocked at PR time by .semgrep/frontend-no-raw-html.yaml. 40014 on frontend pages is NOT suppressed: that is where a real stored XSS would show. Re-check if any API response is ever rendered as HTML (PDF/email/markdown)."
 
 [[accepted]]
 pluginId = "40018" # SQL Injection (boolean-based heuristic)

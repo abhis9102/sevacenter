@@ -140,6 +140,10 @@ jobs:
             semgrep/semgrep@sha256:93963d9295a366f59e4850127b1550400ee7b388f04fe144e4a1f6325d96e01b \
             semgrep --test --metrics=off \
               --config .semgrep/endpoint-missing-role-check.yaml .semgrep/endpoint-missing-role-check.java
+          docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/src" -w /src \
+            semgrep/semgrep@sha256:93963d9295a366f59e4850127b1550400ee7b388f04fe144e4a1f6325d96e01b \
+            semgrep --test --metrics=off \
+              --config .semgrep/frontend-no-raw-html.yaml .semgrep/frontend-no-raw-html.tsx
       # No --error: this job reports, the ruleset's code_scanning rule decides what blocks.
       # --exclude .semgrep: the rule tests are deliberately vulnerable; they're not our code.
       - name: Semgrep scan
