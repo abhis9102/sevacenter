@@ -4968,6 +4968,40 @@
         "tags" : [ "portal-controller" ]
       }
     },
+    "/api/v1/portal/donations/{id}" : {
+      "get" : {
+        "operationId" : "donation",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "cookie",
+          "name" : "SC_DEVOTEE",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Entry"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "portal-controller" ]
+      }
+    },
     "/api/v1/portal/donations/{id}/receipt" : {
       "get" : {
         "operationId" : "receipt",
