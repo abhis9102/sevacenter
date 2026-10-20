@@ -24,6 +24,16 @@ public interface DevoteeRepository extends JpaRepository<Devotee, Long> {
             + "and d.erasedAt is null")
     Page<Devotee> searchAll(String q, Pageable pageable);
 
+    /** Advanced search, phone field only (parameterized; roles that see contact details). */
+    @Query("select d from Devotee d where d.phone like concat('%', :#{escape([0])}, '%') "
+            + "escape :#{escapeCharacter()} and d.erasedAt is null")
+    Page<Devotee> searchByPhone(String q, Pageable pageable);
+
+    /** Advanced search, email field only (parameterized; roles that see contact details). */
+    @Query("select d from Devotee d where lower(d.email) like lower(concat('%', :#{escape([0])}, '%')) "
+            + "escape :#{escapeCharacter()} and d.erasedAt is null")
+    Page<Devotee> searchByEmail(String q, Pageable pageable);
+
     java.util.Optional<Devotee> findByIdAndErasedAtIsNull(Long id);
 
     java.util.List<Devotee> findAllByErasedAtIsNull(org.springframework.data.domain.Sort sort);

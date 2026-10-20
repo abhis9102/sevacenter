@@ -69,12 +69,9 @@ public class DevoteeController {
                                @RequestParam(defaultValue = "25") int size,
                                @AuthenticationPrincipal StaffUser staff) {
         boolean full = seesContactDetails(staff);
-        if (field != null && !field.isBlank()) {
-            java.util.List<Devotee> hits = service.advancedSearch(field, q);
-            return new PageResponse(hits.stream().map(d -> DevoteeResponse.of(d, full)).toList(),
-                    0, hits.size(), hits.size());
-        }
-        Page<Devotee> result = service.search(q, page, size, full);
+        Page<Devotee> result = (field != null && !field.isBlank())
+                ? service.advancedSearch(field, q, page, size, full)
+                : service.search(q, page, size, full);
         return new PageResponse(result.map(d -> DevoteeResponse.of(d, full)).getContent(),
                 result.getNumber(), result.getSize(), result.getTotalElements());
     }

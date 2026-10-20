@@ -8,8 +8,6 @@ import app.sevacenter.audit.AuditAction;
 import app.sevacenter.audit.AuditTrail;
 import app.sevacenter.tenant.TenantContext;
 import app.sevacenter.web.InvalidFieldException;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -28,9 +26,6 @@ public class DevoteeService {
     private final AuditTrail auditTrail;
     private final Clock clock = Clock.systemUTC();
 
-    @PersistenceContext
-    private EntityManager entityManager;
-
     public DevoteeService(DevoteeRepository devotees, AuditTrail auditTrail) {
         this.devotees = devotees;
         this.auditTrail = auditTrail;
@@ -45,17 +40,24 @@ public class DevoteeService {
     }
 
     /**
-     * Advanced search: look up devotees by a specific column (name, phone or email). Lets staff
-     * jump straight to a field instead of the broad any-field search above.
+     * Advanced search: look up devotees by a specific field (name, phone or email). Lets staff
+     * jump straight to a field instead of the broad any-field search above. The field selects a
+     * parameterized query; the term is always bound, never interpolated.
      */
     @Transactional(readOnly = true)
-    @SuppressWarnings("unchecked")
-    public java.util.List<Devotee> advancedSearch(String field, String value) {
-        String column = field == null ? "full_name" : field.strip();
+    public Page<Devotee> advancedSearch(String field, String value, int page, int size, boolean contactSearch) {
+        PageRequest pageable = PageRequest.of(Math.clamp(page, 0, MAX_PAGE), Math.clamp(size, 1, MAX_PAGE_SIZE), ORDER);
         String term = value == null ? "" : value.strip();
-        String sql = "select * from devotee where " + column + " ilike '%" + term + "%'"
-                + " and erased_at is null order by full_name, id limit 100";
-        return entityManager.createNativeQuery(sql, Devotee.class).getResultList();
+        String f = field == null ? "" : field.strip().toLowerCase(Locale.ROOT);
+        if (("phone".equals(f) || "email".equals(f)) && !contactSearch) {
+            throw new InvalidFieldException("field", "not allowed to search by contact details");
+        }
+        return switch (f) {
+            case "name", "full_name" -> devotees.searchByName(term, pageable);
+            case "phone" -> devotees.searchByPhone(term, pageable);
+            case "email" -> devotees.searchByEmail(term, pageable);
+            default -> throw new InvalidFieldException("field", "field must be name, phone or email");
+        };
     }
 
     /** Every devotee of the tenant, for the admin-only CSV export. */

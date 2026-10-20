@@ -3412,6 +3412,13 @@
           }
         }, {
           "in" : "query",
+          "name" : "field",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
           "name" : "page",
           "required" : false,
           "schema" : {
