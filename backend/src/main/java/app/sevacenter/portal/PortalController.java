@@ -161,6 +161,17 @@ public class PortalController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /** One of the devotee's donations in detail, for the My Seva history view. */
+    @GetMapping("/api/v1/portal/donations/{id:\\d+}")
+    @Transactional
+    public ResponseEntity<DonationHistory.Entry> donation(@PathVariable long id,
+            @CookieValue(name = COOKIE, required = false) String token) {
+        login.resolve(token).orElseThrow(NotLoggedInException::new);
+        return donations.byId(id)
+                .map(d -> ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(d))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     private MySeva view(DevoteeAccount account) {
         List<DevoteeContact> mine = login.contactsOf(account);
         List<String> contacts = mine.stream().map(DevoteeContact::getContact).toList();

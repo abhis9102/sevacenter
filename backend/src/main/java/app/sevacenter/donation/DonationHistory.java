@@ -49,6 +49,17 @@ public class DonationHistory {
                 PanProtection.masked(r.getDonorPanLast4()), receipts.cancellation(r.getId()).orElse(null)));
     }
 
+    /** One donation by id, for the My Seva detail view. */
+    @Transactional(readOnly = true)
+    public Optional<Entry> byId(long donationId) {
+        return donations.findById(donationId).map(d -> {
+            Optional<Receipt> r = receipts.findByDonationId(d.getId());
+            boolean receiptValid = r.isPresent() && receipts.cancellation(r.get().getId()).isEmpty();
+            return new Entry(d.getId(), d.getReceivedOn(), Money.toRupees(d.getAmountPaise()), d.getMode(),
+                    d.getPurpose(), false, r.map(Receipt::number).orElse(null), receiptValid);
+        });
+    }
+
     public record Entry(long id, LocalDate receivedOn, String amount, DonationMode mode, String purpose,
                         boolean reversed, String receiptNumber, boolean receiptValid) { }
 }
