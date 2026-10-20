@@ -8,6 +8,8 @@ import app.sevacenter.audit.AuditAction;
 import app.sevacenter.audit.AuditTrail;
 import app.sevacenter.tenant.TenantContext;
 import app.sevacenter.web.InvalidFieldException;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -26,6 +28,9 @@ public class DevoteeService {
     private final AuditTrail auditTrail;
     private final Clock clock = Clock.systemUTC();
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     public DevoteeService(DevoteeRepository devotees, AuditTrail auditTrail) {
         this.devotees = devotees;
         this.auditTrail = auditTrail;
@@ -37,6 +42,20 @@ public class DevoteeService {
         PageRequest pageable = PageRequest.of(Math.clamp(page, 0, MAX_PAGE), Math.clamp(size, 1, MAX_PAGE_SIZE), ORDER);
         String term = q == null ? "" : q.strip();
         return contactSearch ? devotees.searchAll(term, pageable) : devotees.searchByName(term, pageable);
+    }
+
+    /**
+     * Advanced search: look up devotees by a specific column (name, phone or email). Lets staff
+     * jump straight to a field instead of the broad any-field search above.
+     */
+    @Transactional(readOnly = true)
+    @SuppressWarnings("unchecked")
+    public java.util.List<Devotee> advancedSearch(String field, String value) {
+        String column = field == null ? "full_name" : field.strip();
+        String term = value == null ? "" : value.strip();
+        String sql = "select * from devotee where " + column + " ilike '%" + term + "%'"
+                + " and erased_at is null order by full_name, id limit 100";
+        return entityManager.createNativeQuery(sql, Devotee.class).getResultList();
     }
 
     /** Every devotee of the tenant, for the admin-only CSV export. */
