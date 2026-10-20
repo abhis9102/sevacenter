@@ -64,11 +64,14 @@ public class DevoteeController {
     @GetMapping
     @PreAuthorize("hasRole('MEMBER')")
     public PageResponse search(@RequestParam(required = false) String q,
+                               @RequestParam(required = false) String field,
                                @RequestParam(defaultValue = "0") int page,
                                @RequestParam(defaultValue = "25") int size,
                                @AuthenticationPrincipal StaffUser staff) {
         boolean full = seesContactDetails(staff);
-        Page<Devotee> result = service.search(q, page, size, full);
+        Page<Devotee> result = (field != null && !field.isBlank())
+                ? service.advancedSearch(field, q, page, size, full)
+                : service.search(q, page, size, full);
         return new PageResponse(result.map(d -> DevoteeResponse.of(d, full)).getContent(),
                 result.getNumber(), result.getSize(), result.getTotalElements());
     }

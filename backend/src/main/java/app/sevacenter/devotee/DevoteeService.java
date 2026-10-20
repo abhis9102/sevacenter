@@ -39,6 +39,27 @@ public class DevoteeService {
         return contactSearch ? devotees.searchAll(term, pageable) : devotees.searchByName(term, pageable);
     }
 
+    /**
+     * Advanced search: look up devotees by a specific field (name, phone or email). Lets staff
+     * jump straight to a field instead of the broad any-field search above. The field selects a
+     * parameterized query; the term is always bound, never interpolated.
+     */
+    @Transactional(readOnly = true)
+    public Page<Devotee> advancedSearch(String field, String value, int page, int size, boolean contactSearch) {
+        PageRequest pageable = PageRequest.of(Math.clamp(page, 0, MAX_PAGE), Math.clamp(size, 1, MAX_PAGE_SIZE), ORDER);
+        String term = value == null ? "" : value.strip();
+        String f = field == null ? "" : field.strip().toLowerCase(Locale.ROOT);
+        if (("phone".equals(f) || "email".equals(f)) && !contactSearch) {
+            throw new InvalidFieldException("field", "not allowed to search by contact details");
+        }
+        return switch (f) {
+            case "name", "full_name" -> devotees.searchByName(term, pageable);
+            case "phone" -> devotees.searchByPhone(term, pageable);
+            case "email" -> devotees.searchByEmail(term, pageable);
+            default -> throw new InvalidFieldException("field", "field must be name, phone or email");
+        };
+    }
+
     /** Every devotee of the tenant, for the admin-only CSV export. */
     @Transactional
     public java.util.List<Devotee> exportAll() {
