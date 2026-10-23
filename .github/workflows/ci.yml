@@ -33,7 +33,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false # don't leave the token in .git/config for later steps
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
           java-version: "21"
@@ -114,7 +114,7 @@ jobs:
       # Static analysis of .github/workflows itself: script injection via ${{ }} in run:,
       # dangerous triggers (pull_request_target), unpinned actions, over-broad permissions.
       # advanced-security: false → plain pass/fail gate, no SARIF upload / write perms needed.
-      - uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482 # v0.6.4
+      - uses: zizmorcore/zizmor-action@85b2b9fb8e3325e7a23d7d0a9d7ba5ae0f999e3e # v0.7.1
         with:
           advanced-security: false
 
@@ -153,7 +153,7 @@ jobs:
             semgrep scan --config p/java --config p/python --config p/typescript --config p/react \
               --config p/nextjs --config p/secrets --config .semgrep/ --exclude .semgrep \
               --metrics=off --sarif --output semgrep.sarif
-      - uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+      - uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
         with:
           sarif_file: semgrep.sarif
           category: semgrep
@@ -187,7 +187,7 @@ jobs:
           if [ "$rc" -gt 1 ]; then echo "::error::osv-scanner failed or scanned nothing (exit $rc)"; exit "$rc"; fi
           rc=0; scan --format json --all-packages --output-file osv-all.json || rc=$?
           if [ "$rc" -gt 1 ]; then echo "::error::osv-scanner failed or scanned nothing (exit $rc)"; exit "$rc"; fi
-      - uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+      - uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
         with:
           sarif_file: osv.sarif
           category: osv-scanner
@@ -286,7 +286,7 @@ jobs:
         run: tools/security/iac_scan.sh iac-scan
       # Only the real infrastructure goes to code scanning, never the fixture, and without the
       # findings accepted in .checkov/accepted.toml (they're decisions on record, not open alerts).
-      - uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+      - uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
         if: ${{ !cancelled() && hashFiles('iac-scan/infra/code-scanning.sarif') != '' }}
         with:
           sarif_file: iac-scan/infra/code-scanning.sarif
@@ -313,12 +313,12 @@ jobs:
       - name: Dockerfile scan, image build, image scan, coverage, gate
         run: tools/security/image_scan.sh image-scan
       # Every finding, unfixable ones included, stays visible in the Security tab.
-      - uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+      - uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
         if: ${{ !cancelled() && hashFiles('image-scan/trivy-backend.sarif') != '' }}
         with:
           sarif_file: image-scan/trivy-backend.sarif
           category: trivy-image # backend; name kept so its existing alerts carry on
-      - uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+      - uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
         if: ${{ !cancelled() && hashFiles('image-scan/trivy-frontend.sarif') != '' }}
         with:
           sarif_file: image-scan/trivy-frontend.sarif
