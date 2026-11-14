@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.1.1</version>
+		<version>4.1.2</version>
 		<relativePath/>
 	</parent>
 
@@ -17,7 +17,7 @@
 
 	<properties>
 		<java.version>21</java.version>
-		<springdoc.version>3.1.1</springdoc.version>
+		<springdoc.version>3.2.0</springdoc.version>
 		<commons-csv.version>1.14.1</commons-csv.version>
 		<!-- SCA overrides (G3): patch-level bumps over Boot 4.1.1's managed versions to fix
 		     published CVEs. Remove each once a Boot release ships an equal or newer version;
