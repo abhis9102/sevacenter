@@ -16,7 +16,7 @@ COPY . .
 RUN npm run build
 
 # --- stage 3: what ships. Distroless Node 22 on Debian 13: no shell, no package manager, no curl. ---
-FROM gcr.io/distroless/nodejs22-debian13:nonroot@sha256:ec2313763dd43931543bd03830466e0c409ce73a487e8d46f10db72d3b816c1c
+FROM gcr.io/distroless/nodejs22-debian13:nonroot@sha256:b0b1352373f14fe86376d423e6d283ea6b85b912ff55ca89bed8d2fe11c257b8
 LABEL org.opencontainers.image.title="sevacenter-frontend" \
       org.opencontainers.image.source="https://github.com/abhis9102/sevacenter"
 WORKDIR /app
