@@ -27,7 +27,6 @@ COPY --from=build --chown=root:root --chmod=0555 /app/.next/static ./.next/stati
 # The image's built-in unprivileged user (nonroot), by number so platforms can verify it.
 USER 65532:65532
 EXPOSE 3000
-# No HEALTHCHECK (no shell or curl): the platform checks the server over HTTP. Accepted for the
-# Dockerfile scan in .trivy/accepted.toml (G6).
+# No HEALTHCHECK (no shell or curl): the platform checks the server over HTTP.
 # The distroless entrypoint is node; exec form, so node is PID 1 and shuts down on SIGTERM.
 CMD ["server.js"]

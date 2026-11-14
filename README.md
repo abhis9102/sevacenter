@@ -7,8 +7,8 @@ manage devotees, collect donations (with 80G receipts), run events, and publish 
 platform for trust staff (`app.sevacenter.app`); **MandirCenter** is the public devotee site, one
 per temple (`yourtemple.mandircenter.app`). See `docs/adr/0006` and `docs/design/`.
 
-**Status:** M1 (auth, tenancy, Row-Level Security) in progress. CI security gates live: secrets,
-SAST, SCA, workflow linting. See `docs/roadmap.md` and `docs/STATUS.md`.
+**Status:** M1 (auth, tenancy, Row-Level Security) in progress. CI security gates are being
+re-introduced one at a time. See `docs/roadmap.md` and `docs/STATUS.md`.
 
 > **Security-first by design.** Three roles with separation of duties: **Dev** (AI coding agents)
 > write code, **AppSec** owns threat models, review and the CI security gates, **DevOps** runs
@@ -58,7 +58,6 @@ sevacenter/
 │   └── src/main/resources/db/migration/   Flyway migrations
 ├── frontend/             Next.js staff admin app (see frontend/README.md)
 ├── infra/                Terraform              (M6)
-├── tools/security/       Python pipeline tooling (tickets, SCA policy)
 ├── docs/
 │   ├── product-design.md     locked product + stack decisions
 │   ├── roles-and-teams.md    the three-role operating model

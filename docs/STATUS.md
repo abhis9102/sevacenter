@@ -4,6 +4,15 @@ _Last updated: 2026-10-14. Read this section first; everything below it is the d
 
 ## Where we are
 
+- **2026-11-14: security gates reset.** Every security check was removed from the pipeline so each
+  gate can be re-introduced one at a time, proven by failing on purpose, then made required:
+  CI (gitleaks, zizmor, Semgrep, osv-scanner, vendor advisories, SBOM, Checkov, Trivy,
+  attestation, ticket sync), the CD image scan, DAST on staging, the pre-commit security hooks,
+  the scanner configs and `tools/security/`. `protect-main` now requires only
+  `Build & test (backend)` and `Frontend (lint, types, tests, build)`; its code-scanning rule is
+  gone. The previous implementation is in git history before this change. The ADRs and
+  `docs/security/` describe the old gates and get updated as each one returns.
+
 - **MVP: built.** M0 foundation, M1 auth/tenancy/RLS, M2 devotees, M3 donations + 80G + Razorpay,
   M4 MandirCenter operations (temple site, utsavs + gate passes, pujas + priests, Sevak Hub,
   dashboard, Devotee 360, Hindi). ADRs 0001–0029. Every parallel-session prototype feature has been

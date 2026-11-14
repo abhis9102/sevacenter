@@ -3,8 +3,8 @@ name: cd-staging
 # Continuous deployment to staging in ap-south-1 (ADR 0034). Runs on a push to main that touches
 # the app (after the PR's CI gates passed), or on manual dispatch.
 #
-# 1. G6 scans the two images first, before any AWS credential exists in the job; the images
-#    pushed are exactly the ones scanned, never a rebuild.
+# 1. Builds the two images first, before any AWS credential exists in the job; the images
+#    pushed are exactly the ones built here.
 # 2. The deploy role (sevacenter-cd-staging, OIDC, main only) pushes them under immutable SHA tags,
 #    mirrors Caddy and Mailpit into our ECR by digest, and pins every digest in SSM.
 # 3. It runs the one SSM document it's allowed, on the box tagged as the app box. At night staging
@@ -18,8 +18,6 @@ on:
     paths:
       - "backend/**"
       - "frontend/**"
-      - "tools/security/image_scan.sh"
-      - ".trivy/**"
       - ".github/workflows/cd-staging.yml"
   workflow_dispatch: {}
 
@@ -37,15 +35,12 @@ env:
 
 jobs:
   deploy:
-    name: Scan, push, deploy to staging
+    name: Build, push, deploy to staging
     runs-on: ubuntu-latest
     timeout-minutes: 40
-    outputs:
-      deployed: ${{ steps.redeploy.outputs.skipped != 'true' }}
     permissions:
       id-token: write # OIDC token for the deploy role
       contents: read
-      actions: write # cancel a DAST scan running against the build being replaced
     env:
       ECR: ${{ secrets.STAGING_ECR_REGISTRY }}
       SMOKE_URLS: ${{ secrets.STAGING_SMOKE_URLS }} # space-separated
@@ -63,8 +58,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Image scan (G6) before push
-        run: tools/security/image_scan.sh image-scan
+      - name: Build the images
+        run: |
+          set -euo pipefail
+          for name in backend frontend; do
+            docker build -q -t "sevacenter-$name:build" "$name"
+          done
 
       - name: AWS credentials via OIDC (no stored keys)
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
@@ -72,7 +71,7 @@ jobs:
           role-to-assume: ${{ secrets.STAGING_DEPLOY_ROLE_ARN }}
           aws-region: ap-south-1
 
-      - name: Push the scanned images and mirrors, pin digests
+      - name: Push the built images and mirrors, pin digests
         run: |
           set -euo pipefail
           TAG="${GITHUB_SHA::12}"
@@ -88,22 +87,10 @@ jobs:
             echo "$ECR/$repo@$(aws ecr describe-images --repository-name "$repo" --image-ids "imageTag=$tag" --query 'imageDetails[0].imageDigest' --output text)"
           }
           for name in backend frontend; do
-            pin "$name" "$(push "sevacenter-$name:scan" "sevacenter-$name" "$TAG")"
+            pin "$name" "$(push "sevacenter-$name:build" "sevacenter-$name" "$TAG")"
           done
           docker pull -q "$CADDY_IMAGE" >/dev/null && pin caddy "$(push "$CADDY_IMAGE" sevacenter-caddy "${CADDY_IMAGE##*sha256:}")"
           docker pull -q "$MAILPIT_IMAGE" >/dev/null && pin mailpit "$(push "$MAILPIT_IMAGE" sevacenter-mailpit "${MAILPIT_IMAGE##*sha256:}")"
-
-      # A redeploy restarts the backend: a scan running across it gets 502s and loses its session
-      # (the first staging scan did, 2026-10-15). Stop it; the scan started after this deploy
-      # tests the new build from the start.
-      - name: Stop a DAST scan that is running against the old build
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          for id in $(gh run list --repo "$GITHUB_REPOSITORY" --workflow dast-staging.yml --status in_progress --json databaseId --jq '.[].databaseId'); do
-            echo "cancelling DAST run $id"
-            gh run cancel "$id" --repo "$GITHUB_REPOSITORY" || true
-          done
 
       - name: Redeploy the app box (skipped while staging sleeps)
         id: redeploy
@@ -144,22 +131,3 @@ jobs:
             echo "$url -> $code"
             [ "$code" = "200" ] || { echo "::error::smoke test failed for $url ($code)"; exit 1; }
           done
-
-  # Attack what was just deployed (ADR 0035). Started as its own run, not called as a reusable
-  # workflow: a called job didn't receive the staging-dast environment's secrets (DAST_TRUST came
-  # through empty), and a top-level run keeps those secrets in that environment only.
-  dast:
-    name: Start DAST staging
-    needs: deploy
-    if: needs.deploy.outputs.deployed == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      actions: write # workflow_dispatch of dast-staging.yml; GITHUB_TOKEN may start it
-    steps:
-      - name: Start the scan of what was just deployed
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh workflow run dast-staging.yml --repo "$GITHUB_REPOSITORY" --ref main
-          echo "### DAST staging started: Actions → dast-staging (findings on that run's summary)" >> "$GITHUB_STEP_SUMMARY"
