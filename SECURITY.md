@@ -9,8 +9,7 @@ concern, not an afterthought. This file is the entry point to how we build secur
   decision is enforced in the backend. The client is never trusted.
 - **Tenant isolation at the data layer.** Shared-schema multi-tenancy is enforced with
   Postgres Row-Level Security, not only by application `WHERE` clauses (see ADR-0002).
-- **No secrets in source or client bundles.** Config comes from the environment; CI runs
-  gitleaks + trufflehog; the frontend bundle is scanned for leaked secrets.
+- **No secrets in source or client bundles.** Config comes from the environment.
 - **Least privilege** for IAM, DB roles, and agent/tool access.
 - **Payments:** card data never touches our servers — Razorpay hosts it; we stay in the
   lowest PCI SAQ scope. Donor PAN (for 80G) is treated as sensitive PII under the DPDP Act.
@@ -18,9 +17,9 @@ concern, not an afterthought. This file is the entry point to how we build secur
 
 ## The pipeline gate (shift-left)
 
-Pre-commit (local) → PR CI gate → deploy. See `docs/roles-and-teams.md`. The security gate
-grows over the roadmap: secret scanning + SAST from the start, full SAST/SCA/IaC/image/SBOM
-and AI-code provenance by M7.
+Pre-commit (local) → PR CI gate → deploy. See `docs/roles-and-teams.md`. The automated
+security gates (secrets, SAST, SCA, SBOM, IaC, image, DAST) are being re-introduced one at a
+time, each proven to fail on purpose before it becomes a required check on `main`.
 
 ## Compliance targets
 

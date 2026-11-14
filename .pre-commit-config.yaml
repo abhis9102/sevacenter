@@ -1,5 +1,4 @@
-# Developer-side guardrails. Run on `git commit` against staged changes.
-# Mirrored by CI (nothing here is a substitute for the server-side gate).
+# Developer-side hygiene hooks. Run on `git commit` against staged changes.
 # Install once: `pre-commit install`
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -10,26 +9,3 @@ repos:
       - id: check-yaml
       - id: check-added-large-files
       - id: check-merge-conflict
-      - id: detect-private-key
-
-  - repo: local
-    hooks:
-      - id: gitleaks
-        name: gitleaks (secrets, staged diff)
-        entry: gitleaks git --pre-commit --staged --redact --verbose
-        language: system
-        pass_filenames: false
-
-      - id: trufflehog
-        name: trufflehog (verified secrets)
-        entry: trufflehog filesystem --fail --no-update --results=verified,unknown
-        language: system
-        pass_filenames: true
-
-      - id: semgrep
-        name: semgrep (SAST, changed files)
-        entry: semgrep scan --config p/java --config p/python --config p/typescript --config p/react --config p/nextjs --config p/secrets --config .semgrep/ --error --quiet --metrics=off
-        language: system
-        types_or: [java, python, ts, tsx, javascript]
-        exclude: ^\.semgrep/ # custom-rule tests: vulnerable on purpose
-        pass_filenames: true

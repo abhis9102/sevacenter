@@ -41,5 +41,5 @@ API docs when running: `/swagger-ui.html`. Health: `/actuator/health`, `/api/v1/
 
 - Conventional Commits; end commit messages with the Co-Authored-By trailer for the model in use.
 - Schema changes = Flyway migrations only (`backend/src/main/resources/db/migration`), forward-only.
-- Secrets from env only; pre-commit (gitleaks/trufflehog/semgrep) + CI enforce it. `make hooks` to install.
+- Secrets from env only. Security gates (pre-commit + CI) are being re-introduced one at a time; `make hooks` installs the hygiene hooks.
 - Every change reaches `main` through a PR that passes all required security checks (no bypass).

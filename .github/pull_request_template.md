@@ -16,11 +16,11 @@
 ## Security self-check (AppSec gate)
 
 - [ ] Touches a **sensitive path** (auth, authorization, tenancy/RLS, payments, IaC/IAM)? If yes, flag for focused review.
-- [ ] No secrets, keys, or credentials added (gitleaks/trufflehog will also check)
+- [ ] No secrets, keys, or credentials added
 - [ ] Authorization enforced **server-side** for any new endpoint (never trust the client/UI)
 - [ ] New/changed queries respect tenant isolation (RLS / `tenant_id` scoping)
 - [ ] Input validated; errors don't leak internals
-- [ ] New dependencies are real, pinned, and necessary (SCA will also check)
+- [ ] New dependencies are real, pinned, and necessary
 
 ## Tests
 

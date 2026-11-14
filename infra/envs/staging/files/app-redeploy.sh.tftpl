@@ -36,7 +36,7 @@ DB_ENDPOINT=$(param $P/db/endpoint)
 OWNER=$(aws secretsmanager get-secret-value --region "$REGION" --secret-id "$(param $P/db/master-secret-arn)" --query SecretString --output text)
 umask 077
 {
-  echo "DB_URL=jdbc:postgresql://$DB_ENDPOINT/sevacenter?sslmode=verify-full&sslrootcert=/certs/rds-ca.pem" # trufflehog:ignore (no credentials in the URL; they come from the env file lines below)
+  echo "DB_URL=jdbc:postgresql://$DB_ENDPOINT/sevacenter?sslmode=verify-full&sslrootcert=/certs/rds-ca.pem"
   echo "DB_USERNAME=$(jq -r .username <<<"$OWNER")"
   echo "DB_PASSWORD=$(jq -r .password <<<"$OWNER")"
   aws ssm get-parameters-by-path --region "$REGION" --path $P/app/ --with-decryption \

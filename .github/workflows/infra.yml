@@ -4,7 +4,6 @@ name: infra
 # read-only plan role; a merge to main applies staging with the apply role, but only after AppSec
 # approves the run in the `staging` environment (main only, required reviewer). The bootstrap
 # stack (the CI roles themselves) is planned here for review and applied only by a human.
-# G7 (Checkov) scans the same code in ci.yml before any of this.
 on:
   pull_request:
     paths:
