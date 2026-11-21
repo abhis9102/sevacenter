@@ -1,0 +1,10 @@
+# Gitleaks config for SevaCenter. Changes need AppSec review (CODEOWNERS).
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Synthetic test keys (sequential bytes), see docs/security/secrets-baseline.md"
+targetRules = ["generic-api-key"]   # only this rule; all other rules still scan the file
+condition = "AND"
+paths = ['''^backend/src/test/resources/config/application\.yml$''']
+regexes = ['''^(QEFCQ0RF|YGFiY2Rl|AAECAwQF|ICEiIyQl)''']
