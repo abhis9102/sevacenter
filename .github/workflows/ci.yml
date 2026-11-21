@@ -7,32 +7,19 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# Default for every job: no token permissions at all. Each job opts in to exactly what it
-# needs, so a compromised step can't push code, open releases, or edit PRs.
-permissions: {}
-
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-# Security gates are being re-introduced one at a time; each lands in its own PR and is added
-# to the protect-main ruleset once it has been proven to fail on purpose.
-#
-# Every third-party action is pinned to a full commit SHA (tags are mutable — see the
-# tj-actions/changed-files compromise, March 2025). The trailing comment is the human-readable
-# version; Dependabot (.github/dependabot.yml) bumps both together.
+# Security gates and pipeline hardening are being re-introduced one at a time.
 jobs:
   build:
     name: Build & test (backend)
     runs-on: ubuntu-latest
     timeout-minutes: 20 # a hung job shouldn't burn runner minutes for 6h (the default)
-    permissions:
-      contents: read
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false # don't leave the token in .git/config for later steps
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
@@ -42,28 +29,22 @@ jobs:
         working-directory: backend
         run: ./mvnw -B -ntp verify
 
-  # The staff admin app (Next.js). Node 22 LTS. Supply chain first: install exactly the
-  # lockfile with install scripts off (the classic npm attack path). No dependency cache: a cache
-  # shared across runs can be poisoned, and a clean install is ~30 s.
+  # The staff admin app (Next.js). Node 22 LTS.
   frontend:
     name: Frontend (lint, types, tests, build)
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    permissions:
-      contents: read
     defaults:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
           package-manager-cache: false
-      - name: Install exactly the lockfile, no install scripts
-        run: npm ci --ignore-scripts
+      - name: Install dependencies
+        run: npm ci
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test

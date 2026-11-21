@@ -21,8 +21,6 @@ on:
       - ".github/workflows/cd-staging.yml"
   workflow_dispatch: {}
 
-permissions: {}
-
 concurrency:
   group: cd-staging
   cancel-in-progress: false
@@ -54,9 +52,7 @@ jobs:
             [ -n "${!v}" ] || { echo "::error::missing repository secret for $v"; exit 1; }
           done
 
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
+      - uses: actions/checkout@v7
 
       - name: Build the images
         run: |
@@ -66,7 +62,7 @@ jobs:
           done
 
       - name: AWS credentials via OIDC (no stored keys)
-        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ secrets.STAGING_DEPLOY_ROLE_ARN }}
           aws-region: ap-south-1

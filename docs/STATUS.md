@@ -12,6 +12,12 @@ _Last updated: 2026-10-14. Read this section first; everything below it is the d
   `Build & test (backend)` and `Frontend (lint, types, tests, build)`; its code-scanning rule is
   gone. The previous implementation is in git history before this change. The ADRs and
   `docs/security/` describe the old gates and get updated as each one returns.
+- **Repo hardening reset too (same day):** actions unpinned to major tags, least-privilege
+  `permissions` and `persist-credentials: false` dropped (OIDC jobs keep `id-token: write`, which
+  AWS login needs), `npm ci` runs install scripts, Dependabot config removed. GitHub secret
+  scanning, push protection and Dependabot alerts/updates switched off, the default workflow token
+  is read/write, and the `protect-main` ruleset is deleted (direct pushes to `main` allowed). Still
+  in place: the `staging` environment's required reviewer before a Terraform apply.
 
 - **MVP: built.** M0 foundation, M1 auth/tenancy/RLS, M2 devotees, M3 donations + 80G + Razorpay,
   M4 MandirCenter operations (temple site, utsavs + gate passes, pujas + priests, Sevak Hub,
