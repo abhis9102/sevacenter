@@ -34,7 +34,6 @@ Prereqs: JDK 21, Docker, Maven (the `./mvnw` wrapper also works).
 ```bash
 cp .env.example .env     # then set DB_PASSWORD
 make db-up               # start Postgres (docker compose)
-make hooks               # install pre-commit guardrails
 make run                 # start backend
 curl localhost:8080/api/v1/ping          # -> {"status":"ok",...}
 curl localhost:8080/actuator/health      # -> {"status":"UP"}

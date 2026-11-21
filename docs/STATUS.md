@@ -18,6 +18,8 @@ _Last updated: 2026-10-14. Read this section first; everything below it is the d
   scanning, push protection and Dependabot alerts/updates switched off, the default workflow token
   is read/write, and the `protect-main` ruleset is deleted (direct pushes to `main` allowed). Still
   in place: the `staging` environment's required reviewer before a Terraform apply.
+- **Pre-commit removed too (2026-11-21):** `.pre-commit-config.yaml` and `make hooks` are gone,
+  hygiene hooks included, so the developer-side hooks are rebuilt from scratch with the gates.
 
 - **MVP: built.** M0 foundation, M1 auth/tenancy/RLS, M2 devotees, M3 donations + 80G + Razorpay,
   M4 MandirCenter operations (temple site, utsavs + gate passes, pujas + priests, Sevak Hub,

@@ -1,4 +1,4 @@
-.PHONY: help up down db-up db-down db-logs run test build hooks fe-dev fe-check
+.PHONY: help up down db-up db-down db-logs run test build fe-dev fe-check
 help: ## show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  %-10s %s\n",$$1,$$2}'
 db-up: ## start local Postgres + Mailpit (needs .env; mail UI http://localhost:8025)
@@ -21,8 +21,6 @@ test: ## hermetic tests (needs Docker)
 	cd backend && ./mvnw -B -ntp verify
 build: ## compile + package
 	cd backend && ./mvnw -B -ntp package
-hooks: ## install pre-commit hooks
-	pre-commit install
 fe-dev: ## run the staff admin web app -> http://<slug>.localhost:3000 (backend on :8080)
 	cd frontend && npm ci && npm run dev
 fe-check: ## frontend lint + typecheck + unit tests + production build
