@@ -29,7 +29,6 @@ Scopes map to modules: `tenancy`, `auth`, `devotees`, `donations`, `events`, `in
 ```bash
 cp .env.example .env     # set DB_PASSWORD
 make db-up               # start Postgres
-make hooks               # install pre-commit guardrails
 make run                 # run backend → http://localhost:8080/api/v1/ping
 make test                # hermetic tests (needs Docker)
 ```
